@@ -1,0 +1,6 @@
+.gitignore
+inst/www/minifier.jar
+inst/www-full
+
+^.*\.Rproj$
+^\.Rproj\.user$
