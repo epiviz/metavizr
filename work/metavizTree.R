@@ -49,5 +49,48 @@ tableToJSONTree <- function(t) {
   return(tree)
 }
 
+leaves <- function(node) {
+  if (node$nchildren == 0) {
+    return(list(node))
+  } else {
+    ret = list()
+    for (i in 1:node$nchildren) {
+      ret = c(ret, leaves(node$children[[i]]))
+    }
+    return(ret)
+  }
+}
+
+# Test method for getMeasurements() method inside EpivizMetagenomicsData
+getMeasurements=function(samples, id) { # id -> datasourceId
+  out <- lapply(samples, function(sample) {
+    list(id=sample$id,
+         name=sample$name,
+         type="feature",
+         datasourceId=id,
+         datasourceGroup=id,
+         defaultChartType="heatmap",
+         annotation=NULL, # TODO: observationType, ageRange, etc
+         minValue=0, # TODO
+         maxValue=15, # TODO
+         metadata=NULL) # TODO
+  })
+  out
+}
+
+generatePseudoGUID = function(size) {
+  chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  ret = c()
+  indices = sample(1:nchar(chars), size, replace=T)
+  
+  for (i in 1:size) {
+    ret = c(ret, substr(chars, indices[i], indices[i]))
+  }
+  
+  return(paste(ret, collapse=""))
+}
+
 tree = tableToJSONTree(df)
-View(RJSONIO::toJSON(tree,recursive=FALSE))
+ls = leaves(tree)
+ms = getMeasurements(ls, "my-id")
+# View(RJSONIO::toJSON(tree,recursive=FALSE))

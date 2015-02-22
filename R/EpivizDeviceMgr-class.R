@@ -1,4 +1,4 @@
-EpivizDeviceMgr <- setRefClass("EpivizDeviceMgr", 
+EpivizDeviceMgr <- setRefClass("EpivizDeviceMgr",
   fields=list(
     url="character",
     msList="list",
@@ -37,19 +37,19 @@ EpivizDeviceMgr <- setRefClass("EpivizDeviceMgr",
       cat("Epiviz device manager object:\n")
       cat("Server: ")
       server$show(); cat("\n")
-      
+
       st <- .self$listCharts()
       if (!is.null(st)) {
         cat("Charts:\n")
         print(st); cat("\n")
       }
-      
+
       st <- .self$listMeasurements()
       if (length(st)>0) {
         cat("Measurements:\n")
         print(st); cat("\n")
       }
-      
+
       st <- .self$listDevices()
       if (!is.null(st)) {
         cat("Devices:\n")
@@ -68,7 +68,7 @@ EpivizDeviceMgr$methods(list(
 
 # standalone helper
 EpivizDeviceMgr$methods(list(
-  standalone=function() server$standalone                          
+  standalone=function() server$standalone
 ))
 
 # daemonization helpers
@@ -102,8 +102,13 @@ EpivizDeviceMgr$methods(list(
                      input_class="BigWigFile"),
                  geneInfo=list(class="EpivizGeneInfoData",
                          description="Gene annotation data",
-                         input_class="GRanges"))
-                 
+                         input_class="GRanges"),
+                 metagenomics=list(
+                   class="EpivizMetagenomicsData",
+                   description="Metagenomics data",
+                   input_class="MRexperiment"
+                 ))
+
 EpivizDeviceMgr$methods(list(
    addMeasurements=function(obj, msName, sendRequest=!nonInteractive, ...) {
     'add measurements to epiviz session'
@@ -117,7 +122,7 @@ EpivizDeviceMgr$methods(list(
     epivizObject$setMgr(.self)
 
     measurements <- epivizObject$getMeasurements()
-    msRecord <- list(measurements=measurements, 
+    msRecord <- list(measurements=measurements,
       name=msName, obj=epivizObject, connected=FALSE)
     msList[[type]][[msId]] <<- msRecord
 
@@ -150,7 +155,7 @@ EpivizDeviceMgr$methods(list(
        callback2 <- function(data) {
          if (verbose) epivizrMsg("Redrawn", tagPrompt=TRUE)
        }
-       
+
        requestId <- callbackArray$append(callback)
        request <- list(requestId=requestId,
                        type="request",
@@ -200,7 +205,7 @@ EpivizDeviceMgr$methods(list(
 
     if (!exists(msObj$getId(), envir=typeList, inherits=FALSE))
       stop("object not found")
-     
+
     objRecord <- get(msObj$getId(), typeList, inherits=FALSE)
     msName <- objRecord$name
     ms <- objRecord$obj$getMeasurements()
@@ -208,7 +213,7 @@ EpivizDeviceMgr$methods(list(
     rm(list=msObj$getId(), envir=msList[[msType]])
     if(objRecord$connected) {
       callback=function(data) {
-        epivizrMsg("measurement object ", msName, " removed and disconnected", tagPrompt=TRUE)  
+        epivizrMsg("measurement object ", msName, " removed and disconnected", tagPrompt=TRUE)
       }
       requestId=callbackArray$append(callback)
       request <- list(requestId=requestId,
@@ -251,7 +256,7 @@ EpivizDeviceMgr$methods(list(
                  length=lens,
                  connected=connected,
                  columns=columns,
-                 stringsAsFactors=FALSE,row.names=NULL)  
+                 stringsAsFactors=FALSE,row.names=NULL)
    }
    out <- list()
    for (i in seq_along(msList)) {
@@ -280,7 +285,7 @@ EpivizDeviceMgr$methods(list(
        curType <- names(.typeMap)[i]
        nm <- paste0(curType,"Measurements")
        measurements <- list()
-       
+
        ids <- ls(msList[[curType]])
        if (length(ids)>0) {
          for (id in ids) {
@@ -342,7 +347,7 @@ EpivizDeviceMgr$methods(list(
       query <- NULL
     } else {
      query <- GRanges(chr, ranges=IRanges(start, end))
-    } 
+    }
     obj <- .findDatasource(datasource)
     if (is.null(obj)) {
        stop("cannot find datasource", datasource)
@@ -360,6 +365,13 @@ EpivizDeviceMgr$methods(list(
       stop("cannot find datasource", datasource)
     }
     obj$getValues(query, measurement)
+  },
+  getHierarchy=function(datasource) {
+    obj <- .findDatasource(datasource)
+    if (is.null(obj)) {
+      stop("cannot find datasource", datasource)
+    }
+    obj$getHierarchy()
   }
 ))
 
@@ -376,7 +388,7 @@ EpivizDeviceMgr$methods(list(
         appChartId = data$value$id
         chartIdMap[[chartId]] <<- appChartId
         activeId <<- chartId
-        epivizrMsg("Chart ", chartId, " added to browser and connected", tagPrompt=TRUE)  
+        epivizrMsg("Chart ", chartId, " added to browser and connected", tagPrompt=TRUE)
       }
       requestId=callbackArray$append(callback)
       request <- list(type="request",
@@ -387,7 +399,7 @@ EpivizDeviceMgr$methods(list(
       server$sendRequest(request)
     }
     invisible(NULL)
-   }, 
+   },
    .getChartObject=function(chartId) {
      if (!exists(chartId, envir=chartList, inherits=FALSE))
       stop("cannot find object")
@@ -407,10 +419,10 @@ EpivizDeviceMgr$methods(list(
 
     chartId <- chartObj$getId()
     rm(list=chartId, envir=chartList)
-    
+
     if(!is.null(chartIdMap[[chartId]])) {
       callback=function(data) {
-        epivizrMsg("chart ", chartId, " removed and disconnected", tagPrompt=TRUE)  
+        epivizrMsg("chart ", chartId, " removed and disconnected", tagPrompt=TRUE)
       }
       requestId=callbackArray$append(callback)
       request <- list(type="request",
@@ -431,13 +443,13 @@ EpivizDeviceMgr$methods(list(
         rmChart(obj)
     }
     invisible()
-   }, 
+   },
    listCharts=function() {
      ids <- ls(chartList)
     if (length(ids) == 0) {
       return(NULL)
     }
-    
+
     type <- sapply(ids, function(x) chartList[[x]]$type)
     ms <- sapply(ids,
                  function(x) {
@@ -445,9 +457,9 @@ EpivizDeviceMgr$methods(list(
                    paste0(tmp, collapse=",")
                })
     connected <- ifelse(sapply(ids, function(x) x %in% names(chartIdMap)), "*", "")
-    out <- data.frame(id=ids, 
-                      type=type, 
-                      measurements=ms, 
+    out <- data.frame(id=ids,
+                      type=type,
+                      measurements=ms,
                       connected=connected,
                       stringsAsFactors=FALSE)
     rownames(out) <- NULL
@@ -461,7 +473,7 @@ EpivizDeviceMgr$methods(list(
      'add device to epiviz browser'
       deviceIdCounter <<- deviceIdCounter + 1L
       deviceId <- sprintf("epivizDevice_%d", deviceIdCounter)
- 
+
       msObject <- .self$addMeasurements(obj, devName, sendRequest=sendRequest, ...)
       msObject$setInDevice(TRUE)
 
@@ -469,7 +481,7 @@ EpivizDeviceMgr$methods(list(
         waitToClearRequests()
         chartObject <- msObject$plot(sendRequest=sendRequest, inDevice=TRUE, ...)
         chartObject$setInDevice(TRUE)
-      }, 
+      },
       error=function(e) {
         rmMeasurements(msObject)
         stop(e)
@@ -480,7 +492,7 @@ EpivizDeviceMgr$methods(list(
         deviceObj$setId(deviceId)
         deviceList[[deviceId]] <<- deviceObj
         deviceObj
-      }, 
+      },
       error=function(e) {
         rmChart(chartObject)
         rmMeasurements(msObject)
@@ -491,11 +503,11 @@ EpivizDeviceMgr$methods(list(
       'delete device from epiviz browser'
       if (is.character(deviceObj)) {
         if (!exists(deviceObj, envir=deviceList, inherits=FALSE)) {
-          stop("did not find object", deviceObj) 
+          stop("did not find object", deviceObj)
         }
         deviceObj <- deviceList[[deviceObj]]
       }
-      
+
       if (!is(deviceObj, "EpivizDevice"))
         stop("'deviceObj' must be an 'EpivizDevice' object")
 
@@ -539,11 +551,11 @@ EpivizDeviceMgr$methods(list(
        tmp <- sapply(deviceList[[x]]$getChartObject()$measurements, function(y) paste0(y$datasourceId,":",y$name))
        paste0(tmp,collapse=",")
      })
-   
+
     connected <- ifelse(sapply(ids, function(x) deviceList[[x]]$getChartId() %in% names(chartIdMap)), "*", "")
-    out <- data.frame(id=ids, 
-                      type=type, 
-                      measurements=ms, 
+    out <- data.frame(id=ids,
+                      type=type,
+                      measurements=ms,
                       connected=connected,
                       stringsAsFactors=FALSE)
     rownames(out) <- NULL
@@ -571,29 +583,29 @@ EpivizDeviceMgr$methods(list(
       tryCatch(server$startServer(),
                error=function(e) stop(e))
     }
-    
+
     if (nonInteractive) {
       return(invisible())
     }
-    
+
     if (verbose) {
       epivizrMsg("Opening browser")
     }
-    
+
     tryCatch({
       if (missing(url) || is.null(url)) {
         browseURL(.self$url)
       } else {
         browseURL(url)
       }
-      
+
       if (daemonized())
         return(invisible())
-      
+
       if (verbose) {
         epivizrMsg("Servicing websocket until connected")
       }
-      
+
       ptm <- proc.time()
       while(!server$socketConnected && (proc.time()-ptm)[2] * 1000 <= 30) {
         service(verbose=FALSE)
@@ -610,7 +622,7 @@ EpivizDeviceMgr$methods(list(
     if (verbose && !(nonInteractive || daemonized())) {
       epivizrMsg("Serving Epiviz, escape to continue interactive session...")
     }
-    
+
     server$service(nonInteractive)
   },
   stopService=function() {
@@ -633,7 +645,7 @@ EpivizDeviceMgr$methods(list(
 )
 
 # navigation methods
-EpivizDeviceMgr$methods(list(                          
+EpivizDeviceMgr$methods(list(
   refresh=function() {
     'refresh browser'
     server$refresh()
@@ -661,7 +673,7 @@ EpivizDeviceMgr$methods(list(
     'navidate to successive positions'
     if (!is(granges, "GenomicRanges"))
       stop(("'granges' must be a 'GenomicRanges' object"))
-    
+
     n <- min(n, length(granges))
     ind <- seq(len=n)
     chr <- as.character(seqnames(granges)[ind])
@@ -683,7 +695,7 @@ EpivizDeviceMgr$methods(list(
   blockChart=function(ms, ...) {
 #    if (!.self$.checkMeasurements(msType="block", ms=ms, ...))
  #     stop("invalid measurements")
-    
+
     chartObj <- EpivizChart$new(
       measurements=ms,
       mgr=.self,
@@ -691,11 +703,11 @@ EpivizDeviceMgr$methods(list(
     addChart(chartObj, ...)
     chartObj
   },
-  
+
   lineChart=function(ms, ...) {
 #    if (!.self$.checkMeasurements(msType="bp", ms=ms, ...))
  #     stop("invalid measurements")
-    
+
     chartObj <- EpivizChart$new(
       measurements=ms,
       mgr=.self,
@@ -703,13 +715,13 @@ EpivizDeviceMgr$methods(list(
     addChart(chartObj, ...)
     chartObj
   },
-  
+
   scatterChart=function(x, y, ...) {
     ms <- list(x,y)
-    
+
 #    if(!.self$.checkMeasurements(msType="gene", ms=ms, ...))
  #     stop("invalid measurements")
-    
+
     chartObj <- EpivizChart$new(
       measurements=ms,
       mgr=.self,
@@ -766,7 +778,7 @@ EpivizDeviceMgr$methods(
                     requestId=requestId,
                     data=list(action="addSeqInfos",
                       seqInfos=rjson::toJSON(out)))
-    server$sendRequest(request)                      
+    server$sendRequest(request)
   },
 
   rmSeqinfo=function(seqnames) {
@@ -798,7 +810,8 @@ EpivizDeviceMgr$methods(list(
                msgData$end,
                msgData$datasource,
                msgData$measurement),
-            getSeqInfos=getSeqInfos())
+            getSeqInfos=getSeqInfos(),
+            getHierarchy=getHierarchy(msgData$datasourceGroup))
         return(out)
     }
 ))

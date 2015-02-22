@@ -4,6 +4,10 @@ setGeneric("register", signature=c("object"),
 setGeneric("reorderIfNeeded", signature=c("object"),
            function(object, ...) standardGeneric("reorderIfNeeded"))
 
+setMethod("register", "MRexperiment", function(object, ...) {
+  return(EpivizMetagenomicsData$new(object=object, ...))
+})
+
 # TODO: add a sort check
 setMethod("reorderIfNeeded", "GenomicRanges",
           function(object, ...) {
@@ -41,7 +45,7 @@ setMethod("reorderIfNeeded", "SummarizedExperiment",
 setMethod("register", "GenomicRanges",
 	function(object, columns, type=c("block","bp","geneInfo"), ...) {
 		type <- match.arg(type)
-                object <- reorderIfNeeded(object)
+    object <- reorderIfNeeded(object)
 
 		if (!is(object, "GIntervalTree")) {
 			object <- as(object, "GIntervalTree")
