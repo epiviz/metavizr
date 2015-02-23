@@ -1,12 +1,17 @@
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   contains="EpivizData",
-  fields=list(taxonomy="ANY", leaves="list", samples="list", maxDepth="numeric"),
+  fields=list(
+    taxonomy="ANY",
+    leaves="list",
+    samples="list",
+    maxDepth="numeric"
+  ),
   methods=list(
     initialize=function(object, ...) {
-      taxonomy <<- .MRexperimentToTree(object)
-      leaves <<- .leaves(taxonomy)
+      taxonomy <<- EpivizTree$new(.MRexperimentToTree(object))
+      leaves <<- taxonomy$leaves()
       samples <<- list(list(name="sample1", id="s1"), list(name="sample2", id="s2")) # TODO
-      maxDepth <<- 4
+      maxDepth <<- 4 # TODO Make it customizable
       callSuper(object=object, ...)
     },
     update=function(newObject, ...) {
@@ -24,7 +29,6 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       return(.tableToTree(table))
     },
     .tableToTree=function(t) {
-
       tableToListTree <- function(t, colIndex=1) {
         if (colIndex > dim(t)[2]) { return(NULL) }
         groups = by(t, t[, colIndex], list, simplify=F)
@@ -68,28 +72,6 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       tree = listTreeToJSONTree(listTree)
       return(tree)
     },
-    .leaves=function(node) {
-      if (node$nchildren == 0) {
-        return(list(node))
-      } else {
-        ret = list()
-        for (i in 1:node$nchildren) {
-          ret = c(ret, .leaves(node$children[[i]]))
-        }
-        return(ret)
-      }
-    },
-    .generatePseudoGUID = function(size) {
-      chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      ret = c()
-      indices = sample(1:nchar(chars), size, replace=T)
-
-      for (i in 1:size) {
-        ret = c(ret, substr(chars, indices[i], indices[i]))
-      }
-
-      return(paste(ret, collapse=""))
-    },
     plot=function(...) {
       # TODO
     }
@@ -112,32 +94,19 @@ EpivizMetagenomicsData$methods(
     })
     out
   },
-  getHierarchy=function(nodeId=taxonomy$id) {
-    # TODO Joe (Test)
-    # grab subtree with maxDepth
-    # TODO: If nodeId is NULL or not defined then return the entire tree (up to maxDepth)
-    if (is.null(nodeId)) { nodeId = taxonomy$id }
-    env = new.env()
-    env$ret = NULL
-    .traverse(taxonomy, function(node) {
-      if (node$id == nodeId) { env$ret = node }
-    })
-
-    rootGlobalDepth = env$ret$globalDepth
-    select = function(node) {
-      if (node$globalDepth - rootGlobalDepth >= maxDepth) { return(NULL) }
-      ret = node
-      ret$children = NULL
-      if (node$globalDepth - rootGlobalDepth < maxDepth - 1) {
-        ret$children = c()
-        for (i in 1:node$nchildren) {
-          ret$children = c(ret$children, list(select(node$children[[i]])))
-        }
-      }
-      return(ret)
+  getHierarchy=function(nodeId) {
+    root = NULL
+    if (missing(nodeId) || is.null(nodeId)) { root = taxonomy$node() }
+    else {
+      root = taxonomy$parent(id = nodeId)
+      if (is.null(root)) { root = taxonomy$node() }
     }
 
-    select(env$ret)
+    ret = taxonomy$build(function(node) {
+      if (is.null(node) || node$globalDepth - root$globalDepth >= maxDepth) { return(NULL) }
+      node
+    }, root)
+    ret
   },
   propagateHierarchyChanges=function(selection, order) {
     # TODO Joe
@@ -161,13 +130,5 @@ EpivizMetagenomicsData$methods(
 #     })
     browser()
     taxonomy
-  },
-  .traverse=function(node, callback) {
-    callback(node)
-    if (node$nchildren == 0) { return() }
-    for (i in 1:node$nchildren) {
-      .traverse(node$children[[i]], callback)
-    }
   }
-
 )

@@ -5,6 +5,10 @@ taxonomy = fData(example)[,tax]
 taxonomy[,1] = "Bacteria"
 df = taxonomy[sample(1:nrow(taxonomy),10),]
 
+#assayData(example)[["counts"]]
+counts = MRcounts(example,norm=TRUE,log=TRUE)
+
+
 tableToJSONTree <- function(t) {
 
   tableToListTree <- function(t, colIndex=1) {
