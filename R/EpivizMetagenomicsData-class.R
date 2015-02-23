@@ -1,26 +1,20 @@
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   contains="EpivizData",
-  fields=list(taxonomy="ANY", leaves="list", samples="list"),
+  fields=list(taxonomy="ANY", leaves="list", samples="list", maxDepth="numeric"),
   methods=list(
     initialize=function(object, ...) {
       taxonomy <<- .MRexperimentToTree(object)
       leaves <<- .leaves(taxonomy)
       samples <<- list(list(name="sample1", id="s1"), list(name="sample2", id="s2")) # TODO
+      maxDepth <<- 4
       callSuper(object=object, ...)
     },
     update=function(newObject, ...) {
-# TODO
-#       if (!is(newObject, "SummarizedExperiment"))
-#         stop("'newObject' must be of class 'SummarizedExperiment'")
-#
-#       newObject <- reorderIfNecessary(newObject)
-#
-#       if(!is(rowData(newObject), "GIntervalTree"))
-#         rowData(newObject) <- as(rowData(newObject), "GIntervalTree")
-
+      # TODO
       callSuper(newObject, ...)
     },
     .MRexperimentToTree=function(exp) {
+      # TODO Joe
       filteredExp = filterData(exp,depth=6000,present=25)
       levels = colnames(fData(filteredExp))[c(3:9,1)]
       tax = fData(filteredExp)[,levels]
@@ -98,11 +92,6 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     },
     plot=function(...) {
       # TODO
-      # ms <- getMeasurements()
-      # if (length(ms)<2)
-      #   stop("need at least two columns to plot")
-
-      # mgr$scatterChart(x=ms[[1]], y=ms[[2]], ...)
     }
   )
 )
@@ -123,55 +112,62 @@ EpivizMetagenomicsData$methods(
     })
     out
   },
-  getHierarchy=function() {
+  getHierarchy=function(nodeId=taxonomy$id) {
+    # TODO Joe (Test)
+    # grab subtree with maxDepth
+    # TODO: If nodeId is NULL or not defined then return the entire tree (up to maxDepth)
+    if (is.null(nodeId)) { nodeId = taxonomy$id }
+    env = new.env()
+    env$ret = NULL
+    .traverse(taxonomy, function(node) {
+      if (node$id == nodeId) { env$ret = node }
+    })
+
+    rootGlobalDepth = env$ret$globalDepth
+    select = function(node) {
+      if (node$globalDepth - rootGlobalDepth >= maxDepth) { return(NULL) }
+      ret = node
+      ret$children = NULL
+      if (node$globalDepth - rootGlobalDepth < maxDepth - 1) {
+        ret$children = c()
+        for (i in 1:node$nchildren) {
+          ret$children = c(ret$children, list(select(node$children[[i]])))
+        }
+      }
+      return(ret)
+    }
+
+    select(env$ret)
+  },
+  propagateHierarchyChanges=function(selection, order) {
+    # TODO Joe
+    # selection is a list where the labels (names) are node ids, and values are numbers:
+    #    0 means "none"
+    #    1 means "leaves"
+    #    2 means "node aggregation"
+    # example: list(Qy2uUZ=1, abcdef=2,efghij=0, ...)
+    # what you need to do here is, for each node in the taxonomy tree, change the "selectionType" field to the value given in the list
+
+    # order has the same format as selection (labels to numbers) but numbers correpond to the order within the node parend
+    # example:
+    # parent: abc
+    # children: x (3), y (1), z (2)
+    # so in the "taxonomy" tree, we need to re-sort nodes according to these numbers
+    # and also set the "order" field
+
+    # output: taxonomy after the changes have been made, in tree format, right before it is transformed to JSON
+#     .traverse(taxonomy, function(node) {
+#       node$children <<- sort(node$children) # This will not work, but something with this semantic
+#     })
+    browser()
     taxonomy
+  },
+  .traverse=function(node, callback) {
+    callback(node)
+    if (node$nchildren == 0) { return() }
+    for (i in 1:node$nchildren) {
+      .traverse(node$children[[i]], callback)
+    }
   }
-#   parseMeasurement=function(msId) {
-#     column <- strsplit(msId, split="__")[[1]][2]
-#     if(!.checkColumns(column)) {
-#       stop("invalid parsed measurement")
-#     }
-#     column
-#   }
+
 )
-
-#######################################################################
-
-# TODO
-# .valid.EpivizMetagenomicsData.object <- function(x) {
-#   if(!is(x$object, "SummarizedExperiment"))
-#     return("'object' must be of class 'SummarizedExperiment'")
-#   if(!is(rowData(x$object), "GIntervalTree"))
-#     return("'rowData(object)' must be of class 'GIntervalTree'")
-#   NULL
-# }
-#
-# .valid.EpivizMetagenomicsData.ylim <- function(x) {
-#   if(!is(x$ylim, "matrix"))
-#     return("'ylim' must be a matrix")
-#   if(nrow(x$ylim) != 2)
-#     return("'ylim' must have two rows")
-#   if(ncol(x$ylim) != length(x$columns))
-#     return("'ylim' must have 'length(columns)' columns")
-#   NULL
-# }
-#
-# .valid.EpivizMetagenomicsData.assay <- function(x) {
-#   if (is.character(x$assay)) {
-#     if(!(x$assay %in% names(assays(x$object))))
-#       return("'assay' not found in 'object'")
-#     return(NULL)
-#   }
-#
-#   if (x$assay > length(assays(x$object)))
-#     return("'assay' not found in 'object'")
-#   NULL
-# }
-#
-# .valid.EpivizMetagenomicsData <- function(x) {
-#   c(.valid.EpivizMetagenomicsData.object(x),
-#     .valid.EpivizMetagenomicsData.ylim(x),
-#     .valid.EpivizMetagenomicsData.assay(x))
-# }
-#
-# setValidity2("EpivizMetagenomicsData", .valid.EpivizMetagenomicsData)

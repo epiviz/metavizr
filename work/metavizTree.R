@@ -15,11 +15,11 @@ tableToJSONTree <- function(t) {
     })
     return(nodes)
   }
-  
+
   listTreeToJSONTree <- function(node, globalDepth=0) {
     ret = list(
       name=names(node),
-      id=NULL,# TODO 
+      id=NULL,# TODO
       parentId=NULL, # TODO
       globalDepth=globalDepth,
       taxonomy=colnames(t)[globalDepth+1],
@@ -43,7 +43,7 @@ tableToJSONTree <- function(t) {
     ret$nleaves = nleaves
     return(ret)
   }
-  
+
   listTree = tableToListTree(t)
   tree = listTreeToJSONTree(listTree)
   return(tree)
@@ -82,11 +82,11 @@ generatePseudoGUID = function(size) {
   chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
   ret = c()
   indices = sample(1:nchar(chars), size, replace=T)
-  
+
   for (i in 1:size) {
     ret = c(ret, substr(chars, indices[i], indices[i]))
   }
-  
+
   return(paste(ret, collapse=""))
 }
 
@@ -94,3 +94,5 @@ tree = tableToJSONTree(df)
 ls = leaves(tree)
 ms = getMeasurements(ls, "my-id")
 # View(RJSONIO::toJSON(tree,recursive=FALSE))
+
+order(node$children, function(c1, c2) { c1$order - c2$order })

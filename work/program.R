@@ -26,3 +26,4 @@ mgr$service()
 #taxonomi_vis <- mgr$addDevice(msd16s, "Bacteriome Phylogenetic Tree")
 
 mgr$stopServer()
+
