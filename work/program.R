@@ -17,9 +17,10 @@ library("RJSONIO")
 # toJSON(taxonomy)
 # getwd()
 
+load_all("../epivizr")
 load_all("./")
 
-mgr = startEpiviz(localURL="http://epiviz-dev.cbcb.umd.edu/metavis/", workspace = "eOcpNKJ8GE", useDevel=FALSE, debug=FALSE, verbose=TRUE)
+mgr = startMetaviz(localURL="http://epiviz-dev.cbcb.umd.edu/metavis/", workspace = "eOcpNKJ8GE", useDevel=FALSE, debug=FALSE, verbose=TRUE)
 ms <- mgr$addMeasurements(msd16s, "Bacteriome Phylogenetic Tree")
 mgr$service()
 #taxonomi_vis <- mgr$addDevice(msd16s, "Bacteriome Phylogenetic Tree")

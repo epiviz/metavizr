@@ -12,9 +12,9 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 # TODO
 #       if (!is(newObject, "SummarizedExperiment"))
 #         stop("'newObject' must be of class 'SummarizedExperiment'")
-# 
+#
 #       newObject <- reorderIfNecessary(newObject)
-# 
+#
 #       if(!is(rowData(newObject), "GIntervalTree"))
 #         rowData(newObject) <- as(rowData(newObject), "GIntervalTree")
 
@@ -26,11 +26,11 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       tax = fData(filteredExp)[,levels]
       tax[,1] = "Bacteria"
       table = tax[sample(1:nrow(tax),10),]
-      
+
       return(.tableToTree(table))
     },
     .tableToTree=function(t) {
-      
+
       tableToListTree <- function(t, colIndex=1) {
         if (colIndex > dim(t)[2]) { return(NULL) }
         groups = by(t, t[, colIndex], list, simplify=F)
@@ -69,7 +69,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         ret$nleaves = nleaves
         return(ret)
       }
-      
+
       listTree = tableToListTree(t)
       tree = listTreeToJSONTree(listTree)
       return(tree)
@@ -89,11 +89,11 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
       ret = c()
       indices = sample(1:nchar(chars), size, replace=T)
-      
+
       for (i in 1:size) {
         ret = c(ret, substr(chars, indices[i], indices[i]))
       }
-      
+
       return(paste(ret, collapse=""))
     },
     plot=function(...) {
@@ -145,7 +145,7 @@ EpivizMetagenomicsData$methods(
 #     return("'rowData(object)' must be of class 'GIntervalTree'")
 #   NULL
 # }
-# 
+#
 # .valid.EpivizMetagenomicsData.ylim <- function(x) {
 #   if(!is(x$ylim, "matrix"))
 #     return("'ylim' must be a matrix")
@@ -155,23 +155,23 @@ EpivizMetagenomicsData$methods(
 #     return("'ylim' must have 'length(columns)' columns")
 #   NULL
 # }
-# 
+#
 # .valid.EpivizMetagenomicsData.assay <- function(x) {
 #   if (is.character(x$assay)) {
 #     if(!(x$assay %in% names(assays(x$object))))
 #       return("'assay' not found in 'object'")
 #     return(NULL)
 #   }
-# 
+#
 #   if (x$assay > length(assays(x$object)))
 #     return("'assay' not found in 'object'")
 #   NULL
 # }
-# 
+#
 # .valid.EpivizMetagenomicsData <- function(x) {
 #   c(.valid.EpivizMetagenomicsData.object(x),
 #     .valid.EpivizMetagenomicsData.ylim(x),
 #     .valid.EpivizMetagenomicsData.assay(x))
 # }
-# 
+#
 # setValidity2("EpivizMetagenomicsData", .valid.EpivizMetagenomicsData)

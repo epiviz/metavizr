@@ -11,18 +11,6 @@ import(OrganismDbi)
 import(GenomeInfoDb)
 import(GenomicFeatures)
 
-exportClasses(EpivizDeviceMgr,
-              EpivizData,
-              EpivizTrackData,
-              EpivizFeatureData,
-              EpivizBlockData,
-              EpivizBpData,
-              EpivizDataCache,
-              EpivizWigCache,
-              EpivizWigData,
-              EpivizGeneInfoData,
-              EpivizChart)
+exportClasses(EpivizMetagenomicsData)
 
-export(startEpiviz)
-export(startStandalone)
-export(makeGeneTrackAnnotation)
+export(startMetaviz)
