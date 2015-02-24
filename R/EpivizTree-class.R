@@ -6,8 +6,7 @@ EpivizTree <- setRefClass("EpivizTree",
   methods=list(
     initialize=function(tree, ...) {
       rawTree <<- tree
-      nodesById <<- new.env()
-      .self$traverse(function(node) { nodesById[[node$id]] <<- node })
+      nodesById <<- NULL # Lazy initialize
     },
     raw=function() { rawTree },
     leaves=function(node=rawTree) {
@@ -39,6 +38,10 @@ EpivizTree <- setRefClass("EpivizTree",
       ret
     },
     node=function(id=rawTree$id) {
+      if (is.null(nodesById)) {
+        nodesById <<- new.env()
+        .self$traverse(function(node) { nodesById[[node$id]] <<- node })
+      }
       return(nodesById[[id]])
     },
     parent=function(...) {
@@ -53,6 +56,44 @@ EpivizTree <- setRefClass("EpivizTree",
         return(.self$node(node$parentId))
       }
       return(NULL)
+    },
+
+    # selection: @list {nodeId -> selectionType}
+    updateSelection=function(selection) {
+      if (missing(selection) || is.null(selection)) { return(.self) }
+
+      transformed = .self$build(function(node) {
+        selectionType = selection[[node$id]]
+        if (is.null(selectionType)) { return(node) }
+        node$selectionType = selectionType
+        return(node)
+      })
+      return(EpivizTree$new(transformed))
+    },
+
+    # order: @list {nodeId -> order index}
+    updateOrder=function(order) {
+      if (missing(order) || is.null(order)) { return(.self) }
+
+      # First, reassign order
+      transformed = .self$build(function(node) {
+        nodeOrder = order[[node$id]]
+        if (is.null(nodeOrder)) { return(node) }
+        node$order = nodeOrder
+        return(node)
+      })
+
+      # Second, sort
+      transformed = .self$build(function(node) {
+        if (length(node$children) == 0) { return(node) }
+        o = sapply(node$children, function(child) { child$order })
+        node$children = node$children[order(o)]
+
+        node
+      }, transformed)
+
+      return(EpivizTree$new(transformed))
     }
   )
+
 )

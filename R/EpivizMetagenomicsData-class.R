@@ -4,7 +4,8 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     taxonomy="ANY",
     leaves="list",
     samples="list",
-    maxDepth="numeric"
+    maxDepth="numeric",
+    lastSubtree="ANY"
   ),
   methods=list(
     initialize=function(object, ...) {
@@ -12,6 +13,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       leaves <<- taxonomy$leaves()
       samples <<- list(list(name="sample1", id="s1"), list(name="sample2", id="s2")) # TODO
       maxDepth <<- 4 # TODO Make it customizable
+      lastSubtree <<- taxonomy$node()
       callSuper(object=object, ...)
     },
     update=function(newObject, ...) {
@@ -24,7 +26,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       levels = colnames(fData(filteredExp))[c(3:9,1)]
       tax = fData(filteredExp)[,levels]
       tax[,1] = "Bacteria"
-      table = tax[sample(1:nrow(tax),10),]
+      table = tax
 
       return(.tableToTree(table))
     },
@@ -106,29 +108,22 @@ EpivizMetagenomicsData$methods(
       if (is.null(node) || node$globalDepth - root$globalDepth >= maxDepth) { return(NULL) }
       node
     }, root)
+    lastSubtree <<- ret
     ret
   },
   propagateHierarchyChanges=function(selection, order) {
-    # TODO Joe
-    # selection is a list where the labels (names) are node ids, and values are numbers:
-    #    0 means "none"
-    #    1 means "leaves"
-    #    2 means "node aggregation"
-    # example: list(Qy2uUZ=1, abcdef=2,efghij=0, ...)
-    # what you need to do here is, for each node in the taxonomy tree, change the "selectionType" field to the value given in the list
+    if (missing(selection) && missing(order)) { return(lastSubtree) }
+    ret = lastSubtree
+    if (!missing(selection)) {
+      taxonomy <<- taxonomy$updateSelection(selection)
+    }
 
-    # order has the same format as selection (labels to numbers) but numbers correpond to the order within the node parend
-    # example:
-    # parent: abc
-    # children: x (3), y (1), z (2)
-    # so in the "taxonomy" tree, we need to re-sort nodes according to these numbers
-    # and also set the "order" field
+    if (!missing(order)) {
+      taxonomy <<- taxonomy$updateOrder(order)
+    }
 
-    # output: taxonomy after the changes have been made, in tree format, right before it is transformed to JSON
-#     .traverse(taxonomy, function(node) {
-#       node$children <<- sort(node$children) # This will not work, but something with this semantic
-#     })
-    browser()
-    taxonomy
+    ret = getHierarchy(lastSubtree$id)
+    lastSubtree <<- ret
+    ret
   }
 )
