@@ -24,5 +24,33 @@ startMetaviz <- function(...) {
     obj$propagateHierarchyChanges(selection, order)
   })
 
+  mgr$registerAction("getRows", function(mgr, msgData, ...) {
+    datasource = msgData$datasource
+    seqName = msgData$seqName
+    start = msgData$start
+    end = msgData$end
+    metadata = msgData$metadata
+
+    obj <- mgr$.findDatasource(datasource)
+    if (is.null(obj)) {
+      stop("cannot find datasource", datasource)
+    }
+    obj$getRows(start, end, metadata)
+  })
+
+  mgr$registerAction("getValues", function(mgr, msgData, ...) {
+    datasource = msgData$datasource
+    measurement = msgData$measurement
+    seqName = msgData$seqName
+    start = msgData$start
+    end = msgData$end
+
+    obj <- mgr$.findDatasource(datasource)
+    if (is.null(obj)) {
+      stop("cannot find datasource", datasource)
+    }
+    obj$getValues(measurement, start, end)
+  })
+
   mgr
 }

@@ -9,3 +9,5 @@
 
   return(paste(ret, collapse=""))
 }
+
+SelectionType = list(NONE=0, LEAVES=1, NODE=2)

@@ -7,7 +7,9 @@ df = taxonomy[sample(1:nrow(taxonomy),10),]
 
 #assayData(example)[["counts"]]
 counts = MRcounts(example,norm=TRUE,log=TRUE)
-
+pd = pData(example)
+pd["100489",]
+l = as.list(pd["100489",])
 
 tableToJSONTree <- function(t) {
 

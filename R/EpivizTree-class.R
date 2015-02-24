@@ -5,11 +5,13 @@ EpivizTree <- setRefClass("EpivizTree",
   ),
   methods=list(
     initialize=function(tree, ...) {
+      if (missing(tree)) { tree = NULL }
       rawTree <<- tree
       nodesById <<- NULL # Lazy initialize
     },
     raw=function() { rawTree },
     leaves=function(node=rawTree) {
+      if (is.null(node)) { return(NULL) }
       if (node$nchildren == 0) { return(list(node)) }
       ret = list()
       for (i in 1:node$nchildren) {
@@ -18,6 +20,7 @@ EpivizTree <- setRefClass("EpivizTree",
       return(ret)
     },
     traverse=function(callback, node=rawTree) {
+      if (is.null(node)) { return() }
       callback(node)
       if (node$nchildren == 0) { return() }
       for (i in 1:node$nchildren) {
@@ -25,6 +28,7 @@ EpivizTree <- setRefClass("EpivizTree",
       }
     },
     build=function(callback, node=rawTree) {
+      if (is.null(node)) { return(NULL) }
       ret = callback(node)
       if (is.null(ret) || length(ret$children) == 0) { return(ret) }
       children = c()
@@ -37,7 +41,9 @@ EpivizTree <- setRefClass("EpivizTree",
       ret$children = children
       ret
     },
-    node=function(id=rawTree$id) {
+    node=function(id) {
+      if (is.null(rawTree)) { return(NULL) }
+      if (missing(id)) { id = rawTree$id }
       if (is.null(nodesById)) {
         nodesById <<- new.env()
         .self$traverse(function(node) { nodesById[[node$id]] <<- node })
@@ -45,6 +51,7 @@ EpivizTree <- setRefClass("EpivizTree",
       return(nodesById[[id]])
     },
     parent=function(...) {
+      if (is.null(rawTree)) { return(NULL) }
       args = list(...)
       id = args$id
       node = args$node
@@ -60,7 +67,7 @@ EpivizTree <- setRefClass("EpivizTree",
 
     # selection: @list {nodeId -> selectionType}
     updateSelection=function(selection) {
-      if (missing(selection) || is.null(selection)) { return(.self) }
+      if (is.null(rawTree) || missing(selection) || is.null(selection)) { return(.self) }
 
       transformed = .self$build(function(node) {
         selectionType = selection[[node$id]]
@@ -73,7 +80,7 @@ EpivizTree <- setRefClass("EpivizTree",
 
     # order: @list {nodeId -> order index}
     updateOrder=function(order) {
-      if (missing(order) || is.null(order)) { return(.self) }
+      if (is.null(rawTree) || missing(order) || is.null(order)) { return(.self) }
 
       # First, reassign order
       transformed = .self$build(function(node) {
@@ -93,6 +100,18 @@ EpivizTree <- setRefClass("EpivizTree",
       }, transformed)
 
       return(EpivizTree$new(transformed))
+    },
+
+    # Get the leaves of the given subtree, respecting the "selectionType" field
+    selectedLeaves=function(node=rawTree) {
+      if (is.null(node)) { return(NULL) }
+      if (node$selectionType == SelectionType$NONE) { return(NULL) }
+      if (length(node$children) == 0 || node$selectionType == SelectionType$NODE) { return(list(node)) }
+      ret = list()
+      for (i in 1:length(node$children)) {
+        ret = c(ret, selectedLeaves(node$children[[i]]))
+      }
+      return(ret)
     }
   )
 

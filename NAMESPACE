@@ -11,6 +11,7 @@ import(OrganismDbi)
 import(GenomeInfoDb)
 import(GenomicFeatures)
 
+exportClasses(EpivizTree)
 exportClasses(EpivizMetagenomicsData)
 
 export(startMetaviz)
