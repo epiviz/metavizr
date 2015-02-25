@@ -11,7 +11,9 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
     selectedNodes="ANY",
     selectedValues="ANY",
-    selectedNodesRanges="ANY"
+    selectedNodesRanges="ANY",
+    selectedNodesAncestors="ANY",
+    selectedNodesTaxonomies="ANY"
   ),
   methods=list(
     initialize=function(object, ...) {
@@ -30,7 +32,8 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       for (leaf in leaves) {
         idsByNames[[leaf$name]] = leaf$id
       }
-      rownames(counts) <<- sapply(rownames(counts), function(name) { idsByNames(name) })
+      counts <<- counts[names(idsByNames),]
+      rownames(counts) <<- lapply(rownames(counts), function(name) { idsByNames[[name]] })
 
       selectedNodes <<- taxonomy$selectedLeaves()
       selectedValues <<- lapply(selectedNodes, function(node) { counts[node$id, ] })
@@ -38,10 +41,20 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       i = 0
       nodesRanges = list()
       for (node in selectedNodes) {
-        nodeRanges = c(nodeRanges, list(list(i, node$nleaves)))
+        nodesRanges = c(nodesRanges, list(c(i, node$nleaves)))
         i = i + node$nleaves
       }
-      selectedNodeRanges <<- nodeRanges
+      selectedNodesRanges <<- nodesRanges
+
+      selectedNodesAncestors <<- lapply(selectedNodes, function(node) { taxonomy$ancestors(node) })
+      nodesTaxonomies = list()
+      for (i in 1:length(levels)) {
+        nodesTaxonomies[[levels[[i]]]] = list()
+        for (j in 1:length(selectedNodes)) {
+          nodesTaxonomies[[levels[[i]]]][[j]] = selectedNodesAncestors[[j]][[i]]
+        }
+      }
+      selectedNodesTaxonomies <<- nodesTaxonomies
 
       callSuper(object=object, ...)
     },
@@ -69,8 +82,8 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         ret = list(
           name=names(node),
           id=nodeId,
-          parentId=NULL, # TODO
-          depth=globalDepth, # TODO: This is the relative depth of the node (? Check in JS code)
+          parentId=NULL,
+          depth=globalDepth,
           globalDepth=globalDepth,
           taxonomy=colnames(t)[globalDepth+1],
           nchildren=length(node[[1]]),
@@ -120,12 +133,12 @@ EpivizMetagenomicsData$methods(
            name=sample,
            type="feature",
            datasourceId=id,
-           datasourceGroup=id, # TODO: Something specific to this taxonomy
+           datasourceGroup=id,
            defaultChartType="heatmap",
            annotation=as.list(sampleAnnotation[sample,]),
            minValue=0, # TODO
            maxValue=15, # TODO
-           metadata=c("colLabel", "ancestors", "hierarchy-path", levels)) # TODO
+           metadata=c(rev(levels), "colLabel", "ancestors", "hierarchy-path"))
     })
     out
   },
@@ -159,25 +172,57 @@ EpivizMetagenomicsData$methods(
     lastSubtree <<- ret
     ret
   },
-  getRows=function(start, end, metadata) {
-    # TODO
+  getRows=function(seqName, start, end, metadata) {
     startIndex = NULL
     endIndex = NULL
     for (i in 1:length(selectedNodes)) {
       range = selectedNodesRanges[[i]]
-      if (range[[1]] <= end && range[[1]] + range[[2]] > start) {
+      if (range[1] <= end && range[1] + range[2] > start) {
         if (is.null(startIndex)) { startIndex = i }
         endIndex = i
       }
     }
+    if (is.null(startIndex) || is.null(endIndex)) {
+      return(list(
+        globalStartIndex = NULL,
+        values = list(
+          id = list(),
+          start = list(),
+          end = list(),
+          metadata = c(list(
+            colLabel = list(),
+            ancestors = list(),
+            "hierarchy-path" = list()
+          ), sapply(levels, function(level) { list() }))
+        )
+      ))
+    }
+    ret = list(
+      id = start : (start + endIndex - startIndex),
+      start = sapply(selectedNodesRanges[startIndex:endIndex], function(range) { range[1] }),
+      end = sapply(selectedNodesRanges[startIndex:endIndex], function(range) { range[1] + range[2] - 1 }),
+      metadata = c(list(
+        colLabel = sapply(selectedNodes[startIndex:endIndex], function(node) { node$name }),
+        ancestors = sapply(selectedNodesAncestors[startIndex:endIndex], function(ancestors) { paste(lapply(rev(ancestors), function(node) { node$name }), collapse=",") }),
+        "hierarchy-path" = sapply(selectedNodesAncestors[startIndex:endIndex], function(ancestors) { paste(lapply(rev(ancestors), function(node) { node$id }), collapse=",") })
+      ), sapply(rev(levels), function(level) { list(lapply(selectedNodesTaxonomies[[level]][startIndex:endIndex], function(node) { node$name })) }))
+    )
+
+    if (length(startIndex:endIndex) == 1) {
+      ret$id = list(ret$id)
+      ret$start = list(ret$start)
+      ret$end = list(ret$end)
+      for (key in names(ret$metadata)) {
+        ret$metadata[[key]] = list(ret$metadata[[key]])
+      }
+    }
+
     return(list(
-      id = start : (start + endIndex - startIndex + 1),
-      start = sapply(selectedNodesRanges[startIndex, endIndex], function(range) { range[[1]] }),
-      end = sapply(selectedNodesRanges[startIndex, endIndex], function(range) { range[[1]] + range[[2]] - 1 }),
-      metadata = # TODO
+      globalStartIndex = start,
+      values = ret
     ))
   },
-  getValues=function(measurement, start, end) {
+  getValues=function(measurement, seqName, start, end) {
     # TODO
   }
 )

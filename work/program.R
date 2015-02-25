@@ -17,6 +17,8 @@ library("RJSONIO")
 # toJSON(taxonomy)
 # getwd()
 
+toj = RJSONIO::toJSON
+
 load_all("../epivizr")
 load_all("./")
 

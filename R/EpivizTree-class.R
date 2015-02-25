@@ -112,6 +112,27 @@ EpivizTree <- setRefClass("EpivizTree",
         ret = c(ret, selectedLeaves(node$children[[i]]))
       }
       return(ret)
+    },
+
+    # Gets a list where indices correspond to depths in the tree
+    # and values correspond to the ancestors of the given node
+    ancestors=function(node=rawTree, inclusive=TRUE) {
+      if (is.null(node)) { return(NULL) }
+      ret = list()
+      if (inclusive) {
+        # Set the children to NULL, so we do not copy the entire
+        # subtree over and over again
+        node$children = NULL
+        ret[[node$globalDepth + 1]] = node
+      }
+
+      node = .self$parent(node=node)
+      while (!is.null(node)) {
+        node$children = NULL
+        ret[[node$globalDepth + 1]] = node
+        node = .self$parent(node=node)
+      }
+      return(ret)
     }
   )
 

@@ -35,7 +35,7 @@ startMetaviz <- function(...) {
     if (is.null(obj)) {
       stop("cannot find datasource", datasource)
     }
-    obj$getRows(start, end, metadata)
+    obj$getRows(seqName, start, end, metadata)
   })
 
   mgr$registerAction("getValues", function(mgr, msgData, ...) {
@@ -49,7 +49,13 @@ startMetaviz <- function(...) {
     if (is.null(obj)) {
       stop("cannot find datasource", datasource)
     }
-    obj$getValues(measurement, start, end)
+    obj$getValues(measurement, seqName, start, end)
+  })
+
+  mgr$registerAction("getSeqInfos", function(mgr, msgData, ...) {
+    return(list(
+      list("metavizr", 0, .Machine$integer.max)
+    ))
   })
 
   mgr
