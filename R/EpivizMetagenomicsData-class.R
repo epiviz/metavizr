@@ -36,7 +36,9 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       rownames(counts) <<- lapply(rownames(counts), function(name) { idsByNames[[name]] })
 
       selectedNodes <<- taxonomy$selectedLeaves()
-      selectedValues <<- lapply(selectedNodes, function(node) { counts[node$id, ] })
+      # selectedValues <<- lapply(selectedNodes, function(node) { counts[node$id, ] }) # TODO: This might work too, in conjunction with
+      #   lapply(selectedValues[startIndex:endIndex], function(vals) { vals[[measurement]] })
+      selectedValues <<- sapply(colnames(counts), function(sample) { list(lapply(selectedNodes, function(node) { counts[node$id, sample] })) })
 
       i = 0
       nodesRanges = list()
@@ -208,7 +210,7 @@ EpivizMetagenomicsData$methods(
       ), sapply(rev(levels), function(level) { list(lapply(selectedNodesTaxonomies[[level]][startIndex:endIndex], function(node) { node$name })) }))
     )
 
-    if (length(startIndex:endIndex) == 1) {
+    if (endIndex - startIndex == 0) {
       ret$id = list(ret$id)
       ret$start = list(ret$start)
       ret$end = list(ret$end)
@@ -223,6 +225,26 @@ EpivizMetagenomicsData$methods(
     ))
   },
   getValues=function(measurement, seqName, start, end) {
-    # TODO
+    startIndex = NULL
+    endIndex = NULL
+    for (i in 1:length(selectedNodes)) {
+      range = selectedNodesRanges[[i]]
+      if (range[1] <= end && range[1] + range[2] > start) {
+        if (is.null(startIndex)) { startIndex = i }
+        endIndex = i
+      }
+    }
+    if (is.null(startIndex) || is.null(endIndex)) {
+      return(list(
+        globalStartIndex = NULL,
+        values = list()
+      ))
+    }
+    ret = list(
+      globalStartIndex = start,
+      values = selectedValues[[measurement]][startIndex:endIndex]
+    )
+    if (endIndex - startIndex == 0) { ret$values = list(ret$values) }
+    ret
   }
 )
