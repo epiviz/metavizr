@@ -55,6 +55,23 @@ tableToJSONTree <- function(t) {
   return(tree)
 }
 
+toTreeList <- function(t) {
+  rootList = Ptr$new(list())
+
+  for (j in 1:dim(t)[1]) {
+    node = rootList
+    for (i in 2:dim(t)[2]) {
+      nodeName = as.character(t[j, i])
+      if (is.na(nodeName)) { nodeName = "NA" }
+      if (is.null(node$.[[nodeName]])) {
+        node$.[[nodeName]] = Ptr$new(list())
+      }
+      node = node$.[[nodeName]]
+    }
+  }
+  return(rootList)
+}
+
 leaves <- function(node) {
   if (node$nchildren == 0) {
     return(list(node))

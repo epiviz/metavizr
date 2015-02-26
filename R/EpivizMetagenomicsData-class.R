@@ -18,10 +18,10 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   methods=list(
     initialize=function(object, ...) {
       # TODO: Some type checking
-      levels <<- .self$.extractTaxonomyLevels(object)
-      taxonomy <<- EpivizTree$new(.self$.MRexperimentToTree(object))
+      levels <<- .self$.taxonomyLevels(object)
+      taxonomy <<- buildEpivizTree(object)
       maxDepth <<- 4 # TODO Make it customizable
-      lastSubtree <<- taxonomy$node()
+      lastSubtree <<- taxonomy$root()
 
       counts <<- MRcounts(object, norm=TRUE, log=TRUE)
       sampleAnnotation <<- pData(object)
@@ -35,89 +35,43 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       counts <<- counts[names(idsByNames),]
       rownames(counts) <<- lapply(rownames(counts), function(name) { idsByNames[[name]] })
 
-      selectedNodes <<- taxonomy$selectedLeaves()
-      # selectedValues <<- lapply(selectedNodes, function(node) { counts[node$id, ] }) # TODO: This might work too, in conjunction with
-      #   lapply(selectedValues[startIndex:endIndex], function(vals) { vals[[measurement]] })
-      selectedValues <<- sapply(colnames(counts), function(sample) { list(lapply(selectedNodes, function(node) { counts[node$id, sample] })) })
-
-      i = 0
-      nodesRanges = list()
-      for (node in selectedNodes) {
-        nodesRanges = c(nodesRanges, list(c(i, node$nleaves)))
-        i = i + node$nleaves
-      }
-      selectedNodesRanges <<- nodesRanges
-
-      selectedNodesAncestors <<- lapply(selectedNodes, function(node) { taxonomy$ancestors(node) })
-      nodesTaxonomies = list()
-      for (i in 1:length(levels)) {
-        nodesTaxonomies[[levels[[i]]]] = list()
-        for (j in 1:length(selectedNodes)) {
-          nodesTaxonomies[[levels[[i]]]][[j]] = selectedNodesAncestors[[j]][[i]]
-        }
-      }
-      selectedNodesTaxonomies <<- nodesTaxonomies
+#       .self$.updateSelection()
 
       callSuper(object=object, ...)
     },
-    .MRexperimentToTree=function(exp) {
-      # TODO Joe
-      filteredExp = filterData(exp,depth=6000,present=25)
-      taxLvls = colnames(fData(filteredExp))[c(3:9,1)]
-      tax = fData(filteredExp)[,taxLvls]
-      tax[,1] = "Bacteria"
-      table = tax
 
-      return(.tableToTree(table))
-    },
-    .tableToTree=function(t) {
-      tableToListTree <- function(t, colIndex=1) {
-        if (colIndex > dim(t)[2]) { return(NULL) }
-        groups = by(t, t[, colIndex], list, simplify=F)
-        nodes = lapply(groups, function(group){
-          tableToListTree(group[[1]], colIndex + 1)
-        })
-        return(nodes)
-      }
-      listTreeToJSONTree <- function(node, globalDepth=0) {
-        nodeId = .generatePseudoGUID(6)
-        ret = list(
-          name=names(node),
-          id=nodeId,
-          parentId=NULL,
-          depth=globalDepth,
-          globalDepth=globalDepth,
-          taxonomy=colnames(t)[globalDepth+1],
-          nchildren=length(node[[1]]),
-          size=1,
-          selectionType=SelectionType$LEAVES
-        )
-        nleaves = 0
-        if (length(node[[1]]) > 0) {
-          children = c()
-          for (i in 1:length(node[[1]])) {
-            child = listTreeToJSONTree(node[[1]][i], globalDepth + 1)
-            child$order = i - 1
-            child$parentId = nodeId
-            children = c(children, list(child))
-            nleaves = nleaves + child$nleaves
-          }
-          ret$children = children
-        } else {
-          nleaves = 1
-        }
-        ret$nleaves = nleaves
-        return(ret)
-      }
-
-      listTree = tableToListTree(t)
-      tree = listTreeToJSONTree(listTree)
-      return(tree)
-    },
-    .extractTaxonomyLevels=function(exp) {
+    .taxonomyLevels=function(exp) {
       # TODO: Joe
       return(colnames(fData(exp))[c(3:9,1)])
     },
+    .updateSelection=function() {
+#       browser()
+#       selectedNodes <<- taxonomy$selectedLeaves()
+#       # selectedValues <<- lapply(selectedNodes, function(node) { counts[node$id, ] }) # TODO: This might work too, in conjunction with
+#       #   lapply(selectedValues[startIndex:endIndex], function(vals) { vals[[measurement]] })
+#       selectedValues <<- sapply(colnames(counts), function(sample) { list(lapply(selectedNodes, function(node) { counts[node$id, sample] })) })
+#
+#       i = 0
+#       nodesRanges = list()
+#       for (node in selectedNodes) {
+#         nodesRanges = c(nodesRanges, list(c(i, node$nleaves)))
+#         i = i + node$nleaves
+#       }
+#       selectedNodesRanges <<- nodesRanges
+#
+#       selectedNodesAncestors <<- lapply(selectedNodes, function(node) { taxonomy$ancestors(node) })
+#       nodesTaxonomies = list()
+#       for (i in 1:length(levels)) {
+#         nodesTaxonomies[[levels[[i]]]] = list()
+#         for (j in 1:length(selectedNodes)) {
+#           nodesTaxonomies[[levels[[i]]]][[j]] = selectedNodesAncestors[[j]][[i]]
+#         }
+#       }
+#       selectedNodesTaxonomies <<- nodesTaxonomies
+    },
+
+
+
     update=function(newObject, ...) {
       # TODO
       callSuper(newObject, ...)
@@ -146,33 +100,33 @@ EpivizMetagenomicsData$methods(
   },
   getHierarchy=function(nodeId) {
     root = NULL
-    if (missing(nodeId) || is.null(nodeId)) { root = taxonomy$node() }
+    if (missing(nodeId) || is.null(nodeId)) { root = taxonomy$root() }
     else {
-      root = taxonomy$parent(id = nodeId)
-      if (is.null(root)) { root = taxonomy$node() }
+      root = taxonomy$parent(taxonomy$node(nodeId))
+      if (is.null(root)) { root = taxonomy$root() }
     }
 
-    ret = taxonomy$build(function(node) {
-      if (is.null(node) || node$globalDepth - root$globalDepth >= maxDepth) { return(NULL) }
-      node
-    }, root)
+    ret = taxonomy$filter(root, function(node) { return(node$depth - root$depth < maxDepth) })
     lastSubtree <<- ret
-    ret
+
+    if (is.null(ret)) { return(NULL) }
+
+    ret$raw()
   },
   propagateHierarchyChanges=function(selection, order) {
     if (missing(selection) && missing(order)) { return(lastSubtree) }
-    ret = lastSubtree
+
     if (!missing(selection)) {
-      taxonomy <<- taxonomy$updateSelection(selection)
+      taxonomy$updateSelection(selection)
     }
 
     if (!missing(order)) {
-      taxonomy <<- taxonomy$updateOrder(order)
+      taxonomy$updateOrder(order)
     }
 
-    ret = getHierarchy(lastSubtree$id)
-    lastSubtree <<- ret
-    ret
+    # .self$.updateSelection()
+
+    getHierarchy(lastSubtree$id)
   },
   getRows=function(seqName, start, end, metadata) {
     startIndex = NULL

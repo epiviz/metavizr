@@ -1,0 +1,139 @@
+EpivizTreeOld <- setRefClass("EpivizTreeOld",
+  fields=list(
+    rawTree="ANY",
+    nodesById="ANY"
+  ),
+  methods=list(
+    initialize=function(tree, ...) {
+      if (missing(tree)) { tree = NULL }
+      rawTree <<- tree
+      nodesById <<- NULL # Lazy initialize
+    },
+    raw=function() { rawTree },
+    leaves=function(node=rawTree) {
+      if (is.null(node)) { return(NULL) }
+      if (node$nchildren == 0) { return(list(node)) }
+      ret = list()
+      for (i in 1:node$nchildren) {
+        ret = c(ret, leaves(node$children[[i]]))
+      }
+      return(ret)
+    },
+    traverse=function(callback, node=rawTree) {
+      if (is.null(node)) { return() }
+      callback(node)
+      if (node$nchildren == 0) { return() }
+      for (i in 1:node$nchildren) {
+        traverse(callback, node$children[[i]])
+      }
+    },
+    build=function(callback, node=rawTree) {
+      if (is.null(node)) { return(NULL) }
+      ret = callback(node)
+      if (is.null(ret) || length(ret$children) == 0) { return(ret) }
+      children = c()
+      n = length(ret$children)
+      for (i in 1:n) {
+        child = build(callback, ret$children[[i]])
+        if (is.null(child)) { next }
+        children = c(children, list(child))
+      }
+      ret$children = children
+      ret
+    },
+    node=function(id) {
+      if (is.null(rawTree)) { return(NULL) }
+      if (missing(id)) { id = rawTree$id }
+      if (is.null(nodesById)) {
+        nodesById <<- new.env()
+        .self$traverse(function(node) { nodesById[[node$id]] <<- node })
+      }
+      return(nodesById[[id]])
+    },
+    parent=function(...) {
+      if (is.null(rawTree)) { return(NULL) }
+      args = list(...)
+      id = args$id
+      node = args$node
+      if (is.null(node)) {
+        if (is.null(id)) { node = rawTree }
+        else { node = .self$node(id) }
+      }
+      if (!is.null(node$parentId)) {
+        return(.self$node(node$parentId))
+      }
+      return(NULL)
+    },
+
+    # selection: @list {nodeId -> selectionType}
+    updateSelection=function(selection) {
+      if (is.null(rawTree) || missing(selection) || is.null(selection)) { return(.self) }
+
+      transformed = .self$build(function(node) {
+        selectionType = selection[[node$id]]
+        if (is.null(selectionType)) { return(node) }
+        node$selectionType = selectionType
+        return(node)
+      })
+      return(EpivizTreeOld$new(transformed))
+    },
+
+    # order: @list {nodeId -> order index}
+    updateOrder=function(order) {
+      if (is.null(rawTree) || missing(order) || is.null(order)) { return(.self) }
+
+      # First, reassign order
+      transformed = .self$build(function(node) {
+        nodeOrder = order[[node$id]]
+        if (is.null(nodeOrder)) { return(node) }
+        node$order = nodeOrder
+        return(node)
+      })
+
+      # Second, sort
+      transformed = .self$build(function(node) {
+        if (length(node$children) == 0) { return(node) }
+        o = sapply(node$children, function(child) { child$order })
+        node$children = node$children[order(o)]
+
+        node
+      }, transformed)
+
+      return(EpivizTreeOld$new(transformed))
+    },
+
+    # Get the leaves of the given subtree, respecting the "selectionType" field
+    selectedLeaves=function(node=rawTree) {
+      if (is.null(node)) { return(NULL) }
+      if (node$selectionType == SelectionType$NONE) { return(NULL) }
+      if (length(node$children) == 0 || node$selectionType == SelectionType$NODE) { return(list(node)) }
+      ret = list()
+      for (i in 1:length(node$children)) {
+        ret = c(ret, selectedLeaves(node$children[[i]]))
+      }
+      return(ret)
+    },
+
+    # Gets a list where indices correspond to depths in the tree
+    # and values correspond to the ancestors of the given node
+    ancestors=function(node=rawTree, inclusive=TRUE) {
+      if (is.null(node)) { return(NULL) }
+      ret = list()
+      if (inclusive) {
+        # Set the children to NULL, so we do not copy the entire
+        # subtree over and over again
+        node$children = NULL
+        ret[[node$globalDepth + 1]] = node
+      }
+
+      node = .self$parent(node=node)
+      while (!is.null(node)) {
+        node$children = NULL
+        ret[[node$globalDepth + 1]] = node
+        node = .self$parent(node=node)
+      }
+      return(ret)
+    }
+  )
+
+)
