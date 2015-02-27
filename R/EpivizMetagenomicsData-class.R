@@ -4,7 +4,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     taxonomy="EpivizTree",
     levels="character",
     maxDepth="numeric",
-    lastRootId="character",
+    lastRootId="ANY",
 
     counts="ANY",
     sampleAnnotation="ANY",
@@ -57,9 +57,11 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
       selectedNodesAncestors <<- lapply(selectedNodes, function(node) { taxonomy$ancestors(node) })
       nodesTaxonomies = list()
-      for (i in 1:length(levels)) {
+      for (i in seq_along(levels)) {
         nodesTaxonomies[[levels[[i]]]] = list()
-        for (j in 1:length(selectedNodes)) {
+        for (j in seq_along(selectedNodes)) {
+          browser(expr=(j > length(selectedNodesAncestors)))
+          if (i > length(selectedNodesAncestors[[j]])) { next }
           nodesTaxonomies[[levels[[i]]]][[j]] = selectedNodesAncestors[[j]][[i]]
         }
       }
@@ -99,7 +101,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         values = list()
         for (child in taxonomy$children(node)) {
           childResult = .getSelectedValues(child)
-          values = c(values, childResult$values)
+          values = c(values, childResult)
         }
         #result$values = list(Reduce(function(v1, v2) { return(Ptr$new(v1$. + v2$.)) }, values)$. / length(values))
         result[[node$id]] = Ptr$new(Reduce(function(v1, v2) { return(Ptr$new(v1$. + v2$.)) }, values)$. / length(values))
@@ -144,7 +146,7 @@ EpivizMetagenomicsData$methods(
     }
 
     ret = taxonomy$build(root, function(node) { return(node$depth - root$depth < maxDepth) })
-    lastRootId <<- root$id
+    lastRootId <<- nodeId
 
     if (is.null(ret)) { return(NULL) }
 
@@ -168,7 +170,7 @@ EpivizMetagenomicsData$methods(
   getRows=function(seqName, start, end, metadata) {
     startIndex = NULL
     endIndex = NULL
-    for (i in 1:length(selectedNodes)) {
+    for (i in seq_along(selectedNodes)) {
       range = selectedNodesRanges[[i]]
       if (range[1] <= end && range[1] + range[2] > start) {
         if (is.null(startIndex)) { startIndex = i }
@@ -218,7 +220,7 @@ EpivizMetagenomicsData$methods(
   getValues=function(measurement, seqName, start, end) {
     startIndex = NULL
     endIndex = NULL
-    for (i in 1:length(selectedNodes)) {
+    for (i in seq_along(selectedNodes)) {
       range = selectedNodesRanges[[i]]
       if (range[1] <= end && range[1] + range[2] > start) {
         if (is.null(startIndex)) { startIndex = i }

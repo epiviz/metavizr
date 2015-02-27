@@ -36,7 +36,7 @@ tableToJSONTree <- function(t) {
     nleaves = 0
     if (length(node[[1]]) > 0) {
       children = c()
-      for (i in 1:length(node[[1]])) {
+      for (i in seq_along(node[[1]])) {
         child = listTreeToJSONTree(node[[1]][i], globalDepth + 1)
         child$order = i - 1
         children = c(children, list(child))
