@@ -113,6 +113,36 @@ generatePseudoGUID = function(size) {
   return(paste(ret, collapse=""))
 }
 
+.tableToListTree <- function(t, colIndex=1, parent=NULL) {
+  if (colIndex > dim(t)[2]) {
+    if (!is.null(parent)) { parent$nleaves = 1 }
+    return(NULL)
+  }
+
+  parentId = NULL
+  if (!is.null(parent)) { parentId = parent$id }
+
+  groups = by(t, t[, colIndex], list, simplify=F)
+  names = names(groups)
+  nodes = lapply(seq_along(names), function(i) { EpivizNode$new(name=names[i], parentId=parentId, depth=colIndex-1, taxonomy=colnames(t)[colIndex], order=i) })
+  if (!is.null(parent)) {
+    parent$nchildren = length(nodes)
+    parent$childrenIds = lapply(nodes, function(node) { node$id })
+  }
+
+  descendants = unlist(lapply(seq_along(groups), function(i) {
+    node = nodes[[i]]
+    children = .tableToListTree(groups[[i]][[1]], colIndex+1, node)
+    if (!is.null(parent)) {
+      parent$nleaves = parent$nleaves + node$nleaves
+    }
+    children
+  }))
+  ret = c(nodes, descendants)
+
+  return(ret)
+}
+
 tree = tableToJSONTree(df)
 ls = leaves(tree)
 ms = getMeasurements(ls, "my-id")

@@ -4,7 +4,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     taxonomy="EpivizTree",
     levels="character",
     maxDepth="numeric",
-    lastSubtree="ANY",
+    lastRootId="character",
 
     counts="ANY",
     sampleAnnotation="ANY",
@@ -21,7 +21,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       levels <<- .self$.taxonomyLevels(object)
       taxonomy <<- buildEpivizTree(object)
       maxDepth <<- 4 # TODO Make it customizable
-      lastSubtree <<- taxonomy$root()
+      lastRootId <<- taxonomy$root()$id
 
       counts <<- MRcounts(object, norm=TRUE, log=TRUE)
       sampleAnnotation <<- pData(object)
@@ -106,15 +106,15 @@ EpivizMetagenomicsData$methods(
       if (is.null(root)) { root = taxonomy$root() }
     }
 
-    ret = taxonomy$filter(root, function(node) { return(node$depth - root$depth < maxDepth) })
-    lastSubtree <<- ret
+    ret = taxonomy$build(root, function(node) { return(node$depth - root$depth < maxDepth) })
+    lastRootId <<- root$id
 
     if (is.null(ret)) { return(NULL) }
 
-    ret$raw()
+    ret
   },
   propagateHierarchyChanges=function(selection, order) {
-    if (missing(selection) && missing(order)) { return(lastSubtree) }
+    if (missing(selection) && missing(order)) { return(lastSubtree) }# lastRootId
 
     if (!missing(selection)) {
       taxonomy$updateSelection(selection)
@@ -126,7 +126,7 @@ EpivizMetagenomicsData$methods(
 
     # .self$.updateSelection()
 
-    getHierarchy(lastSubtree$id)
+    getHierarchy(lastRootId)
   },
   getRows=function(seqName, start, end, metadata) {
     startIndex = NULL
