@@ -22,7 +22,6 @@ startMetaviz <- function(...) {
       stop("cannot find datasource", datasource)
     }
     obj$propagateHierarchyChanges(selection, order)
-    mgr$.clearDatasourceGroupCache(mgr)
   })
 
   mgr$registerAction("getRows", function(mgr, msgData, ...) {

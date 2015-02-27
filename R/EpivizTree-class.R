@@ -75,7 +75,7 @@ EpivizTree <- setRefClass("EpivizTree",
       modifiedParents = list()
 
       # First, reassign order
-      for (nodeId in names(selection)) {
+      for (nodeId in names(order)) {
         if (is.null(nodesById[[nodeId]])) { next }
         nodesById[[nodeId]]$order <<- order[[nodeId]]
         parent = .self$parent(nodesById[[nodeId]])
@@ -113,7 +113,7 @@ EpivizTree <- setRefClass("EpivizTree",
 
       node = parent(node)
       while (!is.null(node)) {
-        ret[[node$globalDepth + 1]] = node
+        ret[[node$depth + 1]] = node
         node = parent(node=node)
       }
       return(ret)

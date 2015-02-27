@@ -23,6 +23,7 @@ EpivizNode <- setRefClass("EpivizNode",
       childrenIds <<- childrenIds
       nleaves <<- nleaves
       order <<- order
+    },
 
     raw=function(recursive=TRUE) {
       ret = list(

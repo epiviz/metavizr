@@ -8,6 +8,8 @@ library("devtools")
 library("metagenomeSeq")
 library("msd16s")
 
+options(error=recover)
+
 load_all("../epivizr")
 load_all("./")
 

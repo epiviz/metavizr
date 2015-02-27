@@ -35,7 +35,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       counts <<- counts[names(idsByNames),]
       rownames(counts) <<- lapply(rownames(counts), function(name) { idsByNames[[name]] })
 
-#       .self$.updateSelection()
+      .self$.updateSelection()
 
       callSuper(object=object, ...)
     },
@@ -45,29 +45,66 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       return(colnames(fData(exp))[c(3:9,1)])
     },
     .updateSelection=function() {
-#       browser()
-#       selectedNodes <<- taxonomy$selectedLeaves()
-#       # selectedValues <<- lapply(selectedNodes, function(node) { counts[node$id, ] }) # TODO: This might work too, in conjunction with
-#       #   lapply(selectedValues[startIndex:endIndex], function(vals) { vals[[measurement]] })
-#       selectedValues <<- sapply(colnames(counts), function(sample) { list(lapply(selectedNodes, function(node) { counts[node$id, sample] })) })
-#
-#       i = 0
-#       nodesRanges = list()
-#       for (node in selectedNodes) {
-#         nodesRanges = c(nodesRanges, list(c(i, node$nleaves)))
-#         i = i + node$nleaves
-#       }
-#       selectedNodesRanges <<- nodesRanges
-#
-#       selectedNodesAncestors <<- lapply(selectedNodes, function(node) { taxonomy$ancestors(node) })
-#       nodesTaxonomies = list()
-#       for (i in 1:length(levels)) {
-#         nodesTaxonomies[[levels[[i]]]] = list()
-#         for (j in 1:length(selectedNodes)) {
-#           nodesTaxonomies[[levels[[i]]]][[j]] = selectedNodesAncestors[[j]][[i]]
-#         }
-#       }
-#       selectedNodesTaxonomies <<- nodesTaxonomies
+      selectedNodes <<- taxonomy$selectedLeaves()
+
+      i = 0
+      nodesRanges = list()
+      for (node in selectedNodes) {
+        nodesRanges = c(nodesRanges, list(c(i, node$nleaves)))
+        i = i + node$nleaves
+      }
+      selectedNodesRanges <<- nodesRanges
+
+      selectedNodesAncestors <<- lapply(selectedNodes, function(node) { taxonomy$ancestors(node) })
+      nodesTaxonomies = list()
+      for (i in 1:length(levels)) {
+        nodesTaxonomies[[levels[[i]]]] = list()
+        for (j in 1:length(selectedNodes)) {
+          nodesTaxonomies[[levels[[i]]]][[j]] = selectedNodesAncestors[[j]][[i]]
+        }
+      }
+      selectedNodesTaxonomies <<- nodesTaxonomies
+
+      selection = .getSelectedValues()
+      selectedValues <<- sapply(selection, function(v) { v$. })
+    },
+
+    .getSelectedValues=function(node=taxonomy$root()) {
+      if (node$selectionType == SelectionType$NONE) {
+        #return(list(rows=list(), values=list()))
+        return(list())
+      }
+      if (node$nchildren == 0) {
+        ret = list()
+        ret[[node$id]] = Ptr$new(counts[node$id, ])
+        return(ret)
+        #return(list(rows=list(node$id), values=list(Ptr$new(counts[node$id, ]))))
+      }
+
+      #result = list(rows=list(), values=list())
+      result = list()
+
+      if (node$selectionType == SelectionType$LEAVES) {
+        for (child in taxonomy$children(node)) {
+          childResult = .getSelectedValues(child)
+          #result$rows = c(result$rows, childResult$rows)
+          #result$values = c(result$values, childResult$values)
+          result = c(result, childResult)
+        }
+        return(result)
+      }
+
+      if (node$selectionType == SelectionType$NODE) {
+        #result$rows = list(node$id)
+        values = list()
+        for (child in taxonomy$children(node)) {
+          childResult = .getSelectedValues(child)
+          values = c(values, childResult$values)
+        }
+        #result$values = list(Reduce(function(v1, v2) { return(Ptr$new(v1$. + v2$.)) }, values)$. / length(values))
+        result[[node$id]] = Ptr$new(Reduce(function(v1, v2) { return(Ptr$new(v1$. + v2$.)) }, values)$. / length(values))
+        return(result)
+      }
     },
 
 
@@ -114,7 +151,7 @@ EpivizMetagenomicsData$methods(
     ret
   },
   propagateHierarchyChanges=function(selection, order) {
-    if (missing(selection) && missing(order)) { return(lastSubtree) }# lastRootId
+    if (missing(selection) && missing(order)) { return(getHierarchy(lastRootId)) }
 
     if (!missing(selection)) {
       taxonomy$updateSelection(selection)
@@ -124,7 +161,7 @@ EpivizMetagenomicsData$methods(
       taxonomy$updateOrder(order)
     }
 
-    # .self$.updateSelection()
+    .self$.updateSelection()
 
     getHierarchy(lastRootId)
   },
@@ -196,7 +233,7 @@ EpivizMetagenomicsData$methods(
     }
     ret = list(
       globalStartIndex = start,
-      values = selectedValues[[measurement]][startIndex:endIndex]
+      values = unname(selectedValues[measurement, startIndex:endIndex])
     )
     if (endIndex - startIndex == 0) { ret$values = list(ret$values) }
     ret
