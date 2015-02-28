@@ -1,33 +1,67 @@
-EpivizTree <- setRefClass("EpivizTree",
+MetavizTree <- setRefClass("MetavizTree",
   fields=list(
-    nodes="ANY",
     nodesById="ANY",           # nullable environment
-    nodesByDepthAndName="ANY"
+    nodesByDepthAndName="ANY",
+    taxonomyDF="ANY"
   ),
   methods=list(
-    initialize=function(nodes, ...) {
-      if (missing(nodes)) { nodes <<- NULL; return() }
-      nodes <<- nodes
+    initialize=function(taxonomyDF, ...) {
+      if (missing(taxonomyDF)) { taxonomyDF <<- NULL }
+
+      taxonomyDF <<- taxonomyDF
+
       nodesById <<- list()
       nodesByDepthAndName <<- list()
 
-      for (node in nodes) {
-        nodesById[[node$id]] <<- node
-        if (length(nodesByDepthAndName) < node$depth + 1 || is.null(nodesByDepthAndName[[node$depth + 1]])) {
-          nodesByDepthAndName[[node$depth + 1]] <<- list()
-        }
-        nodesByDepthAndName[[node$depth + 1]][[node$name]] <<- node
-      }
+      childrenGroups = by(taxonomyDF, taxonomyDF[, 2], list, simplify=F)
+      root = EpivizNode$new(name=taxonomyDF[1,1], taxonomy=colnames(taxonomyDF)[1], nchildren=length(childrenGroups), nleaves=dim(taxonomyDF)[1])
+      nodesById[[root$id]] <<- root
+      nodesByDepthAndName[[root$depth + 1]] <<- list()
+      nodesByDepthAndName[[root$depth + 1]][[root$name]] <<- root
     },
     root=function() { nodesByDepthAndName[[1]][[1]] },
 
     children=function(node) {
+      if (is.null(node)) { return(NULL) }
+      if (node$nchildren > 0 && length(node$childrenIds) == 0) {
+        # Generate the children
+        nodeDF = taxonomyDF[node$leafIndex:(node$leafIndex + node$nleaves),]
+        childrenGroups = by(nodeDF, nodeDF[, node$depth + 2], list, simplify=F)
+        names = names(childrenGroups)
+        env = new.env()
+        env$lastLeafIndex = node$leafIndex
+        children = lapply(seq_along(names), function(i) {
+          depth = node$depth + 1
+          leafIndex = env$lastLeafIndex
+          if (depth + 2 > dim(nodeDF)[2]) {
+            # This is a leaf
+            nchildren = 0
+            nleaves = 1
+          } else {
+            childGroup = childrenGroups[[i]]
+            groups = by(childGroup, childGroup[, depth + 1], list, simplify=F)
+            nchildren = length(groups)
+            nleaves = dim(childGroup)[1]
+          }
+          env$lastLeafIndex = leafIndex + nleaves
+          child = EpivizNode$new(name=names[i], parentId=node$id, depth=depth, taxonomy=colnames(nodeDF)[depth + 1], nchildren=nchildren, nleaves=nleaves, order=i, leafIndex=leafIndex)
+          if (nchildren == 0) { child$id = child$name }
+          nodesById[[child$id]] <<- child
+          if (length(nodesByDepthAndName) < depth + 1 || is.null(nodesByDepthAndName[[depth + 1]])) {
+            nodesByDepthAndName[[depth + 1]] <<- list()
+          }
+          nodesByDepthAndName[[depth + 1]][[child$name]] <<- child
+          return(child)
+        })
 
+        node$childrenIds = lapply(children, function(child) { child$id })
+      }
       lapply(node$childrenIds, function(id) { nodesById[[id]] })
     },
 
     traverse=function(callback, node=root()) {
-      callback(node)
+      doBreak = callback(node)
+      if (doBreak) { return() }
       if (is.null(node)) { return() }
       if (length(node$childrenIds) == 0) { return() }
       for (child in children(node)) {
@@ -35,7 +69,7 @@ EpivizTree <- setRefClass("EpivizTree",
       }
     },
 
-     node=function(id) {
+    node=function(id) {
       if (missing(id)) { id = root()$id }
       return(nodesById[[id]])
     },
@@ -46,16 +80,6 @@ EpivizTree <- setRefClass("EpivizTree",
         return(.self$node(node$parentId))
       }
       return(NULL)
-    },
-
-    leaves=function(node=root()) {
-      if (is.null(node)) { return(NULL) }
-      if (length(node$childrenIds) == 0) { return(list(node)) }
-      ret = list()
-      for (child in children(node)) {
-        ret = c(ret, leaves(child))
-      }
-      return(ret)
     },
 
     # selection: @list {nodeId -> selectionType}
@@ -144,15 +168,15 @@ EpivizTree <- setRefClass("EpivizTree",
 
 # Used by jsonlite::toJSON
 # if (!is.null(getGeneric("asJSON"))) {
-#   setMethod(getGeneric("asJSON"), "EpivizTree", function(x, ...){
+#   setMethod(getGeneric("asJSON"), "MetavizTree", function(x, ...){
 #     return(epivizr::toJSON(x$root(), ...))
 #   })
 # }
 
-setGeneric("buildEpivizTree", signature=c("object"),
-           function(object, ...) standardGeneric("buildEpivizTree"))
+setGeneric("buildMetavizTree", signature=c("object"),
+           function(object, ...) standardGeneric("buildMetavizTree"))
 
-setMethod("buildEpivizTree", "MRexperiment", function(object, ...) {
+setMethod("buildMetavizTree", "MRexperiment", function(object, ...) {
   taxLvls = colnames(fData(object))[c(3:9,1)]
   tax = fData(object)[,taxLvls]
   tax[,1] = "Bacteria"
@@ -188,5 +212,5 @@ setMethod("buildEpivizTree", "MRexperiment", function(object, ...) {
     return(ret)
   }
 
-  return(EpivizTree$new(.tableToTree(tax)))
+  return(MetavizTree$new(.tableToTree(tax)))
 })

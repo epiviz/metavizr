@@ -9,10 +9,11 @@ EpivizNode <- setRefClass("EpivizNode",
     selectionType="numeric",
     childrenIds="ANY",      # list of ids
     nleaves="numeric",
-    order="numeric"
+    order="numeric",
+    leafIndex="numeric"     # the index of the first leaf in the taxonomy table
   ),
   methods=list(
-    initialize=function(id=.generatePseudoGUID(10), name=NULL, parentId=NULL, depth=0, taxonomy=NULL, nchildren=0, selectionType=1, childrenIds=NULL, nleaves=0, order=0, ...) {
+    initialize=function(id=.generatePseudoGUID(10), name=NULL, parentId=NULL, depth=0, taxonomy=NULL, nchildren=0, selectionType=1, childrenIds=NULL, nleaves=0, order=0, leafIndex=0, ...) {
       id <<- id
       name <<- name
       parentId <<- parentId
@@ -23,6 +24,7 @@ EpivizNode <- setRefClass("EpivizNode",
       childrenIds <<- childrenIds
       nleaves <<- nleaves
       order <<- order
+      leafIndex <<- leafIndex
     },
 
     raw=function(recursive=TRUE) {

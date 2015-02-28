@@ -26,14 +26,14 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       counts <<- MRcounts(object, norm=TRUE, log=TRUE)
       sampleAnnotation <<- pData(object)
 
-      # Change the counts row names to the ids of the leaves corresponding to them
-      idsByNames = list()
-      leaves = taxonomy$leaves()
-      for (leaf in leaves) {
-        idsByNames[[leaf$name]] = leaf$id
-      }
-      counts <<- counts[names(idsByNames),]
-      rownames(counts) <<- lapply(rownames(counts), function(name) { idsByNames[[name]] })
+#       # Change the counts row names to the ids of the leaves corresponding to them
+#       idsByNames = list()
+#       leaves = taxonomy$leaves()
+#       for (leaf in leaves) {
+#         idsByNames[[leaf$name]] = leaf$id
+#       }
+#       counts <<- counts[names(idsByNames),]
+#       rownames(counts) <<- lapply(rownames(counts), function(name) { idsByNames[[name]] })
 
       .self$.updateSelection()
 
