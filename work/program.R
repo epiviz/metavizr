@@ -14,9 +14,16 @@ load_all("./")
 
 # TODO Joe
 #filteredExp = filterData(msd16s,depth=6000,present=25)
+# filteredExp = filterData(msd16s,depth=3000,present=350)[,sample(1:599,10)]
+# fData(filteredExp) = fData(filteredExp)[,c(6,7,8,9,1)]
 filteredExp = msd16s
 
-mgr = startMetaviz(localURL="http://epiviz-dev.cbcb.umd.edu/metavis/", workspace = "qSJzFdtOFPq", useDevel=FALSE, debug=TRUE, verbose=TRUE)
+# tax = colnames(fData(filteredExp))#[c(3:9,1)]
+# taxonomy = fData(filteredExp)[,tax]
+# taxonomy[,1] = "Bacteria"
+# df = filteredExp
+
+mgr = startMetaviz(localURL="http://epiviz-dev.cbcb.umd.edu/metavis/", workspace = "qSJzFdtOFPq", useDevel=FALSE, debug=FALSE, verbose=FALSE)
 #mgr = startMetaviz(localURL="http://localhost/epiviz-dev/", workspace = "YGwCd2zrYOs", useDevel=FALSE, debug=TRUE, verbose=TRUE)
 ms <- mgr$addMeasurements(filteredExp, "Bacteriome Phylogenetic Tree")
 #tree = buildEpivizTree(msd16s)

@@ -5,11 +5,13 @@ MetavizTree <- setRefClass("MetavizTree",
     orders="Ptr",
     parents="Ptr",
     leavesCounts="Ptr",
+    realLeavesCounts="Ptr",
     depthStrSize="numeric",
     leafIndexStrSize="numeric"
   ),
   methods=list(
-    initialize=function(taxonomyTablePtr=Ptr$new(as.data.frame(NULL)), selectionTypes=Ptr$new(list()), orders=Ptr$new(list()), parents=Ptr$new(list()), leavesCounts=Ptr$new(list()), ...) {
+    initialize=function(taxonomyTablePtr=Ptr$new(as.data.frame(NULL)), selectionTypes=Ptr$new(list()), orders=Ptr$new(list()),
+                        parents=Ptr$new(list()), leavesCounts=Ptr$new(list()), realLeavesCounts=Ptr$new(list()), ...) {
       t = taxonomyTablePtr$.
       t[which(is.na(t), arr.ind=T)] = "NA"
       t = t[do.call(order, t),]
@@ -18,13 +20,14 @@ MetavizTree <- setRefClass("MetavizTree",
       orders <<- orders
       parents <<- parents
       leavesCounts <<- leavesCounts
+      realLeavesCounts <<- realLeavesCounts
 
       depthStrSize <<- ceiling(log(dim(taxonomyTablePtr$.)[2], base=16))
       leafIndexStrSize <<- ceiling(log(dim(taxonomyTablePtr$.)[1], base=16))
     },
     root=function() {
       return(MetavizNode$new(taxonomyTablePtr=taxonomyTablePtr, selectionTypes=selectionTypes, orders=orders, parents=parents,
-                             leavesCounts=leavesCounts, depthStrSize=depthStrSize, leafIndexStrSize=leafIndexStrSize))
+                             leavesCounts=leavesCounts, realLeavesCounts=realLeavesCounts, depthStrSize=depthStrSize, leafIndexStrSize=leafIndexStrSize))
     },
 
 #     children=function(node) {
@@ -80,13 +83,19 @@ MetavizTree <- setRefClass("MetavizTree",
       info = .fromMetavizNodeId(id, depthStrSize=depthStrSize)
       return(MetavizNode$new(taxonomyTablePtr=taxonomyTablePtr, depth=info$depth, leafIndex=info$leafIndex,
                              selectionTypes=selectionTypes, orders=orders, parents=parents, leavesCounts=leavesCounts,
-                             depthStrSize=depthStrSize, leafIndexStrSize=leafIndexStrSize))
+                             realLeavesCounts=realLeavesCounts, depthStrSize=depthStrSize, leafIndexStrSize=leafIndexStrSize))
     },
 
-    parent=function(node=root()) {
-      if (is.null(node)) { return(NULL) }
-      if (!is.null(node$parentId)) {
-        return(.self$node(node$parentId))
+    parent=function(child=root()) {
+      if (is.null(child)) { return(NULL) }
+
+#       tryCatch({ child$parentId },
+#         error=function(e) {
+#           browser()
+#         }
+#       )
+      if (!is.null(child$parentId)) {
+        return(.self$node(child$parentId))
       }
       return(NULL)
     },
@@ -99,6 +108,28 @@ MetavizTree <- setRefClass("MetavizTree",
 
       for (nodeId in names(selection)) {
         selectionTypes$.[[nodeId]] <<- selection[[nodeId]]
+
+        realNleaves = realLeavesCounts$.[[nodeId]]
+        nleaves = leavesCounts$.[[nodeId]]
+        n = .self$node(nodeId)
+        if (is.null(nleaves)) {
+          nleaves = n$nleaves
+        }
+        if (is.null(realNleaves)) { realNleaves = nleaves }
+
+        newNleaves = 0
+        if (selection[[nodeId]] == SelectionType$NODE) { newNleaves = 1 }
+        else if (selection[[nodeId]] == SelectionType$LEAVES) { newNleaves = nleaves }
+
+        realLeavesCounts$.[[nodeId]] <<- newNleaves
+        n = parent(n)
+        while (!is.null(n)) {
+          if (n$selectionType() != SelectionType$LEAVES) { break }
+          l = realLeavesCounts$.[[n$id]]
+          if (is.null(l)) { l = n$nleaves }
+          realLeavesCounts$.[[n$id]] <<- l - realNleaves + newNleaves
+          n = parent(n)
+        }
       }
     },
 
@@ -116,25 +147,26 @@ MetavizTree <- setRefClass("MetavizTree",
     selectedLeaves=function(leafStartIndex, leafEndIndex) {
       if (leafStartIndex >= dim(taxonomyTablePtr$.)[1] || leafEndIndex <= 0) { return(NULL) }
 
-      .iterate=function(node, s) {
-        if (is.null(node)) { return(NULL) }
-        if (node$selectionType() == SelectionType$NONE) { return(NULL) }
-        if (s >= leafEndIndex || s + node$nleaves <= leafStartIndex) { return(NULL) }
-        if (node$selectionType() == SelectionType$NODE || node$isLeaf()) {
-          return(list(list(node=node, start=s)))
+      .iterate=function(n, s, realNodesBefore) {
+        if (is.null(n)) { return(NULL) }
+        if (n$selectionType() == SelectionType$NONE) { return(NULL) }
+        if (s >= leafEndIndex || s + n$nleaves <= leafStartIndex) { return(NULL) }
+        if (n$selectionType() == SelectionType$NODE || n$isLeaf()) {
+          return(list(list(node=n, start=s, realNodesBefore=realNodesBefore)))
         }
 
         ret = list()
-        children = node$children()
+        children = n$children()
         for (child in children) {
-          ret = c(ret, .iterate(child, s))
+          ret = c(ret, .iterate(child, s, realNodesBefore))
           s = s + child$nleaves
+          realNodesBefore = realNodesBefore + child$realNleaves()
         }
         return(ret)
       }
 
-      return(.iterate(root(), 0))
-    }
+      return(.iterate(root(), 0, 0))
+    },
 
     # leafStartIndex is 0-based, and leafEndIndex is non-inclusive
 #     .forSelectedLeaves(leafStartIndex, leafEndIndex, fun) {
@@ -180,21 +212,21 @@ MetavizTree <- setRefClass("MetavizTree",
 #       }
 #     },
 #
-#     # Gets a list of ancestor nodes in the tree for the given node
-#     ancestors=function(node=root(), inclusive=TRUE) {
-#       if (is.null(node)) { return(NULL) }
-#       ret = list()
-#       if (inclusive) {
-#         ret[[node$depth + 1]] = node
-#       }
-#
-#       node = parent(node)
-#       while (!is.null(node)) {
-#         ret[[node$depth + 1]] = node
-#         node = parent(node=node)
-#       }
-#       return(ret)
-#     },
+    # Gets a list of ancestor nodes in the tree for the given node
+    ancestors=function(n=root(), inclusive=TRUE) {
+      if (is.null(n)) { return(NULL) }
+      ret = list()
+      if (inclusive) {
+        ret[[n$depth + 1]] = n
+      }
+
+      n = parent(n)
+      while (!is.null(n)) {
+        ret[[n$depth + 1]] = n
+        n = parent(n)
+      }
+      return(ret)
+    }
 #
 #
 #     build=function(node=root(), filter=function(node) { TRUE }) {
@@ -226,7 +258,7 @@ setMethod("buildMetavizTree", "MRexperiment", function(object, ...) {
   tax = colnames(fData(object))[c(3:9,1)]
   taxonomy = fData(object)[,tax]
   taxonomy[,1] = "Bacteria"
-
+  #taxonomy = fData(object)[,tax]
   MetavizTree$new(Ptr$new(taxonomy))
 })
 

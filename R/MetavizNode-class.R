@@ -8,15 +8,17 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
     orders="Ptr",
     parents="Ptr",
     leavesCounts="Ptr",
+    realLeavesCounts="Ptr",
     depthStrSize="numeric",
     leafIndexStrSize="numeric",
 
     id="character",
-    parentId="ANY"
+    parentId="ANY",
+    name="character"
   ),
   methods=list(
     initialize=function(taxonomyTablePtr=Ptr$new(as.data.frame(NULL)), depth=0, leafIndex=0, selectionTypes=Ptr$new(list()), orders=Ptr$new(list()),
-                        parents=Ptr$new(list()), leavesCounts=Ptr$new(list()), depthStrSize=0, leafIndexStrSize=0, ...) {
+                        parents=Ptr$new(list()), leavesCounts=Ptr$new(list()), realLeavesCounts=Ptr$new(list()), depthStrSize=0, leafIndexStrSize=0, ...) {
       taxonomyTablePtr <<- taxonomyTablePtr
       depth <<- depth
       leafIndex <<- leafIndex
@@ -32,7 +34,12 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
 
       id <<- .generateMetavizNodeId(depth, leafIndex, depthStrSize=depthStrSize, leafIndexStrSize=leafIndexStrSize)
       parentId <<- parents$.[[id]]
+#       browser(expr=(dim(taxonomyTablePtr$.)[1] < leafIndex + 1))
+#       browser(expr=(dim(taxonomyTablePtr$.)[2] < depth + 1))
+#       browser(expr=(depth == 7))
+      name <<- as.character(taxonomyTablePtr$.[leafIndex+1, depth+1])
 
+      realLeavesCounts <<- realLeavesCounts
       leavesCounts <<- leavesCounts
       nleaves <<- leavesCounts$.[[id]]
       if (is.null(nleaves)) {
@@ -46,7 +53,7 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
           info = .fromMetavizNodeId(parentId, depthStrSize=depthStrSize)
           parent = MetavizNode$new(taxonomyTablePtr=taxonomyTablePtr, depth=info$depth, leafIndex=info$leafIndex,
                                    selectionTypes=selectionTypes, orders=orders, parents=parents, leavesCounts=leavesCounts,
-                                   depthStrSize=depthStrSize, leafIndexStrSize=leafIndexStrSize)
+                                   realLeavesCounts=realLeavesCounts, depthStrSize=depthStrSize, leafIndexStrSize=leafIndexStrSize)
           parent$raw(maxDepth=1) # This will ensure that the correct nleaves are actually computed
           nleaves <<- leavesCounts$.[[id]]
         }
@@ -68,6 +75,12 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
       orders$.[[id]]
     },
 
+    realNleaves=function() {
+      ret = realLeavesCounts$.[[id]]
+      if (is.null(ret)) { ret = nleaves }
+      return(ret)
+    },
+
     children=function() {
       t = taxonomyTablePtr$.[(leafIndex+1):(leafIndex+nleaves), ]
       if (depth + 1 >= dim(t)[2]) { return(NULL) }
@@ -82,7 +95,7 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
         parents$.[[childId]] <<- id
 
         child = MetavizNode$new(taxonomyTablePtr=taxonomyTablePtr, depth=depth+1, leafIndex=childLeafIndex, selectionTypes=selectionTypes, orders=orders,
-                                parents=parents, leavesCounts=leavesCounts, depthStrSize=depthStrSize, leafIndexStrSize=leafIndexStrSize)
+                                parents=parents, leavesCounts=leavesCounts, realLeavesCounts=realLeavesCounts, depthStrSize=depthStrSize, leafIndexStrSize=leafIndexStrSize)
 
         if (is.null(orders$.[[child$id]])) {
           orders$.[[child$id]] <<- env$order
