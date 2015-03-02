@@ -9,5 +9,3 @@ Ptr <- setRefClass("Ptr",
     }
   )
 )
-
-# setMethod(getGeneric("asJSON"), "Ptr", function(x, ...){ return(toJSON(x$., ...)) })

@@ -149,3 +149,24 @@ ms = getMeasurements(ls, "my-id")
 # View(RJSONIO::toJSON(tree,recursive=FALSE))
 
 order(node$children, function(c1, c2) { c1$order - c2$order })
+
+
+#####################################################################
+
+
+require(msd16s)
+example = msd16s #filterData(msd16s,depth=6000,present=25)
+tax = colnames(fData(example))[c(3:9,1)]
+taxonomy = fData(example)[,tax]
+taxonomy[,1] = "Bacteria"
+df = taxonomy#axonomy[sample(1:nrow(taxonomy),10),]
+
+#assayData(example)[["counts"]]
+counts = MRcounts(example,norm=TRUE,log=TRUE)
+pd = pData(example)
+pd["100489",]
+l = as.list(pd["100489",])
+
+root = MetavizNode$new(taxonomyTablePtr=Ptr$new(df))
+x = root$raw(maxDepth=0)
+y = root$children()
