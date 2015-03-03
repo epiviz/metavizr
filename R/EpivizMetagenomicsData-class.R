@@ -23,7 +23,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .aggregateAtDepth <<- aggregateAtDepth
       .lastRootId <<- .taxonomy$root()$id()
 
-      .counts <<- MRcounts(object, norm=TRUE, log=TRUE)
+      .counts <<- MRcounts(object, norm=TRUE, log=FALSE)
       .sampleAnnotation <<- pData(object)
 
       .maxHistory <<- maxHistory
@@ -170,10 +170,10 @@ EpivizMetagenomicsData$methods(
     ret = list(
       globalStartIndex = globalStartIndex,
       values = unname(lapply(leafInfos, function(info) {
-        if (info$node$isLeaf()) { return(.counts[info$node$leafIndex()+1, measurement]) }
+        if (info$node$isLeaf()) { return(log2(.counts[info$node$leafIndex()+1, measurement] + 1)) }
 
         # TODO Joe: Currently, we compute mean of counts. What should we do instead?
-        return(mean(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()), measurement]))
+        return(log2(1 + mean(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()), measurement])))
       }))
     )
     return(ret)

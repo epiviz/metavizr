@@ -169,10 +169,6 @@ setGeneric("buildMetavizTree", signature=c("object"),
            function(object, ...) standardGeneric("buildMetavizTree"))
 
 setMethod("buildMetavizTree", "MRexperiment", function(object, ...) {
-  # TODO Joe
-  tax = colnames(fData(object))[c(3:9,1)]
-  taxonomy = fData(object)[,tax]
-  taxonomy[,1] = "Bacteria"
-#   taxonomy = fData(object)
+  taxonomy = fData(object)
   MetavizTree$new(Ptr$new(taxonomy))
 })

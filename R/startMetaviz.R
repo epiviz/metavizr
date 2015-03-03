@@ -1,5 +1,13 @@
 startMetaviz <- function(...) {
   mgr = startEpiviz(...)
+
+  mgr$registerChartType("heatmap", "epiviz.plugins.charts.HeatmapPlot")
+  mgr$registerChartType("scatterplot", "epiviz.plugins.charts.ScatterPlot")
+  mgr$registerChartType("blocks", "epiviz.plugins.charts.BlocksTrack")
+  mgr$registerChartType("line", "epiviz.plugins.charts.LineTrack")
+  mgr$registerChartType("stackedplot", "epiviz.plugins.charts.StackedLinePlot")
+  mgr$registerChartType("icicle", "epiviz.ui.charts.tree.Icicle")
+
   mgr$registerType("metagenomics",list(class="EpivizMetagenomicsData", description="Metagenomics data", input_class="MRexperiment"))
 
   mgr$registerAction("getHierarchy", function(mgr, msgData, ...) {

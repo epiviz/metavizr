@@ -182,3 +182,14 @@ d = filterData(msd16s,depth=3000,present=350)[,sample(1:599,10)]
 fData(d) = fData(d)[,c(6,7,8,9,1)]
 t = fData(d)
 
+# tax = colnames(fData(filteredExp))#[c(3:9,1)]
+# taxonomy = fData(filteredExp)[,tax]
+# taxonomy[,1] = "Bacteria"
+# df = filteredExp
+#options(error=recover)
+
+# TODO Joe
+#filteredExp = filterData(msd16s,depth=6000,present=25)
+# filteredExp = filterData(msd16s,depth=3000,present=350)[,sample(1:599,10)]
+# fData(filteredExp) = fData(filteredExp)[,c(6,7,8,9,1)]
+#counts = MRcounts(filteredExp, norm=TRUE, log=TRUE)
