@@ -171,6 +171,8 @@ EpivizMetagenomicsData$methods(
       globalStartIndex = globalStartIndex,
       values = unname(lapply(leafInfos, function(info) {
         if (info$node$isLeaf()) { return(.counts[info$node$leafIndex()+1, measurement]) }
+
+        # TODO Joe: Currently, we compute mean of counts. What should we do instead?
         return(mean(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()), measurement]))
       }))
     )
