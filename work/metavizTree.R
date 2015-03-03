@@ -155,7 +155,7 @@ order(node$children, function(c1, c2) { c1$order - c2$order })
 
 
 require(msd16s)
-example = msd16s #filterData(msd16s,depth=6000,present=25)
+example = filterData(msd16s,depth=6000,present=25)
 tax = colnames(fData(example))[c(3:9,1)]
 taxonomy = fData(example)[,tax]
 taxonomy[,1] = "Bacteria"
@@ -172,3 +172,13 @@ x = root$raw(maxDepth=0)
 y = root$children()
 tree = MetavizTree$new(taxonomyTablePtr=Ptr$new(df))
 z = tree$selectedLeaves(0,100)
+
+
+filteredExp = msd16s#filterData(msd16s,depth=3000,present=350)[,sample(1:599,10)]
+fData(filteredExp) = fData(filteredExp)[,c(6,7,8,9,1)]
+df = fData(filteredExp)
+
+d = filterData(msd16s,depth=3000,present=350)[,sample(1:599,10)]
+fData(d) = fData(d)[,c(6,7,8,9,1)]
+t = fData(d)
+
