@@ -9,6 +9,7 @@ library("metagenomeSeq")
 library("msd16s")
 library("stringr")
 
+setwd("d:\\EpiViz\\github\\metavizr\\")
 load_all("../epivizr")
 load_all("./")
 
@@ -17,16 +18,24 @@ fData(filteredExp) = fData(filteredExp)[,c(3:9, 1)]
 
 #mgr = startMetaviz(localURL="http://epiviz-dev.cbcb.umd.edu/metavis/", workspace = "6SbPOUDtKzg", useDevel=FALSE, debug=TRUE, verbose=TRUE)
 mgr = startMetaviz(localURL="http://localhost/epiviz-dev", workspace = "YGwCd2zrYOs", useDevel=FALSE, debug=TRUE, verbose=TRUE)
-metavizrData = mgr$addMeasurements(filteredExp, "MSD 16", maxDepth=3, aggregateAtDepth=3)
+metavizrData = mgr$addMeasurements(filteredExp, "MSD 16", maxDepth=5, aggregateAtDepth=5, minValue=0, maxValue=15)
 
-measurements = metavizrData$getMeasurements()
+samples = metavizrData$getMeasurements()
 
-scatter = mgr$visualize("scatterplot", list(measurements[[1]], measurements[[2]]))
-heatmap = mgr$visualize("heatmap", list(measurements[[1]], measurements[[2]]))
+scatter = mgr$visualize("scatterplot", list(samples[[1]], samples[[2]]))
+heatmap = mgr$visualize("heatmap", list(samples[[1]], samples[[2]]))
 icicle = mgr$visualize("icicle", datasource=metavizrData)
+
+metavizrData$changeAggregationAtDepth(mgr, depth=2, 2)
 
 mgr$service()
 #taxonomi_vis <- mgr$addDevice(msd16s, "Bacteriome Phylogenetic Tree")
 
 mgr$stopServer()
+
+
+k = rownames(aggTax(msd16s,"genus")[order(rowSums(aggTax(msd16s,lvl="genus")),decreasing=TRUE)])[1:10]
+for(i in 4:9) fData(msd16s)[which(!fData(msd16s)[,"genus"]%in%k),i] = "Other"
+
+
 

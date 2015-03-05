@@ -10,12 +10,16 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .counts="ANY",
     .sampleAnnotation="ANY",
 
+    .minValue="ANY",
+    .maxValue="ANY",
+    .aggregateFun="ANY",
+
     .lastRequestRanges="list",
     .lastLeafInfos="list",
     .maxHistory="numeric"
   ),
   methods=list(
-    initialize=function(object, maxDepth=3, aggregateAtDepth=3, maxHistory=3, ...) {
+    initialize=function(object, maxDepth=3, aggregateAtDepth=3, maxHistory=3, minValue=NULL, maxValue=NULL, aggregateFun=function(col) log2(1 + sum(col)), ...) {
       # TODO: Some type checking
       .taxonomy <<- buildMetavizTree(object)
       .levels <<- .taxonomy$levels()
@@ -24,6 +28,18 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .lastRootId <<- .taxonomy$root()$id()
 
       .counts <<- MRcounts(object, norm=TRUE, log=FALSE)
+
+      if (is.null(minValue)) {
+        minValue = log2(min(.counts) + 1)
+      }
+      .minValue <<- minValue
+
+      if (is.null(maxValue)) {
+        maxValue = log2(max(.counts) + 1)
+      }
+      .maxValue <<- maxValue
+      .aggregateFun <<- aggregateFun
+
       .sampleAnnotation <<- pData(object)
 
       .maxHistory <<- maxHistory
@@ -80,6 +96,27 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   )
 )
 
+# Data analysis features
+EpivizMetagenomicsData$methods(
+  changeAggregation=function(mgr, nodeId, aggregationType) {
+    selection = list()
+    selection[[nodeId]] = aggregationType
+    .taxonomy$updateSelection(selection)
+    mgr$.clearDatasourceGroupCache(.self, TRUE)
+  },
+  changeAggregationAtDepth=function(mgr, depth, aggregationType) {
+    if (depth < 0) { return() }
+    nodesAtDepth = .taxonomy$nodesAtDepth(depth)
+    selection = list()
+    for (node in nodesAtDepth) {
+      selection[[node$id()]] = aggregationType
+    }
+    .taxonomy$updateSelection(selection)
+    mgr$.clearDatasourceGroupCache(.self, TRUE)
+  }
+)
+
+# Epiviz Websockets Protocol
 EpivizMetagenomicsData$methods(
   getMeasurements=function() {
     out <- lapply(colnames(.counts), function(sample) {
@@ -90,8 +127,8 @@ EpivizMetagenomicsData$methods(
            datasourceGroup=id,
            defaultChartType="heatmap",
            annotation=as.list(.sampleAnnotation[sample,]),
-           minValue=0, # TODO
-           maxValue=15, # TODO
+           minValue=.minValue,
+           maxValue=.maxValue,
            metadata=c(rev(.levels), "colLabel", "ancestors", "hierarchy-path"))
     })
     out
@@ -144,7 +181,13 @@ EpivizMetagenomicsData$methods(
         colLabel = sapply(leafInfos, function(info) { info$node$name() }),
         ancestors = sapply(leafAncestors, function(ancestors) { paste(lapply(rev(ancestors), function(node) { node$name() }), collapse=",") }), # TODO: Use tree .ancestryByDepth
         "hierarchy-path" = sapply(leafAncestors, function(ancestors) { paste(lapply(rev(ancestors), function(node) { node$id() }), collapse=",") })
-      ), sapply(rev(.levels), function(level) { list(lapply(leafTaxonomies[[level]], function(node) { if(is.null(node)) { return("<NA>") }; node$name() })) }))
+      ), sapply(rev(.levels), function(level) {
+        r = list(lapply(leafTaxonomies[[level]], function(node) { if(is.null(node)) { return("<NA>") }; node$name() }))
+        if (length(r[[1]]) == 0) {
+          r[[1]] = lapply(seq_along(leafInfos), function(i) { "<NA>" })
+        }
+        return(r)
+      }))
     )
 
     globalStartIndex = NULL
@@ -173,7 +216,7 @@ EpivizMetagenomicsData$methods(
         if (info$node$isLeaf()) { return(log2(.counts[info$node$leafIndex()+1, measurement] + 1)) }
 
         # TODO Joe: Currently, we compute mean of counts. What should we do instead?
-        return(log2(1 + mean(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()), measurement])))
+        return(.aggregateFun(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()), measurement]))
       }))
     )
     return(ret)
