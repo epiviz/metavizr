@@ -16,10 +16,11 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
     .lastRequestRanges="list",
     .lastLeafInfos="list",
+    .lastValues="list",
     .maxHistory="numeric"
   ),
   methods=list(
-    initialize=function(object, maxDepth=3, aggregateAtDepth=3, maxHistory=3, minValue=NULL, maxValue=NULL, aggregateFun=function(col) log2(1 + sum(col)), ...) {
+    initialize=function(object, maxDepth=3, aggregateAtDepth=3, maxHistory=3, minValue=NULL, maxValue=NULL, aggregateFun=function(t) log2(1 + colSums(t)), ...) {
       # TODO: Some type checking
       .taxonomy <<- buildMetavizTree(object)
       .levels <<- .taxonomy$levels()
@@ -45,6 +46,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .maxHistory <<- maxHistory
       .lastRequestRanges <<- list()
       .lastLeafInfos <<- list()
+      .lastValues <<- list()
 
       if (.aggregateAtDepth >= 0) {
         nodesAtDepth = .taxonomy$nodesAtDepth(.aggregateAtDepth)
@@ -76,14 +78,37 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         ret = Ptr$new(.taxonomy$selectedLeaves(start, end))
         .lastLeafInfos <<- c(.lastLeafInfos, ret)
         .lastRequestRanges <<- c(.lastRequestRanges, list(requestRange))
+        .lastValues <<- c(.lastValues, list(NULL))
 
         if (length(.lastRequestRanges) > .maxHistory) {
           .lastRequestRanges <<- .lastRequestRanges[2:(.maxHistory+1)]
           .lastLeafInfos <<- .lastLeafInfos[2:(.maxHistory+1)]
+          .lastValues <<- .lastValues[2:(.maxHistory+1)] # Not yet a value
         }
       }
 
       return(ret$.)
+    },
+
+    .getSelectedValues=function(measurement, start, end) {
+      leafInfos = .getSelectedLeaves(start, end)
+      values = NULL
+      for (i in rev(seq_along(.lastRequestRanges))) {
+        if (.lastRequestRanges[[i]]$start == start || .lastRequestRanges[[i]]$end == end) {
+          if (!is.null(.lastValues[[i]])) {
+            values = .lastValues[[i]]
+          } else {
+            values = Ptr$new(unname(lapply(leafInfos, function(info) {
+              return(.aggregateFun(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()),, drop=FALSE]))
+            })))
+
+            .lastValues[[i]] <<- values
+          }
+          break
+        }
+      }
+
+      lapply(values$., function(v) { v[[measurement]] })
     },
 
     update=function(newObject, ...) {
@@ -212,12 +237,7 @@ EpivizMetagenomicsData$methods(
     if (length(leafInfos) > 0) { globalStartIndex = leafInfos[[1]]$realNodesBefore }
     ret = list(
       globalStartIndex = globalStartIndex,
-      values = unname(lapply(leafInfos, function(info) {
-        if (info$node$isLeaf()) { return(log2(.counts[info$node$leafIndex()+1, measurement] + 1)) }
-
-        # TODO Joe: Currently, we compute mean of counts. What should we do instead?
-        return(.aggregateFun(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()), measurement]))
-      }))
+      values = .self$.getSelectedValues(measurement, start, end)
     )
     return(ret)
   }
