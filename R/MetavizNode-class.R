@@ -110,7 +110,7 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
         .parents$.[[childId]] <<- .id
 
         child = MetavizNode$new(taxonomyTablePtr=.taxonomyTablePtr, depth=.depth+1, leafIndex=childLeafIndex, selectionTypes=.selectionTypes, orders=.orders,
-                                parents=.parents, leavesCounts=.leavesCounts, realLeavesCounts=.realLeavesCounts, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)
+                                parents=.parents, leavesCounts=.leavesCounts, realLeavesCounts=.realLeavesCounts, ancestryByDepth=.ancestryByDepth, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)
 
         if (is.null(.orders$.[[child$.id]])) {
           .orders$.[[child$.id]] <<- env$order

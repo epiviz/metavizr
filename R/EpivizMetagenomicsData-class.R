@@ -67,23 +67,28 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
     .getSelectedLeaves=function(start, end) {
       ret = NULL
-      for (i in rev(seq_along(.lastRequestRanges))) {
-        if (.lastRequestRanges[[i]]$start == start || .lastRequestRanges[[i]]$end == end) {
-          ret = .lastLeafInfos[[i]]
-          break
+      if (length(.lastRequestRanges) > 0) {
+        for (i in rev(seq_along(.lastRequestRanges))) {
+          if (.lastRequestRanges[[i]]$start == start || .lastRequestRanges[[i]]$end == end) {
+            ret = .lastLeafInfos[[i]]
+            break
+          }
         }
       }
       if (is.null(ret)) {
         requestRange = list(start=start, end=end)
         ret = Ptr$new(.taxonomy$selectedLeaves(start, end))
-        .lastLeafInfos <<- c(.lastLeafInfos, ret)
-        .lastRequestRanges <<- c(.lastRequestRanges, list(requestRange))
-        .lastValues <<- c(.lastValues, list(NULL))
 
-        if (length(.lastRequestRanges) > .maxHistory) {
-          .lastRequestRanges <<- .lastRequestRanges[2:(.maxHistory+1)]
-          .lastLeafInfos <<- .lastLeafInfos[2:(.maxHistory+1)]
-          .lastValues <<- .lastValues[2:(.maxHistory+1)] # Not yet a value
+        if (.maxHistory > 0) {
+          .lastLeafInfos <<- c(.lastLeafInfos, ret)
+          .lastRequestRanges <<- c(.lastRequestRanges, list(requestRange))
+          .lastValues <<- c(.lastValues, list(NULL))
+
+          if (length(.lastRequestRanges) > .maxHistory) {
+            .lastRequestRanges <<- .lastRequestRanges[2:(.maxHistory+1)]
+            .lastLeafInfos <<- .lastLeafInfos[2:(.maxHistory+1)]
+            .lastValues <<- .lastValues[2:(.maxHistory+1)] # Not yet a value
+          }
         }
       }
 
@@ -92,23 +97,31 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
     .getSelectedValues=function(measurement, start, end) {
       leafInfos = .getSelectedLeaves(start, end)
+      index = -1
       values = NULL
-      for (i in rev(seq_along(.lastRequestRanges))) {
-        if (.lastRequestRanges[[i]]$start == start || .lastRequestRanges[[i]]$end == end) {
-          if (!is.null(.lastValues[[i]])) {
-            values = .lastValues[[i]]
-          } else {
-            values = Ptr$new(unname(lapply(leafInfos, function(info) {
-              return(.aggregateFun(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()),, drop=FALSE]))
-            })))
-
-            .lastValues[[i]] <<- values
+      if (length(.lastRequestRanges) > 0) {
+        for (i in rev(seq_along(.lastRequestRanges))) {
+          if (.lastRequestRanges[[i]]$start == start || .lastRequestRanges[[i]]$end == end) {
+            if (!is.null(.lastValues[[i]])) {
+              values = .lastValues[[i]]
+            } else {
+              index = i
+            }
+            break
           }
-          break
         }
       }
 
-      lapply(values$., function(v) { v[[measurement]] })
+      if (is.null(values)) {
+        values = Ptr$new(unname(lapply(leafInfos, function(info) {
+          return(.aggregateFun(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()),, drop=FALSE]))
+        })))
+      }
+      if (index > 0) {
+        .lastValues[[index]] <<- values
+      }
+
+      lapply(values$., function(v) { as.data.frame(v)[[measurement]] })
     },
 
     update=function(newObject, ...) {
