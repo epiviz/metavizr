@@ -15,6 +15,7 @@ MetavizTree <- setRefClass("MetavizTree",
                         parents=Ptr$new(list()), leavesCounts=Ptr$new(list()), realLeavesCounts=Ptr$new(list()), ...) {
       t = taxonomyTablePtr$.
       t[which(is.na(t), arr.ind=T)] = "NA"
+      for(i in seq_along(t)) { t[,i] = as.character(t[,i]) }
       t = t[do.call(order, t),]
       .taxonomyTablePtr <<- Ptr$new(t)
 
