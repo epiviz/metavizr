@@ -131,7 +131,12 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         .lastValues[[index]] <<- values
       }
 
-      lapply(values$., function(v) { as.data.frame(v)[[measurement]] })
+      lapply(values$., function(vals) {
+        lapply(vals, function(v) {
+          if (length(dim(v)) > 0) { return(v[, measurement]) }
+          return(v[[measurement]])
+        })
+      })
     },
 
     update=function(newObject, ...) {
