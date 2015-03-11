@@ -41,6 +41,8 @@ MetavizTree <- setRefClass("MetavizTree",
                              depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize))
     },
 
+    taxonomyTable=function() { .taxonomyTablePtr$. },
+
     root=function() {
       return(.createNode())
     },

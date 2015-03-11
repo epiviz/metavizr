@@ -151,6 +151,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
 # Data analysis features
 EpivizMetagenomicsData$methods(
+  taxonomyTable=function() { .taxonomy$taxonomyTable() },
   calcNodeId=function(rowIndex, colIndex) { .taxonomy$calcNodeId(rowIndex, colIndex) },
   node=function(nodeId) { .taxonomy$node(nodeId) },
   parent=function(node) { .taxonomy$parent(node) },
