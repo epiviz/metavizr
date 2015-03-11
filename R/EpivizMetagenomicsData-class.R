@@ -13,6 +13,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .minValue="ANY",
     .maxValue="ANY",
     .aggregateFun="ANY",
+    .valuesAnnotationFuns="ANY",
 
     .lastRequestRanges="list",
     .lastLeafInfos="list",
@@ -20,7 +21,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .maxHistory="numeric"
   ),
   methods=list(
-    initialize=function(object, maxDepth=3, aggregateAtDepth=3, maxHistory=3, minValue=NULL, maxValue=NULL, aggregateFun=function(t) log2(1 + colSums(t)), ...) {
+    initialize=function(object, maxDepth=3, aggregateAtDepth=3, maxHistory=3, minValue=NULL, maxValue=NULL, aggregateFun=function(t) log2(1 + colSums(t)), valuesAnnotationFuns=NULL, ...) {
       # TODO: Some type checking
       .taxonomy <<- buildMetavizTree(object)
       .levels <<- .taxonomy$levels()
@@ -40,6 +41,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       }
       .maxValue <<- maxValue
       .aggregateFun <<- aggregateFun
+      .valuesAnnotationFuns <<- valuesAnnotationFuns
 
       .sampleAnnotation <<- pData(object)
 
@@ -113,9 +115,17 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       }
 
       if (is.null(values)) {
-        values = Ptr$new(unname(lapply(leafInfos, function(info) {
+        values = Ptr$new(list(values=unname(lapply(leafInfos, function(info) {
           return(.aggregateFun(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()),, drop=FALSE]))
-        })))
+        }))))
+        if (!is.null(.valuesAnnotationFuns)) {
+          for (anno in names(.valuesAnnotationFuns)) {
+            fun = .valuesAnnotationFuns[[anno]]
+            values$.[[anno]] = unname(lapply(leafInfos, function(info) {
+              return(fun(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()),, drop=FALSE]))
+            }))
+          }
+        }
       }
       if (index > 0) {
         .lastValues[[index]] <<- values
