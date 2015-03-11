@@ -5,6 +5,7 @@ startMetaviz <- function(...) {
   mgr$registerChartType("scatterplot", "epiviz.plugins.charts.ScatterPlot")
   mgr$registerChartType("blocks", "epiviz.plugins.charts.BlocksTrack")
   mgr$registerChartType("line", "epiviz.plugins.charts.LineTrack")
+  mgr$registerChartType("lineplot", "epiviz.plugins.charts.LinePlot")
   mgr$registerChartType("stackedplot", "epiviz.plugins.charts.StackedLinePlot")
   mgr$registerChartType("icicle", "epiviz.ui.charts.tree.Icicle")
 
