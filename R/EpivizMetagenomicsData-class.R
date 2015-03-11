@@ -151,6 +151,11 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
 # Data analysis features
 EpivizMetagenomicsData$methods(
+  calcNodeId=function(rowIndex, colIndex) { .taxonomy$calcNodeId(rowIndex, colIndex) },
+  node=function(nodeId) { .taxonomy$node(nodeId) },
+  parent=function(node) { .taxonomy$parent(node) },
+  siblings=function(node) { .taxonomy$siblings(node) },
+
   changeAggregation=function(mgr, nodeId, aggregationType) {
     selection = list()
     selection[[nodeId]] = aggregationType

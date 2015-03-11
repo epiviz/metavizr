@@ -193,3 +193,10 @@ t = fData(d)
 # filteredExp = filterData(msd16s,depth=3000,present=350)[,sample(1:599,10)]
 # fData(filteredExp) = fData(filteredExp)[,c(6,7,8,9,1)]
 #counts = MRcounts(filteredExp, norm=TRUE, log=TRUE)
+
+
+####
+load_all("./")
+t = buildMetavizTree(filteredExp)
+df = t$.taxonomyTablePtr$.
+t$calcNodeId(1, 7)

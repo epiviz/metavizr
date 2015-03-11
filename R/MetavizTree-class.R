@@ -85,6 +85,33 @@ MetavizTree <- setRefClass("MetavizTree",
       }))
     },
 
+    calcNodeId=function(rowIndex, colIndex) {
+      depth = colIndex - 1
+      leafIndex = -1
+      if (depth == 0) { return(.generateMetavizNodeId(depth, 0, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)) }
+      if (depth == 1) {
+        t = .taxonomyTablePtr
+        leafIndex = min(which(t$.[,2] == t$.[rowIndex, colIndex])) - 1
+      } else if (depth == ncol(.taxonomyTablePtr$.) - 1) {
+        leafIndex = rowIndex - 1
+      } else {
+        leafIndex = min(which(.ancestryByDepth$.[[depth]] == .ancestryByDepth$.[[depth]][rowIndex])) - 1
+      }
+      return(.generateMetavizNodeId(depth, leafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize))
+    },
+
+    siblings=function(node) {
+      ret = list()
+      p = parent(node)
+      if (is.null(p)) { return(ret) }
+      for (child in p$children()) {
+        if (child$id() != node$id()) {
+          ret = c(ret, child)
+        }
+      }
+      return(ret)
+    },
+
     levels=function() { colnames(.taxonomyTablePtr$.) },
 
     # selection: @list {nodeId -> selectionType}
