@@ -21,7 +21,20 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .maxHistory="numeric"
   ),
   methods=list(
-    initialize=function(object, maxDepth=3, aggregateAtDepth=3, maxHistory=3, minValue=NULL, maxValue=NULL, aggregateFun=function(t) log2(1 + colSums(t)), valuesAnnotationFuns=NULL, ...) {
+    initialize=function(object,control=metavizControl(),valuesAnnotationFuns=NULL, ...) {
+      
+      # Initialize parameters used here
+      maxDepth=control$maxDepth
+      aggregateAtDepth=control$aggregateAtDepth
+      maxHistory=control$maxHistory
+      minValue=control$minValue
+      maxValue=control$maxValue
+      aggregateFun=control$aggregateFun
+      if(is.character(aggregateAtDepth)) aggregateAtDepth = assignValues(object,aggregateAtDepth)
+      if(is.character(maxDepth)) maxDepth = assignValues(object,maxDepth)
+      log = control$log
+      norm= control$norm
+
       # TODO: Some type checking
       .taxonomy <<- buildMetavizTree(object)
       .levels <<- .taxonomy$levels()
@@ -30,7 +43,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .lastRootId <<- .taxonomy$root()$id()
 
       t = .taxonomy$taxonomyTable()
-      .counts <<- MRcounts(object[rownames(t),],norm=TRUE,log=FALSE)
+      .counts <<- MRcounts(object[rownames(t),],norm=norm,log=log)
 
 
       # TODO: Make this consistent with the aggregateFun
@@ -119,13 +132,17 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
       if (is.null(values)) {
         values = Ptr$new(list(values=unname(lapply(leafInfos, function(info) {
-          return(.aggregateFun(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()),, drop=FALSE]))
+          lind = info$node$leafIndex()
+          ind = seq((lind+1):(lind+info$node$nleaves()))
+          return(.aggregateFun(.counts[ind,, drop=FALSE]))
         }))))
         if (!is.null(.valuesAnnotationFuns)) {
           for (anno in names(.valuesAnnotationFuns)) {
             fun = .valuesAnnotationFuns[[anno]]
             values$.[[anno]] = unname(lapply(leafInfos, function(info) {
-              return(fun(.counts[(info$node$leafIndex()+1):(info$node$leafIndex()+info$node$nleaves()),, drop=FALSE]))
+              lind = info$node$leafIndex()
+              ind = seq((lind+1):(lind+info$node$nleaves()))
+              return(fun(.counts[ind,, drop=FALSE]))
             }))
           }
         }
