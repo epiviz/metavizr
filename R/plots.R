@@ -1,3 +1,52 @@
+#' Icicle
+#'
+#' Produces an icicle for the tree of an EpivizMetagenomicsData class object
+#' 
+#' @param datasource An EpivizMetagenomicsData class object (i.e. output from one of the metavizPlot functions).
+#' @param mgr manager of a metaviz session.
+#' @return Icicle plot
+#' @export
+#' @seealso \code{\link{startMetaviz}}
+#' 
+metavizTree<-function(datasource,mgr){
+	invisible(mgr$visualize("icicle", datasource=datasource))
+}
+#' Stacked plot
+#'
+#' Produces the stacked plot for the experiment.
+#' 
+#' @param obj MRexperiment object or EpivizMetagenomicsData object. 
+#' 		If EpivizMetagenomicsData object then control is ignored.
+#' @param mgr metaviz session.
+#' @param control List of options passed through `metavizControl`.
+#' @return EpivizMetagenomicsData class object
+#' @export
+#' @seealso \code{\link{metavizControl}} \code{\link{metaviztree}}
+#' 		\code{\link{metavizRank}} \code{\link{metavizOptimize}}
+#' @examples
+#' # This will transform the tree to top 9 selected genera due to average abundance 
+#' #	of a subset of samples. Then plot the relative abundances of those 9 and 'others'.
+#' # mgr = startMetaviz(localURL="http://epiviz-dev.cbcb.umd.edu/metavis/", 
+#' # 	workspace = "Ey4CYuaTjNd",useDevel=TRUE, debug=TRUE, verbose=TRUE)
+#' library(msd16s)
+#' msd16s = filterData(msd16s,present=100)
+#' fData(msd16s) = fData(msd16s)[,c(3:9, 1)]
+#' ind = which(pData(msd16s)$Type=="Control" & pData(msd16s)$Country=="Gambia")
+#' obj = metavizTransformSelect(msd16s[,ind],fun=rowMeans,control=metavizControl(aggregateAtDepth="genus",n=10))
+#' # gates = metavizStack(obj,mgr,control=metavizControl(aggregateFun=colSums,aggregateAtDepth=5,log=FALSE))
+#'
+metavizStack<-function(obj,mgr,control=metavizControl(title="stacked plot",aggregateFun=colSums)) {
+	if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
+		stop("Either a MRexperiment or EpivizMetagenomicsData")
+	}
+	if(class(obj)=="MRexperiment"){
+		otuIndices = metavizRank(obj,control)
+		obj = mgr$addMeasurements(obj[otuIndices,],msName=control$title,control=control)
+	} 
+	measurements = obj$getMeasurements()
+	stack = mgr$visualize("stackedplot", measurements)
+	invisible(obj)
+}
 #' Indices of ranked features
 #'
 #' Calculate top n features at the leaves. Returns indices for the rankings.
