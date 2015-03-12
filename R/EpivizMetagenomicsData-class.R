@@ -219,6 +219,7 @@ EpivizMetagenomicsData$methods(
 
     .lastRequestRanges <<- list()
     .lastLeafInfos <<- list()
+    .lastValues <<- list()
 
     getHierarchy(.lastRootId)
   },
