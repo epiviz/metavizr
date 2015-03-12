@@ -24,14 +24,15 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     initialize=function(object,control=metavizControl(),valuesAnnotationFuns=NULL, ...) {
       
       # Initialize parameters used here
-      maxDepth=control$maxDepth
-      aggregateAtDepth=control$aggregateAtDepth
-      maxHistory=control$maxHistory
-      minValue=control$minValue
-      maxValue=control$maxValue
-      aggregateFun=control$aggregateFun
-      if(is.character(aggregateAtDepth)) aggregateAtDepth = assignValues(object,aggregateAtDepth)
-      if(is.character(maxDepth)) maxDepth = assignValues(object,maxDepth)
+      aggregateAtDepth = control$aggregateAtDepth
+      maxDepth         = control$maxDepth
+      maxHistory       = control$maxHistory
+      maxValue         =  control$maxValue
+      minValue         =  control$minValue
+      aggregateFun     =  control$aggregateFun
+      
+      if(is.character(aggregateAtDepth)){ aggregateAtDepth = assignValues(object,aggregateAtDepth) }
+      if(is.character(maxDepth)){ maxDepth = assignValues(object,maxDepth) }
       log = control$log
       norm= control$norm
 
@@ -133,7 +134,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       if (is.null(values)) {
         values = Ptr$new(list(values=unname(lapply(leafInfos, function(info) {
           lind = info$node$leafIndex()
-          ind = seq((lind+1):(lind+info$node$nleaves()))
+          ind = (lind+1):(lind+info$node$nleaves())
           return(.aggregateFun(.counts[ind,, drop=FALSE]))
         }))))
         if (!is.null(.valuesAnnotationFuns)) {
@@ -141,7 +142,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
             fun = .valuesAnnotationFuns[[anno]]
             values$.[[anno]] = unname(lapply(leafInfos, function(info) {
               lind = info$node$leafIndex()
-              ind = seq((lind+1):(lind+info$node$nleaves()))
+              ind = (lind+1):(lind+info$node$nleaves())
               return(fun(.counts[ind,, drop=FALSE]))
             }))
           }

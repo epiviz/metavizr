@@ -91,7 +91,7 @@ metavizControl<-function(aggregateAtDepth=3,aggregateFun=function(x) log2(1 + co
 
 	list(aggregateAtDepth=aggregateAtDepth,aggregateFun=aggregateFun,
 						maxDepth=maxDepth,maxHistory=maxHistory,maxValue=maxValue,minValue=minValue,title=title,
-						n=n,rankFun=sd,norm=TRUE,log=TRUE)
+						n=n,rankFun=sd,norm=norm,log=log)
 }
 #' Check appropriate values
 #'
