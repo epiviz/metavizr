@@ -29,8 +29,11 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .aggregateAtDepth <<- aggregateAtDepth
       .lastRootId <<- .taxonomy$root()$id()
 
-      .counts <<- MRcounts(object, norm=TRUE, log=FALSE)
+      t = .taxonomy$taxonomyTable()
+      .counts <<- MRcounts(object[rownames(t),],norm=TRUE,log=FALSE)
 
+
+      # TODO: Make this consistent with the aggregateFun
       if (is.null(minValue)) {
         minValue = log2(min(.counts) + 1)
       }
