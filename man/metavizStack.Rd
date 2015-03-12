@@ -11,7 +11,7 @@ metavizStack(obj, mgr, control = metavizControl(title = "stacked plot",
 \item{obj}{MRexperiment object or EpivizMetagenomicsData object.
 If EpivizMetagenomicsData object then control is ignored.}
 
-\item{mgr}{metaviz session.}
+\item{mgr}{manager of a metaviz session.}
 
 \item{control}{List of options passed through `metavizControl`.}
 }

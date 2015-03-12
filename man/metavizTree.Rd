@@ -17,6 +17,10 @@ Icicle plot
 \description{
 Produces an icicle for the tree of an EpivizMetagenomicsData class object
 }
+\examples{
+# assuming datasource, and mgr
+# metavizTree(datasource,mgr)
+}
 \seealso{
 \code{\link{startMetaviz}}
 }

@@ -7,7 +7,10 @@
 #' @return Icicle plot
 #' @export
 #' @seealso \code{\link{startMetaviz}}
-#' 
+#' @examples
+#' # assuming datasource, and mgr
+#' # metavizTree(datasource,mgr)
+#'
 metavizTree<-function(datasource,mgr){
 	invisible(mgr$visualize("icicle", datasource=datasource))
 }
@@ -17,7 +20,7 @@ metavizTree<-function(datasource,mgr){
 #' 
 #' @param obj MRexperiment object or EpivizMetagenomicsData object. 
 #' 		If EpivizMetagenomicsData object then control is ignored.
-#' @param mgr metaviz session.
+#' @param mgr manager of a metaviz session.
 #' @param control List of options passed through `metavizControl`.
 #' @return EpivizMetagenomicsData class object
 #' @export
@@ -119,6 +122,7 @@ metavizTransformSelect<-function(obj,fun=rowSums ,control=metavizControl(n=100))
 #' 
 #' @param aggregateAtDepth Level of the tree to aggregate counts at by default.
 #' @param aggregateFun Function to aggregate counts by at the aggregateAtDepth level.
+#' @param valuesAnnotationFuns Function for error bars.
 #' @param maxDepth Level of the tree to display by default in icicle view.
 #' @param maxHistory Value for caching.
 #' @param maxValue Maximum value to display.
@@ -135,6 +139,7 @@ metavizTransformSelect<-function(obj,fun=rowSums ,control=metavizControl(n=100))
 #' settings = metavizControl()
 #'
 metavizControl<-function(aggregateAtDepth=3,aggregateFun=function(x) log2(1 + colSums(x)),
+						valuesAnnotationFuns=NULL,
 						maxDepth=4,maxHistory=3,maxValue=NULL,minValue=NULL,title="",
 						n=10000,rankFun=sd,norm=TRUE,log=FALSE){
 
