@@ -1,3 +1,40 @@
+#' Line plot
+#'
+#' Produces a line plot for the experiment
+#' 
+#' @param obj MRexperiment object or EpivizMetagenomicsData object. 
+#' 		If EpivizMetagenomicsData object then control is ignored.
+#' @param mgr manager of a metaviz session.
+#' @param control List of options passed through `metavizControl`.
+#' @return EpivizMetagenomicsData class object
+#' @export
+#' @seealso \code{\link{metavizControl}} \code{\link{metaviztree}} \code{\link{metavizRank}} \code{\link{metavizOptimize}}
+#' @examples
+#' library(msd16s)
+#' ind = which(pData(msd16s)$Type=="Control" & pData(msd16s)$Country=="Mali")
+#' obj = metavizTransformSelect(msd16s[,ind],fun=rowMeans,control=metavizControl(aggregateAtDepth="phylum",n=10))
+#' # gates = metavizLine(obj,mgr,control=metavizControl(aggregateAtDepth="phylum"))
+#'
+#' # second example with time-series data for an individual mouse
+#' data(mouseData)
+#' time = order(as.Date(pData(mouseData)[,2],format="%Y-%m%-%d"))
+#' mouseData = mouseData[,time]
+#' status = pData(mouseData)[,"status"]
+#' pm = pData(mouseData)[,"mouseID"]
+#' obj = metavizTransformSelect(mouseData[,which(pm=="PM10")],fun=rowSums,control=metavizControl(aggregateAtDepth="class",n=5))
+#' metavizLine(obj,mgr=mgr,metavizControl(aggregateAtDepth="class",n=nrow(obj)))
+metavizLine<-function(obj,mgr,control=metavizControl(title="line plot")){
+	if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
+		stop("Either a MRexperiment or EpivizMetagenomicsData")
+	}
+	if(class(obj)=="MRexperiment"){
+		otuIndices = metavizRank(obj,control)
+		obj = mgr$addMeasurements(obj[otuIndices,],msName=control$title,control=control)
+	} 
+	measurements = obj$getMeasurements()
+	line = mgr$visualize("lineplot", measurements)
+	invisible(obj)
+}
 #' Icicle
 #'
 #' Produces an icicle for the tree of an EpivizMetagenomicsData class object
