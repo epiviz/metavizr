@@ -1,3 +1,30 @@
+#' Heatmap
+#'
+#' Produces a heatmap for the experiment.
+#' 
+#' @param obj MRexperiment object or EpivizMetagenomicsData object. 
+#' 		If EpivizMetagenomicsData object then control is ignored.
+#' @param mgr manager of a metaviz session.
+#' @param control List of options passed through `metavizControl`.
+#' @param samples Index vector of samples to include in plot.
+#' @return EpivizMetagenomicsData class object
+#' @export
+#' @seealso \code{\link{metavizControl}} \code{\link{metaviztree}} \code{\link{metavizRank}} \code{\link{metavizOptimize}}
+#' @examples
+#' #todo
+metavizHeatmap<-function(obj,mgr,control=metavizControl(title="heatmap"),samples=NULL) {
+	if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
+		stop("Either a MRexperiment or EpivizMetagenomicsData")
+	}
+	if(class(obj)=="MRexperiment"){
+		otuIndices = metavizRank(obj,control)
+		obj = mgr$addMeasurements(obj[otuIndices,],msName=control$title,control=control)
+	}
+	measurements = obj$getMeasurements()
+	if(is.null(samples)){ samples = seq(measurements) }
+	heatmap = mgr$visualize("heatmap", measurements[samples])
+	invisible(obj)
+}
 #' Line plot
 #'
 #' Produces a line plot for the experiment
