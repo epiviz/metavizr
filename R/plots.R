@@ -6,11 +6,13 @@
 #' 		If EpivizMetagenomicsData object then control is ignored.
 #' @param mgr manager of a metaviz session.
 #' @param control List of options passed through `metavizControl`.
+#' @param samples Index vector of samples to include in plot.
 #' @return EpivizMetagenomicsData class object
 #' @export
 #' @seealso \code{\link{metavizControl}} \code{\link{metaviztree}} \code{\link{metavizRank}} \code{\link{metavizOptimize}}
 #' @examples
 #' library(msd16s)
+#' msd16s = filterData(msd16s,present=100)
 #' ind = which(pData(msd16s)$Type=="Control" & pData(msd16s)$Country=="Mali")
 #' obj = metavizTransformSelect(msd16s[,ind],fun=rowMeans,control=metavizControl(aggregateAtDepth="phylum",n=10))
 #' # gates = metavizLine(obj,mgr,control=metavizControl(aggregateAtDepth="phylum"))
@@ -22,17 +24,18 @@
 #' status = pData(mouseData)[,"status"]
 #' pm = pData(mouseData)[,"mouseID"]
 #' obj = metavizTransformSelect(mouseData[,which(pm=="PM10")],fun=rowSums,control=metavizControl(aggregateAtDepth="class",n=5))
-#' metavizLine(obj,mgr=mgr,metavizControl(aggregateAtDepth="class",n=nrow(obj)))
-metavizLine<-function(obj,mgr,control=metavizControl(title="line plot")){
+#' # metavizLine(obj,mgr=mgr,metavizControl(aggregateAtDepth="class",n=nrow(obj)))
+metavizLine<-function(obj,mgr,control=metavizControl(title="line plot"),samples=NULL){
 	if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
 		stop("Either a MRexperiment or EpivizMetagenomicsData")
 	}
 	if(class(obj)=="MRexperiment"){
 		otuIndices = metavizRank(obj,control)
 		obj = mgr$addMeasurements(obj[otuIndices,],msName=control$title,control=control)
-	} 
+	}
 	measurements = obj$getMeasurements()
-	line = mgr$visualize("lineplot", measurements)
+	if(is.null(samples)){ samples = seq(measurements) }
+	line = mgr$visualize("lineplot", measurements[samples])
 	invisible(obj)
 }
 #' Icicle
@@ -59,6 +62,7 @@ metavizTree<-function(datasource,mgr){
 #' 		If EpivizMetagenomicsData object then control is ignored.
 #' @param mgr manager of a metaviz session.
 #' @param control List of options passed through `metavizControl`.
+#' @param samples Index vector of samples to include in plot.
 #' @return EpivizMetagenomicsData class object
 #' @export
 #' @seealso \code{\link{metavizControl}} \code{\link{metaviztree}}
@@ -75,7 +79,7 @@ metavizTree<-function(datasource,mgr){
 #' obj = metavizTransformSelect(msd16s[,ind],fun=rowMeans,control=metavizControl(aggregateAtDepth="genus",n=10))
 #' # gates = metavizStack(obj,mgr,control=metavizControl(aggregateFun=colSums,aggregateAtDepth=5,log=FALSE))
 #'
-metavizStack<-function(obj,mgr,control=metavizControl(title="stacked plot",aggregateFun=colSums)) {
+metavizStack<-function(obj,mgr,control=metavizControl(title="stacked plot",aggregateFun=colSums),samples=NULL) {
 	if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
 		stop("Either a MRexperiment or EpivizMetagenomicsData")
 	}
@@ -87,6 +91,66 @@ metavizStack<-function(obj,mgr,control=metavizControl(title="stacked plot",aggre
 	stack = mgr$visualize("stackedplot", measurements)
 	invisible(obj)
 }
+
+#' MDS (multiple dimensional scaling) or PCA
+#'
+#' Produces a PCA or PCoA scatterplot of an experiment.
+#' 
+#' @param obj MRexperiment object.
+#' @param mgr manager of a metaviz session.
+#' @param usePCA TRUE/FALSE whether to use PCA or MDS coordinates (TRUE isPCA).
+#' @param useDist TRUE/FALSE whether to calculate distance matrix.
+#' @param cord Which coordinates to compare/display.
+#' @param distFun Distance function - default is stats::dist.
+#' @param distMethod If useDist==TRUE, what method to calculate distances.
+#' @param tran Transpose the matrix.
+#' @param control List of options passed through `metavizControl`.
+#' @return EpivizMetagenomicsData class object
+#' @export
+#' @seealso \code{\link{metavizControl}} \code{\link{metavizRank}} \code{\link{cmdscale}} \code{\link{prcomp}}
+#' @examples
+#' data(mouseData)
+#' # metavizOrd(mouseData,mgr)
+#'
+metavizMDS<-function(obj,mgr,usePCA=FALSE,useDist=TRUE,cord=c(1,2),
+					distFun=stats::dist,distMethod="euclidian",tran=FALSE,
+					control=metavizControl(title="MDS plot")){
+	if(useDist == FALSE & usePCA == FALSE) 
+		stop("Classical MDS requires distances")
+	control$n = min(nrow(obj),control$n)
+	otuIndices = metavizRank(obj,control)
+	d = MRcounts(obj[otuIndices, ],norm=TRUE,log=TRUE)
+	if(tran == FALSE) { d = t(d) }
+	if(useDist == TRUE) { d = distFun(d, method = distMethod) }
+	if(usePCA == FALSE) {
+		ord = cmdscale(d, k = dim(as.matrix(d))[1]-1 )
+		colnames(ord) = paste("MDS",1:ncol(ord),sep="")
+		df = data.frame(root="MDS",components = paste("MDS",1:ncol(ord),sep=""))
+		rownames(df) = colnames(ord)
+	} else {
+		ord = prcomp(d)$x
+		df = data.frame(root="PCA",PCs = paste("PC",1:ncol(ord),sep=""))
+		rownames(df) = colnames(ord)
+	}
+	pd = pData(obj)
+	pd = cbind(Sample = "sample",pd)
+	pd = cbind(pd,sampleNames = factor(rownames(pd)))
+	tmp = newMRexperiment(ord,featureData=AnnotatedDataFrame(pd),
+	normFactors=rep(1000,ncol(ord)),phenoData=AnnotatedDataFrame(df))
+	# over-ride parameters
+	control$aggregateAtDepth = -1
+	control$aggregateFun = identity
+	control$minValue = min(ord)
+	control$maxValue = max(ord)
+	control$norm=FALSE
+	control$log=FALSE
+
+	metavizrData = mgr$addMeasurements(tmp,control$title,control=control)
+	measurements = metavizrData$getMeasurements()
+	scatterplot = mgr$visualize("scatterplot", list(measurements[[cord[1]]],measurements[[cord[2]]]))
+	invisible(metavizrData)
+}
+
 #' Indices of ranked features
 #'
 #' Calculate top n features at the leaves. Returns indices for the rankings.
@@ -176,9 +240,8 @@ metavizTransformSelect<-function(obj,fun=rowSums ,control=metavizControl(n=100))
 #' settings = metavizControl()
 #'
 metavizControl<-function(aggregateAtDepth=3,aggregateFun=function(x) log2(1 + colSums(x)),
-						valuesAnnotationFuns=NULL,
-						maxDepth=4,maxHistory=3,maxValue=NULL,minValue=NULL,title="",
-						n=10000,rankFun=sd,norm=TRUE,log=FALSE){
+						valuesAnnotationFuns=NULL,maxDepth=4,maxHistory=3,maxValue=NULL,
+						minValue=NULL,title="",n=10000,rankFun=sd,norm=TRUE,log=FALSE){
 
 	list(aggregateAtDepth=aggregateAtDepth,aggregateFun=aggregateFun,
 						maxDepth=maxDepth,maxHistory=maxHistory,maxValue=maxValue,minValue=minValue,title=title,

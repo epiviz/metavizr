@@ -5,7 +5,7 @@
 \title{Stacked plot}
 \usage{
 metavizStack(obj, mgr, control = metavizControl(title = "stacked plot",
-  aggregateFun = colSums))
+  aggregateFun = colSums), samples = NULL)
 }
 \arguments{
 \item{obj}{MRexperiment object or EpivizMetagenomicsData object.
@@ -14,6 +14,8 @@ If EpivizMetagenomicsData object then control is ignored.}
 \item{mgr}{manager of a metaviz session.}
 
 \item{control}{List of options passed through `metavizControl`.}
+
+\item{samples}{Index vector of samples to include in plot.}
 }
 \value{
 EpivizMetagenomicsData class object

@@ -4,7 +4,8 @@
 \alias{metavizLine}
 \title{Line plot}
 \usage{
-metavizLine(obj, mgr, control = metavizControl(title = "line plot"))
+metavizLine(obj, mgr, control = metavizControl(title = "line plot"),
+  samples = NULL)
 }
 \arguments{
 \item{obj}{MRexperiment object or EpivizMetagenomicsData object.
@@ -13,6 +14,8 @@ If EpivizMetagenomicsData object then control is ignored.}
 \item{mgr}{manager of a metaviz session.}
 
 \item{control}{List of options passed through `metavizControl`.}
+
+\item{samples}{Index vector of samples to include in plot.}
 }
 \value{
 EpivizMetagenomicsData class object
@@ -22,6 +25,7 @@ Produces a line plot for the experiment
 }
 \examples{
 library(msd16s)
+msd16s = filterData(msd16s,present=100)
 ind = which(pData(msd16s)$Type=="Control" & pData(msd16s)$Country=="Mali")
 obj = metavizTransformSelect(msd16s[,ind],fun=rowMeans,control=metavizControl(aggregateAtDepth="phylum",n=10))
 # gates = metavizLine(obj,mgr,control=metavizControl(aggregateAtDepth="phylum"))
@@ -33,7 +37,7 @@ mouseData = mouseData[,time]
 status = pData(mouseData)[,"status"]
 pm = pData(mouseData)[,"mouseID"]
 obj = metavizTransformSelect(mouseData[,which(pm=="PM10")],fun=rowSums,control=metavizControl(aggregateAtDepth="class",n=5))
-metavizLine(obj,mgr=mgr,metavizControl(aggregateAtDepth="class",n=nrow(obj)))
+# metavizLine(obj,mgr=mgr,metavizControl(aggregateAtDepth="class",n=nrow(obj)))
 }
 \seealso{
 \code{\link{metavizControl}} \code{\link{metaviztree}} \code{\link{metavizRank}} \code{\link{metavizOptimize}}
