@@ -270,7 +270,7 @@ metavizControl<-function(aggregateAtDepth=3,aggregateFun=function(x) log2(1 + co
 						valuesAnnotationFuns=NULL,maxDepth=4,maxHistory=3,maxValue=NULL,
 						minValue=NULL,title="",n=10000,rankFun=sd,norm=TRUE,log=FALSE){
 
-	list(aggregateAtDepth=aggregateAtDepth,aggregateFun=aggregateFun,
+	list(aggregateAtDepth=aggregateAtDepth,aggregateFun=aggregateFun,valuesAnnotationFuns=valuesAnnotationFuns,
 						maxDepth=maxDepth,maxHistory=maxHistory,maxValue=maxValue,minValue=minValue,title=title,
 						n=n,rankFun=sd,norm=norm,log=log)
 }
