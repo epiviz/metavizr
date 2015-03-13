@@ -233,7 +233,7 @@ metavizTransformSelect<-function(obj,fun=rowSums ,control=metavizControl(n=100))
 	tree = fData(obj)
     
 	treeLvl = colnames(tree)[aggregateAtDepth+1]
-	agg = aggregateByTaxonomy(obj,treeLvl)
+	agg = aggregateByTaxonomy(obj,treeLvl,out="matrix")
 	topX = rownames(agg)[order(fun(agg),decreasing=TRUE)[1:n]]
 	ind = which(!tree[,aggregateAtDepth+1]%in%topX)
 	for(i in 1:ncol(tree)) tree[,i] = as.character(tree[,i])
