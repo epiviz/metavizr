@@ -13,7 +13,8 @@ fData(msd16s) = fData(msd16s)[,c(3:9, 1)]
 pData(msd16s) = pData(msd16s)[,c("Type","Country","AgeFactor","Age")]
 fData(msd16s)[,1] = "Bacteria"
 #mgr = startMetaviz(localURL="http://epiviz-dev.cbcb.umd.edu/metavis/", workspace = "Ey4CYuaTjNd",useDevel=TRUE, debug=TRUE, verbose=TRUE)
-mgr = startMetaviz(localURL="http://localhost/epiviz-dev", workspace = "YGwCd2zrYOs", useDevel=FALSE, debug=TRUE, verbose=FALSE)
+#mgr = startMetaviz(localURL="http://localhost/epiviz-dev", workspace = "YGwCd2zrYOs", useDevel=FALSE, debug=TRUE, verbose=FALSE)
+mgr = startMetaviz(localURL="http://localhost/epiviz-dev/index-standalone.html", workspace = "YGwCd2zrYOs", useDevel=FALSE, debug=TRUE, verbose=FALSE)
 
 #####
 # STACK PLOT
