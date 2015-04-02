@@ -13,13 +13,18 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
     .depthStrSize="numeric",
     .leafIndexStrSize="numeric",
 
+    .nodeMap="Ptr",
+    .childrenMap="Ptr",
+    .idMap="Ptr",
+
     .id="character",
     .parentId="ANY",
     .name="character"
   ),
   methods=list(
     initialize=function(taxonomyTablePtr=Ptr$new(as.data.frame(NULL)), depth=0, leafIndex=0, selectionTypes=Ptr$new(list()), orders=Ptr$new(list()),
-                        parents=Ptr$new(list()), leavesCounts=Ptr$new(list()), realLeavesCounts=Ptr$new(list()), ancestryByDepth=Ptr$new(NULL), depthStrSize=0, leafIndexStrSize=0, ...) {
+                        parents=Ptr$new(list()), leavesCounts=Ptr$new(list()), realLeavesCounts=Ptr$new(list()), ancestryByDepth=Ptr$new(NULL), depthStrSize=0,
+                        leafIndexStrSize=0, nodeMap=Ptr$new(list()), childrenMap=Ptr$new(list()), idMap=Ptr$new(NULL), ...) {
       .taxonomyTablePtr <<- taxonomyTablePtr
       .depth <<- depth
       .leafIndex <<- leafIndex
@@ -27,6 +32,9 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
       .orders <<- orders
       .parents <<- parents
       .ancestryByDepth <<- ancestryByDepth
+      .nodeMap <<- nodeMap
+      .childrenMap <<- childrenMap
+      .idMap <<- idMap
 
       .depthStrSize <<- depthStrSize
       if (.depthStrSize == 0) { .depthStrSize <<- ceiling(log(dim(.taxonomyTablePtr$.)[2], base=16)) }
@@ -34,20 +42,12 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
       .leafIndexStrSize <<- leafIndexStrSize
       if (.leafIndexStrSize == 0) { .leafIndexStrSize <<- ceiling(log(dim(.taxonomyTablePtr$.)[1], base=16)) }
 
-      .id <<- .generateMetavizNodeId(.depth, .leafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)
+      .id <<- .generateMetavizNodeId(.depth, .leafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, idMap=.idMap)
       .name <<- as.character(.taxonomyTablePtr$.[.leafIndex+1, .depth+1])
       .realLeavesCounts <<- realLeavesCounts
       .leavesCounts <<- leavesCounts
 
-      .parentId <<- .parents$.[[.id]]
-      if (is.null(.parentId) && .depth > 0) {
-        if (.depth == 1) { .parentId <<- .generateMetavizNodeId(0, 0, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)  }
-        else {
-          parentLeafIndex = min(which(.ancestryByDepth$.[[.depth-1]] == .ancestryByDepth$.[[.depth-1]][.leafIndex+1])) - 1
-          .parentId <<- .generateMetavizNodeId(.depth-1, parentLeafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)
-        }
-        .parents$.[[.id]] <<- .parentId
-      }
+      .parentId <<- NULL
 
       .nleaves <<- .leavesCounts$.[[.id]]
       if (is.null(.nleaves)) {
@@ -66,7 +66,20 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
 
     name=function() { .name },
 
-    parentId=function() { .parentId },
+    parentId=function() {
+      if (!is.null(.parentId)) { return(.parentId) }
+        .parentId <<- .parents$.[[.id]]
+        if (is.null(.parentId) && .depth > 0) {
+          if (.depth == 1) { .parentId <<- .generateMetavizNodeId(0, 0, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, idMap=.idMap)  }
+          else {
+            parentLeafIndex = min(which(.ancestryByDepth$.[[.depth-1]] == .ancestryByDepth$.[[.depth-1]][.leafIndex+1])) - 1
+            .parentId <<- .generateMetavizNodeId(.depth-1, parentLeafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, idMap=.idMap)
+          }
+          .parents$.[[.id]] <<- .parentId
+        }
+      return(.parentId)
+      #.parentId
+    },
 
     depth=function() { .depth },
 
@@ -96,40 +109,67 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
     },
 
     children=function() {
-      # TODO: Use .ancestryByDepth
-      t = .taxonomyTablePtr$.[(.leafIndex+1):(.leafIndex+.nleaves), ]
-      if (.depth + 1 >= dim(t)[2]) { return(NULL) }
+      nlevels = ncol(.taxonomyTablePtr$.)
+      if (.depth + 1 >= nlevels) { return(NULL) }
 
-      groups = by(t, t[, .depth + 2], list, simplify=F)
+      ret = .childrenMap$.[[.id]]
+      if (is.null(ret)) {
 
-      env = new.env()
-      env$order = 0
-      children = unname(lapply(groups, function(group){
-        childLeafIndex = min(which(t[,.depth+2]==group[[1]][1, .depth+2], arr.ind=TRUE)) + .leafIndex - 1
-        childId = .generateMetavizNodeId(.depth+1, childLeafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)
-        .parents$.[[childId]] <<- .id
-
-        child = MetavizNode$new(taxonomyTablePtr=.taxonomyTablePtr, depth=.depth+1, leafIndex=childLeafIndex, selectionTypes=.selectionTypes, orders=.orders,
-                                parents=.parents, leavesCounts=.leavesCounts, realLeavesCounts=.realLeavesCounts, ancestryByDepth=.ancestryByDepth, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)
-
-        if (is.null(.orders$.[[child$.id]])) {
-          .orders$.[[child$.id]] <<- env$order
+        if (.depth == nlevels - 2) {
+          env = new.env()
+          env$order = 0
+          ret = lapply(seq(.leafIndex, .leafIndex + .nleaves - 1), function(childLeafIndex) {
+            childId = .generateMetavizNodeId(.depth+1, childLeafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, idMap=.idMap)
+            child = .nodeMap$.[[childId]]
+            if (is.null(child)) {
+              child = createNode(.depth+1, childLeafIndex)
+              .nodeMap$.[[childId]] <<- child
+            }
+            if (is.null(.orders$.[[child$.id]])) {
+              .orders$.[[child$.id]] <<- env$order
+            }
+            env$order = env$order + 1
+            return(child)
+          })
+        } else {
+          childrenAncestors = unique(.ancestryByDepth$.[[.depth + 1]][seq(.leafIndex + 1, .leafIndex + .nleaves)])
+          env = new.env()
+          env$order = 0
+          ret = lapply(childrenAncestors, function(a) {
+            childLeafIndex = min(which(.ancestryByDepth$.[[.depth + 1]] == a)) - 1
+            childId = .generateMetavizNodeId(.depth+1, childLeafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, idMap=.idMap)
+            child = .nodeMap$.[[childId]]
+            if (is.null(child)) {
+              child = createNode(.depth+1, childLeafIndex)
+              .nodeMap$.[[childId]] <<- child
+            }
+            if (is.null(.orders$.[[child$.id]])) {
+              .orders$.[[child$.id]] <<- env$order
+            }
+            env$order = env$order + 1
+            return(child)
+          })
         }
 
-        env$order = env$order + 1
-        return(child)
-      }))
+        .childrenMap$.[[.id]] <<- ret
+      }
 
-      o = sapply(children, function(node) { node$nodeOrder() })
-      children = children[order(o)]
+      o = sapply(ret, function(node) { node$nodeOrder() })
+      ret = ret[order(o)]
 
-      return(children)
+      return(ret)
+    },
+
+    createNode=function(depth, leafIndex) {
+      MetavizNode$new(taxonomyTablePtr=.taxonomyTablePtr, depth=depth, leafIndex=leafIndex, selectionTypes=.selectionTypes, orders=.orders,
+                      parents=.parents, leavesCounts=.leavesCounts, realLeavesCounts=.realLeavesCounts, ancestryByDepth=.ancestryByDepth,
+                      depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, nodeMap=.nodeMap, childrenMap=.childrenMap, idMap=.idMap)
     },
 
     raw = function(t=.taxonomyTablePtr$.[(.leafIndex+1):(.leafIndex+.nleaves),], maxDepth=NULL, colIndex=.depth+1, rowIndex=.leafIndex+1) {
       if ((!is.null(maxDepth) && maxDepth < 0) || colIndex > dim(t)[2]) { return(NULL) }
 
-      nodeId = .generateMetavizNodeId(colIndex-1, rowIndex-1, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)
+      nodeId = .generateMetavizNodeId(colIndex-1, rowIndex-1, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, idMap=.idMap)
       selectionType = SelectionType$LEAVES
       if (!is.null(.selectionTypes$.[[nodeId]])) { selectionType = .selectionTypes$.[[nodeId]] }
 
@@ -188,11 +228,19 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
   )
 )
 
-.generateMetavizNodeId=function(depth, leafIndex, taxonomyTablePtr=NULL, depthStrSize=NULL, leafIndexStrSize=NULL) {
+.generateMetavizNodeId=function(depth, leafIndex, taxonomyTablePtr=NULL, depthStrSize=NULL, leafIndexStrSize=NULL, idMap=NULL) {
+  if (!missing(idMap) && !is.null(idMap)) {
+    id = idMap$.[leafIndex+1, depth+1]
+    if (!is.na(id)) { return(id) }
+  }
   if (missing(depthStrSize)) { depthStrSize = ceiling(log(dim(taxonomyTablePtr$.)[2], base=16)) }
   if (missing(leafIndexStrSize)) { leafIndexStrSize = ceiling(log(dim(taxonomyTablePtr$.)[1], base=16)) }
 
-  paste(str_pad(as.hexmode(depth), depthStrSize, pad="0"), str_pad(as.hexmode(leafIndex), leafIndexStrSize, pad="0"), sep="-")
+  id = paste(str_pad(as.hexmode(depth), depthStrSize, pad="0"), str_pad(as.hexmode(leafIndex), leafIndexStrSize, pad="0"), sep="-")
+  if (!missing(idMap) && !is.null(idMap)) {
+    idMap$.[leafIndex+1, depth+1] = id
+  }
+  return(id)
 }
 
 .fromMetavizNodeId=function(id, taxonomyTablePtr=NULL, depthStrSize=NULL, leafIndexStrSize=NULL) {

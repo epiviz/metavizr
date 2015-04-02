@@ -22,7 +22,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   ),
   methods=list(
     initialize=function(object,control=metavizControl(), ...) {
-      
+
       # Initialize parameters used here
       aggregateAtDepth = control$aggregateAtDepth
       maxDepth         = control$maxDepth
@@ -31,7 +31,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       minValue         =  control$minValue
       aggregateFun     =  control$aggregateFun
       valuesAnnotationFuns=control$valuesAnnotationFuns
-      
+
       if(is.character(aggregateAtDepth)){ aggregateAtDepth = assignValues(object,aggregateAtDepth) }
       if(is.character(maxDepth)){ maxDepth = assignValues(object,maxDepth) }
       log = control$log
@@ -173,6 +173,26 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
 # Data analysis features
 EpivizMetagenomicsData$methods(
+  nleaves=function() {
+    if (is.null(dim(.counts))) {
+      if (length(.counts) > 0) { return(1) }
+      return(0)
+    }
+
+    nrow(.counts)
+  },
+  nmeasurements=function() {
+    if (is.null(dim(.counts))) {
+      return(length(.counts))
+    }
+
+    ncol(.counts)
+  },
+
+  nlevels=function() {
+    length(.levels)
+  },
+
   taxonomyTable=function() { .taxonomy$taxonomyTable() },
   calcNodeId=function(rowIndex, colIndex) { .taxonomy$calcNodeId(rowIndex, colIndex) },
   node=function(nodeId) { .taxonomy$node(nodeId) },

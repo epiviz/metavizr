@@ -8,7 +8,10 @@ MetavizTree <- setRefClass("MetavizTree",
     .realLeavesCounts="Ptr",
     .ancestryByDepth="Ptr",
     .depthStrSize="numeric",
-    .leafIndexStrSize="numeric"
+    .leafIndexStrSize="numeric",
+    .nodeMap="Ptr",
+    .childrenMap="Ptr",
+    .idMap="Ptr"
   ),
   methods=list(
     initialize=function(taxonomyTablePtr=Ptr$new(as.data.frame(NULL)), selectionTypes=Ptr$new(list()), orders=Ptr$new(list()),
@@ -21,7 +24,7 @@ MetavizTree <- setRefClass("MetavizTree",
 
       .ancestryByDepth <<- Ptr$new(NULL)
       if (nrow(t) > 2) {
-        .ancestryByDepth$. <<- lapply(2:(ncol(t)-1), function(depth) { do.call(paste, c(t[,1:depth],sep=",")) })
+        .ancestryByDepth$. <<- lapply(2:(ncol(t)), function(depth) { do.call(paste, c(t[,1:depth],sep=",")) })
       }
 
       .selectionTypes <<- selectionTypes
@@ -32,13 +35,16 @@ MetavizTree <- setRefClass("MetavizTree",
 
       .depthStrSize <<- ceiling(log(dim(.taxonomyTablePtr$.)[2], base=16))
       .leafIndexStrSize <<- ceiling(log(dim(.taxonomyTablePtr$.)[1], base=16))
+      .nodeMap <<- Ptr$new(new.env())
+      .childrenMap <<- Ptr$new(new.env())
+      .idMap <<- Ptr$new(matrix(nrow=nrow(t), ncol=ncol(t)))
     },
 
     .createNode=function(depth=0, leafIndex=0) {
       return(MetavizNode$new(taxonomyTablePtr=.taxonomyTablePtr, depth=depth, leafIndex=leafIndex,
                              selectionTypes=.selectionTypes, orders=.orders, parents=.parents, leavesCounts=.leavesCounts,
                              realLeavesCounts=.realLeavesCounts, ancestryByDepth=.ancestryByDepth,
-                             depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize))
+                             depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, nodeMap=.nodeMap, childrenMap=.childrenMap, idMap=.idMap))
     },
 
     taxonomyTable=function() { .taxonomyTablePtr$. },
@@ -49,8 +55,12 @@ MetavizTree <- setRefClass("MetavizTree",
 
     node=function(id) {
       if (missing(id)) { return(root()) }
+      ret = .nodeMap$.[[id]]
+      if (!is.null(ret)) { return(ret) }
       info = .fromMetavizNodeId(id, depthStrSize=.depthStrSize)
-      return(.createNode(info$depth, info$leafIndex))
+      ret = .createNode(info$depth, info$leafIndex)
+      .nodeMap$.[[id]] <<- ret
+      return(ret)
     },
 
     parent=function(child=root()) {
@@ -78,7 +88,7 @@ MetavizTree <- setRefClass("MetavizTree",
       return(lapply(groups, function(group) {
         leafIndex = env$leafIndex
         nleaves = nrow(group[[1]])
-        childId = .generateMetavizNodeId(depth, leafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)
+        childId = .generateMetavizNodeId(depth, leafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, idMap=.idMap)
 
         .leavesCounts$.[[childId]] <<- nleaves
         env$leafIndex = env$leafIndex + nleaves
@@ -90,7 +100,7 @@ MetavizTree <- setRefClass("MetavizTree",
     calcNodeId=function(rowIndex, colIndex) {
       depth = colIndex - 1
       leafIndex = -1
-      if (depth == 0) { return(.generateMetavizNodeId(depth, 0, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize)) }
+      if (depth == 0) { return(.generateMetavizNodeId(depth, 0, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, idMap=.idMap)) }
       if (depth == 1) {
         t = .taxonomyTablePtr
         leafIndex = min(which(t$.[,2] == t$.[rowIndex, colIndex])) - 1
@@ -99,7 +109,7 @@ MetavizTree <- setRefClass("MetavizTree",
       } else {
         leafIndex = min(which(.ancestryByDepth$.[[depth]] == .ancestryByDepth$.[[depth]][rowIndex])) - 1
       }
-      return(.generateMetavizNodeId(depth, leafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize))
+      return(.generateMetavizNodeId(depth, leafIndex, depthStrSize=.depthStrSize, leafIndexStrSize=.leafIndexStrSize, idMap=.idMap))
     },
 
     siblings=function(node) {
@@ -156,16 +166,16 @@ MetavizTree <- setRefClass("MetavizTree",
     selectedLeaves=function(leafStartIndex, leafEndIndex) {
       if (leafStartIndex >= dim(.taxonomyTablePtr$.)[1] || leafEndIndex <= 0) { return(NULL) }
 
-      .iterate=function(n, s, realNodesBefore) {
-        if (is.null(n)) { return(NULL) }
-        if (n$selectionType() == SelectionType$NONE) { return(NULL) }
-        if (s >= leafEndIndex || s + n$nleaves() <= leafStartIndex) { return(NULL) }
-        if (n$selectionType() == SelectionType$NODE || n$isLeaf()) {
-          return(list(list(node=n, start=s, realNodesBefore=realNodesBefore)))
+      .iterate=function(node, s, realNodesBefore) {
+        if (is.null(node)) { return(NULL) }
+        if (node$selectionType() == SelectionType$NONE) { return(NULL) }
+        if (s >= leafEndIndex || s + node$nleaves() <= leafStartIndex) { return(NULL) }
+        if (node$selectionType() == SelectionType$NODE || node$isLeaf()) {
+          return(list(list(node=node, start=s, realNodesBefore=realNodesBefore)))
         }
 
         ret = list()
-        children = n$children()
+        children = node$children()
         for (child in children) {
           ret = c(ret, .iterate(child, s, realNodesBefore))
           s = s + child$nleaves()

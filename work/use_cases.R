@@ -11,7 +11,10 @@ msd16s = msd16s[,ord]
 msd16s = filterData(msd16s,present=100)
 fData(msd16s) = fData(msd16s)[,c(3:9, 1)]
 pData(msd16s) = pData(msd16s)[,c("Type","Country","AgeFactor","Age")]
+levels(pData(msd16s)$AgeFactor) = c("0-5 mo.", "6-11 mo.", "12-17 mo.", "18-23 mo.", "24-59 mo.")
 fData(msd16s)[,1] = "Bacteria"
+df = fData(msd16s)
+fData(msd16s)$OTU = paste(df$OTU, " (", df$genus, ")", sep="")
 #mgr = startMetaviz(localURL="http://epiviz-dev.cbcb.umd.edu/metavis/", workspace = "Ey4CYuaTjNd",useDevel=TRUE, debug=TRUE, verbose=TRUE)
 #mgr = startMetaviz(localURL="http://localhost/epiviz-dev", workspace = "YGwCd2zrYOs", useDevel=FALSE, debug=TRUE, verbose=FALSE)
 mgr = startMetaviz(localURL="http://localhost/epiviz-dev/index-standalone.html", workspace = "YGwCd2zrYOs", useDevel=FALSE, debug=TRUE, verbose=FALSE)
@@ -26,7 +29,7 @@ mgr$visualize("icicle", datasource=gates)
 
 # HEATMAP
 obj = msd16s[,which(pData(msd16s)$Type=="Control")]
-top15 = metavizTransformSelect(obj,rowVars,control=metavizControl(n=25,aggregateAtDepth="OTU"))
+top15 = metavizTransformSelect(obj,rowVars,control=metavizControl(n=50,aggregateAtDepth="OTU"))
 ok = which(!fData(top15)$species=="Other")
 heat  = metavizHeatmap(top15[ok,],mgr,control=metavizControl(aggregateAtDepth="OTU"))
 
@@ -55,11 +58,16 @@ metavizLine(obj,mgr=mgr,metavizControl(aggregateAtDepth="class",n=nrow(obj),norm
 
 #####
 # ALTERNATIVE LINE PLOT
+pData(mouseData)$diet[which(pData(mouseData)$diet=="BK")] = "LF/PP"
+df = pData(mouseData)
+pData(mouseData)$label = paste(df$date, " (", df$diet, ")", sep="")
 obj = metavizTransformSelect(mouseData[,which(pm=="PM10")],fun=rowSums,control=metavizControl(aggregateAtDepth="class",n=5))
 metavizLine(obj,mgr=mgr,metavizControl(aggregateAtDepth="class",n=nrow(obj)))
 
 #####
-# MDS
+# MDS (Scatter Plot)
+pData(mouseData) = pData(mouseData)[,c("mouseID", "diet", "date", "relativeTime")]
+pData(mouseData)$diet[which(pData(mouseData)$diet=="BK")] = "LF/PP"
 metavizMDS(mouseData,mgr)
 
 #####
@@ -69,7 +77,7 @@ obj = msd16s[,which(pData(msd16s)$Type=="Control")]
 top15 = metavizTransformSelect(obj,rowVars,control=metavizControl(n=25,aggregateAtDepth="OTU"))
 ok = which(!fData(top15)$species=="Other")
 heat  = metavizHeatmap(top15[ok,],mgr,control=metavizControl(aggregateAtDepth="OTU"))
-# Replace `FOO` with either, `rowVars` or `rowMads` or `rowRanks` (edited)
+#  Replace `FOO` with either, `rowVars` or `rowMads` or `rowRanks` (edited)
 
 #####
 mgr$service()
