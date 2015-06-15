@@ -233,26 +233,33 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
     id = idMap$.[leafIndex+1, depth+1]
     if (!is.na(id)) { return(id) }
   }
-  if (missing(depthStrSize)) { depthStrSize = ceiling(log(dim(taxonomyTablePtr$.)[2], base=16)) }
-  if (missing(leafIndexStrSize)) { leafIndexStrSize = ceiling(log(dim(taxonomyTablePtr$.)[1], base=16)) }
-
-  id = paste(str_pad(as.hexmode(depth), depthStrSize, pad="0"), str_pad(as.hexmode(leafIndex), leafIndexStrSize, pad="0"), sep="-")
-  if (!missing(idMap) && !is.null(idMap)) {
-    idMap$.[leafIndex+1, depth+1] = id
-  }
+#   if (missing(depthStrSize)) { depthStrSize = ceiling(log(dim(taxonomyTablePtr$.)[2], base=16)) }
+#   if (missing(leafIndexStrSize)) { leafIndexStrSize = ceiling(log(dim(taxonomyTablePtr$.)[1], base=16)) }
+#
+#   id = paste(str_pad(as.hexmode(depth), depthStrSize, pad="0"), str_pad(as.hexmode(leafIndex), leafIndexStrSize, pad="0"), sep="-")
+#   if (!missing(idMap) && !is.null(idMap)) {
+#     idMap$.[leafIndex+1, depth+1] = id
+#   }
+  id = paste(as.hexmode(depth), as.hexmode(leafIndex), sep="-")
   return(id)
 }
 
 .fromMetavizNodeId=function(id, taxonomyTablePtr=NULL, depthStrSize=NULL, leafIndexStrSize=NULL) {
-  if (missing(depthStrSize)) {
-    if (missing(leafIndexStrSize)) {
-      depthStrSize <<- ceiling(log(dim(taxonomyTablePtr$.)[2], base=16))
-    } else {
-      depthStrSize = nchar(id) - leafIndexStrSize - 1
-    }
-  }
-
-  depth = as.integer(as.hexmode(substring(id, 1, depthStrSize)))
-  leafIndex = as.integer(as.hexmode(substring(id, depthStrSize + 2)))
+  tokens = strsplit(id, "-")
+  depthStr = tokens[[1]][1]
+  leafIndexStr = tokens[[1]][2]
+  depth = as.integer(as.hexmode(depthStr))
+  leafIndex = as.integer(as.hexmode(leafIndexStr))
   return(list(depth=depth, leafIndex=leafIndex))
+#   if (missing(depthStrSize)) {
+#     if (missing(leafIndexStrSize)) {
+#       depthStrSize <<- ceiling(log(dim(taxonomyTablePtr$.)[2], base=16))
+#     } else {
+#       depthStrSize = nchar(id) - leafIndexStrSize - 1
+#     }
+#   }
+#
+#   depth = as.integer(as.hexmode(substring(id, 1, depthStrSize)))
+#   leafIndex = as.integer(as.hexmode(substring(id, depthStrSize + 2)))
+#   return(list(depth=depth, leafIndex=leafIndex))
 }

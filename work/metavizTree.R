@@ -167,7 +167,7 @@ pd = pData(example)
 pd["100489",]
 l = as.list(pd["100489",])
 
-root = MetavizNode$new(taxonomyTablePtr=Ptr$new(df))
+#root = MetavizNode$new(taxonomyTablePtr=Ptr$new(df))
 x = root$raw(maxDepth=0)
 y = root$children()
 tree = MetavizTree$new(taxonomyTablePtr=Ptr$new(df))

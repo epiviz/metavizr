@@ -81,8 +81,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     },
 
     .taxonomyLevels=function(exp) {
-      # TODO: Joe
-      return(colnames(fData(exp))[c(3:9,1)])
+      .levels
     },
 
     .getSelectedLeaves=function(start, end) {
@@ -317,5 +316,183 @@ EpivizMetagenomicsData$methods(
       values = .self$.getSelectedValues(measurement, start, end)
     )
     return(ret)
+  }
+)
+
+# Database serialization
+EpivizMetagenomicsData$methods(
+  toMySQLDb=function(connectionStr, colLabel=NULL) {
+    # TODO: Add logging
+    con = odbcDriverConnect(connectionStr)
+
+    # TODO: Formal log
+    cat("Saving column data...")
+    .saveColData(con, colLabel)
+    cat("Done\n")
+
+    cat("Saving row data...")
+    .saveRowData(con)
+    cat("Done\n")
+
+    cat("Saving hierarchy...")
+    .saveHierarchy(con)
+    cat("Done\n")
+
+    cat("Saving counts...")
+    .saveValues(con)
+    cat("Done\n")
+
+    cat("Saving levels...")
+    .saveLevels(con)
+    cat("Done\n")
+
+    odbcClose(con)
+  },
+  .saveColData=function(con, labelCol=NULL) {
+    odbcSetAutoCommit(con, autoCommit = FALSE)
+    cols = .sampleAnnotation
+    if (!is.null(labelCol)) {
+      cols$label = cols[[labelCol]]
+    }
+    cols$index = seq(dim(cols)[1]) - 1
+    sqlDrop(con, "col_data", errors=FALSE)
+    sqlSave(con, cols, tablename="col_data", addPK=TRUE)
+    sqlQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL;")
+    sqlQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `index` `index` BIGINT NULL DEFAULT NULL;")
+    sqlQuery(con, "ALTER TABLE `col_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
+    sqlQuery(con, "ALTER TABLE `col_data` ADD INDEX `index_idx` (`index` ASC) ;")
+    odbcSetAutoCommit(con, autoCommit = TRUE)
+  },
+
+  .saveRowData=function(con) {
+    cat("\n  Computing taxonomy leafs...\n")
+    h = taxonomyTable()
+    pb = txtProgressBar(style=3, width=25)
+    leafIds = lapply(seq(dim(h)[1]), function(i) {
+      setTxtProgressBar(pb, i/dim(h)[1])
+      e$calcNodeId(i, dim(h)[2])
+    })
+
+    cat("\n  Outputting to database...")
+    leafIndices = seq(dim(h)[1]) - 1
+
+    leafNames = h[,9]
+
+    df = data.frame(label=unlist(leafNames), index=leafIndices, start=leafIndices, end=(leafIndices+1))
+    df$partition = NA
+    rownames(df) = unlist(leafIds)
+
+    con = odbcDriverConnect('Driver={MySQL ODBC 5.3 Unicode Driver};Server=localhost;Database=epiviz.test_template;User=root;Password=tuculeana;Option=3;')
+    odbcSetAutoCommit(con, autoCommit = FALSE)
+    sqlDrop(con, "row_data", errors=FALSE)
+    sqlSave(con, df, tablename="row_data", addPK=TRUE)
+    sqlQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL  ;")
+    sqlQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `index` `index` BIGINT NULL;")
+    sqlQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
+    sqlQuery(con, "ALTER TABLE `row_data` ADD INDEX `index_idx` USING BTREE (`index` ASC);")
+    sqlQuery(con, "ALTER TABLE `row_data` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
+    sqlQuery(con, "ALTER TABLE `row_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
+    odbcSetAutoCommit(con, autoCommit = TRUE)
+  },
+
+  .saveHierarchy=function(con) {
+    h = taxonomyTable()
+    indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
+
+    cat("\n  Extracting taxonomy nodes...\n")
+    pb = txtProgressBar(style=3, width=25)
+    nodeIds = lapply(seq(dim(indexCombs)[1]), function(i) {
+      setTxtProgressBar(pb, i/dim(indexCombs)[1])
+      calcNodeId(indexCombs[i, 1], indexCombs[i, 2])
+    })
+    uniqueIds = unique(nodeIds)
+
+    cat("\n  Computing node labels...\n")
+    pb = txtProgressBar(style=3, width=25)
+    names = lapply(seq(length(uniqueIds)), function(i) {
+      setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      node(nodeId)$name()
+    })
+
+    cat("\n  Computing node parent ids...\n")
+    pb = txtProgressBar(style=3, width=25)
+    parentIds = lapply(seq(length(uniqueIds)), function(i) {
+      setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      node(nodeId)$parentId()
+    })
+
+    cat("\n  Computing lineages...\n")
+    pathsList = Ptr$new(list())
+    pb = txtProgressBar(style=3, width=25)
+    paths = lapply(seq(length(uniqueIds)), function(i) {
+      setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      parentId = parentIds[[i]]
+      if (is.null(parentId) || is.null(pathsList$.[[parentId]])) {
+        pathsList$.[[nodeId]] = nodeId
+        return(nodeId)
+      }
+      path = paste(pathsList$.[[parentId]], nodeId, sep=",")
+      pathsList$.[[nodeId]] = path
+      return(path)
+    })
+
+    cat("\n  Computing index of first leaf in node subtrees...\n")
+    pb = txtProgressBar(style=3, width=25)
+    starts = lapply(seq(length(uniqueIds)), function(i) {
+      setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      node(nodeId)$leafIndex()
+    })
+
+    cat("\n  Computing leaf counts in node subtrees...\n")
+    pb = txtProgressBar(style=3, width=25)
+    ends = lapply(seq(length(uniqueIds)), function(i) {
+      setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      node(nodeId)$nleaves() + starts[[i]]
+    })
+
+    cat("\n  Outputting to database...")
+    parentIds[[1]] = NA
+    df = data.frame(label=unlist(names), parentId=unlist(parentIds), lineage=unlist(paths), start=unlist(starts), end=unlist(ends))
+    df$partition = NA
+    rownames(df) = unlist(uniqueIds)
+
+    odbcSetAutoCommit(con, autoCommit = FALSE)
+    sqlDrop(con, "hierarchy", errors=FALSE)
+    sqlSave(con, df, tablename="hierarchy", addPK=TRUE)
+    sqlQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL;")
+    sqlQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
+    sqlQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `name_idx` USING HASH (`label` ASC);")
+    sqlQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
+    sqlQuery(con, "ALTER TABLE `hierarchy` ADD FULLTEXT INDEX `lineage_idx` (`lineage` ASC);")
+    odbcSetAutoCommit(con, autoCommit = TRUE)
+  },
+
+  .saveValues=function(con) {
+    counts = .counts
+    countsIndices = expand.grid(seq(dim(counts)[1]), seq(dim(counts)[2]))
+
+    df = data.frame(row=countsIndices[,1], col=countsIndices[,2], val=as.vector(counts))
+    df = df[df$val != 0,]
+
+    odbcSetAutoCommit(con, autoCommit = FALSE)
+    sqlDrop(con, "values", errors=FALSE)
+    sqlSave(con, df, tablename="values", addPK=TRUE)
+    sqlQuery(con, "ALTER TABLE `values` CHANGE COLUMN `rownames` `id` BIGINT NOT NULL  ;")
+    sqlQuery(con, "ALTER TABLE `values` ADD INDEX `rowcol_idx` USING BTREE (`row` ASC, `col` ASC) ;")
+    odbcSetAutoCommit(con, autoCommit = TRUE)
+  },
+
+  .saveLevels=function(con) {
+    df = data.frame(depth=seq(length(.levels)) - 1, label=.levels)
+    odbcSetAutoCommit(con, autoCommit = FALSE)
+    sqlDrop(con, "levels", errors=FALSE)
+    sqlSave(con, df, tablename="levels", addPK=FALSE)
+    sqlQuery(con, "ALTER TABLE `levels` DROP COLUMN `rownames` ;")
+    odbcSetAutoCommit(con, autoCommit = TRUE)
   }
 )

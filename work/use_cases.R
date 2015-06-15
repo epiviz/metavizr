@@ -33,6 +33,85 @@ top15 = metavizTransformSelect(obj,rowVars,control=metavizControl(n=50,aggregate
 ok = which(!fData(top15)$species=="Other")
 heat  = metavizHeatmap(top15[ok,],mgr,control=metavizControl(aggregateAtDepth="OTU"))
 
+#####
+
+obj = msd16s
+pData(obj)$AgeStatus = interaction(pData(obj)$AgeFactor, pData(obj)$Type)
+#pData(obj)$AgeStatus = interaction(pData(obj)$Type, pData(obj)$AgeFactor)
+#obj = msd16s[,which(pData(msd16s)$Type=="Control")]
+#obj = obj[,sort(pData(obj)$Type,pData(obj)$AgeFactor)]
+obj = obj[,order(pData(obj)$AgeStatus)]
+top15 = metavizTransformSelect(obj,rowVars,control=metavizControl(n=50,aggregateAtDepth="OTU"))
+ok = which(!fData(top15)$species=="Other")
+heat  = metavizHeatmap(top15[ok,],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+
+#####
+
+obj = msd16s[,which(pData(msd16s)$Type=="Control" & pData(msd16s)$AgeFactor=="0-5 mo.")]
+top15 = metavizTransformSelect(obj,rowVars,control=metavizControl(n=50,aggregateAtDepth="OTU"))
+ok = which(!fData(top15)$species=="Other")
+heat  = metavizHeatmap(top15[ok,],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+obj = msd16s[,which(pData(msd16s)$Type=="Control" & pData(msd16s)$AgeFactor=="6-11 mo.")]
+top15 = metavizTransformSelect(obj,rowVars,control=metavizControl(n=50,aggregateAtDepth="OTU"))
+ok = which(!fData(top15)$species=="Other")
+heat  = metavizHeatmap(top15[ok,],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+obj = msd16s[,which(pData(msd16s)$Type=="Control" & pData(msd16s)$AgeFactor=="12-17 mo.")]
+top15 = metavizTransformSelect(obj,rowVars,control=metavizControl(n=50,aggregateAtDepth="OTU"))
+ok = which(!fData(top15)$species=="Other")
+heat  = metavizHeatmap(top15[ok,],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+obj = msd16s[,which(pData(msd16s)$Type=="Control" & pData(msd16s)$AgeFactor=="18-23 mo.")]
+top15 = metavizTransformSelect(obj,rowVars,control=metavizControl(n=50,aggregateAtDepth="OTU"))
+ok = which(!fData(top15)$species=="Other")
+heat  = metavizHeatmap(top15[ok,],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+obj = msd16s[,which(pData(msd16s)$Type=="Control" & pData(msd16s)$AgeFactor=="24-59 mo.")]
+top15 = metavizTransformSelect(obj,rowVars,control=metavizControl(n=50,aggregateAtDepth="OTU"))
+ok = which(!fData(top15)$species=="Other")
+heat  = metavizHeatmap(top15[ok,],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+#####
+
+#obj = msd16s[,which(pData(msd16s)$AgeFactor=="0-5 mo.")]
+e = msd16s
+topN = metavizTransformSelect(e,rowVars,control=metavizControl(n=50,aggregateAtDepth="OTU"))
+pData(topN)$CountryStatus = interaction(pData(topN)$Country, pData(topN)$Type)
+withoutOther = which(!fData(topN)$species=="Other")
+
+ageGroup = which(pData(topN)$AgeFactor=="0-5 mo.")
+heat  = metavizHeatmap(topN[withoutOther, ageGroup],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+ageGroup = which(pData(topN)$AgeFactor=="6-11 mo.")
+heat  = metavizHeatmap(topN[withoutOther, ageGroup],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+ageGroup = which(pData(topN)$AgeFactor=="12-17 mo.")
+heat  = metavizHeatmap(topN[withoutOther, ageGroup],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+ageGroup = which(pData(topN)$AgeFactor=="18-23 mo.")
+heat  = metavizHeatmap(topN[withoutOther, ageGroup],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+ageGroup = which(pData(topN)$AgeFactor=="24-59 mo.")
+heat  = metavizHeatmap(topN[withoutOther, ageGroup],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
+#####
+
+# e = msd16s
+# pData(e)$CountryStatus = interaction(pData(e)$Country, pData(e)$Type)
+#
+# ageGroup = which(pData(e)$AgeFactor=="0-5 mo.")
+# topN = metavizTransformSelect(e[,ageGroup],rowVars,control=metavizControl(n=50,aggregateAtDepth="OTU"))
+#
+# withoutOther = which(!fData(topN)$species=="Other")
+# heat  = metavizHeatmap(topN[withoutOther, ],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+#
+# ageGroup = which(pData(e)$AgeFactor=="24-59 mo.")
+# topN = metavizTransformSelect(e[,ageGroup],rowVars,control=metavizControl(n=50,aggregateAtDepth="OTU"))
+# withoutOther = which(!fData(topN)$species=="Other")
+# heat  = metavizHeatmap(topN[withoutOther, ],mgr,control=metavizControl(aggregateAtDepth="OTU"))
+
 #t = gates$taxonomyTable()
 #####
 # LINE DIFFERENCE PLOT
