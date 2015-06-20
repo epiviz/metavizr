@@ -327,11 +327,11 @@ EpivizMetagenomicsData$methods(
 
     # TODO: Formal log
     cat("Saving column data...")
-    .saveColData(con, colLabel)
+    #.saveColData(con, colLabel)
     cat("Done\n")
 
     cat("Saving row data...")
-    .saveRowData(con)
+    #.saveRowData(con)
     cat("Done\n")
 
     cat("Saving hierarchy...")
@@ -339,11 +339,11 @@ EpivizMetagenomicsData$methods(
     cat("Done\n")
 
     cat("Saving counts...")
-    .saveValues(con)
+    #.saveValues(con)
     cat("Done\n")
 
     cat("Saving levels...")
-    .saveLevels(con)
+    #.saveLevels(con)
     cat("Done\n")
 
     odbcClose(con)
@@ -407,15 +407,17 @@ EpivizMetagenomicsData$methods(
     })
     uniqueIds = unique(nodeIds)
 
-    cat("\n  Computing node labels...\n")
+    cat("\n  Generating taxonomy structure...\n")
     pb = txtProgressBar(style=3, width=25)
     names = lapply(seq(length(uniqueIds)), function(i) {
       setTxtProgressBar(pb, i/length(uniqueIds))
       nodeId = uniqueIds[[i]]
-      node(nodeId)$name()
+      #node(nodeId)$name()
+      pair = .fromMetavizNodeId(nodeId)
+      h[pair$leafIndex+1, pair$depth+1]
     })
 
-    cat("\n  Computing node parent ids...\n")
+    cat("\n  Computing node parents...\n")
     pb = txtProgressBar(style=3, width=25)
     parentIds = lapply(seq(length(uniqueIds)), function(i) {
       setTxtProgressBar(pb, i/length(uniqueIds))
@@ -455,9 +457,55 @@ EpivizMetagenomicsData$methods(
       node(nodeId)$nleaves() + starts[[i]]
     })
 
+    cat("\n  Computing node depths...\n")
+    pb = txtProgressBar(style=3, width=25)
+    depths = lapply(seq(length(uniqueIds)), function(i) {
+      setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      node(nodeId)$depth()
+    })
+
+    cat("\n  Computing node children counts...")
+    nchildren = list()
+    for (parentId in parentIds) {
+      if (is.null(parentId)) { next }
+      if (is.null(nchildren[[parentId]])) {
+        nchildren[[parentId]] = 0
+      }
+      nchildren[[parentId]] = nchildren[[parentId]] + 1
+    }
+    childCount = lapply(uniqueIds, function(nodeId) {
+      if (is.null(nchildren[[nodeId]])) { return(0) }
+      nchildren[[nodeId]]
+    })
+    cat("Done\n")
+
+    cat("\n  Computing nodes order...\n")
+    lastOrder = list()
+    pb = txtProgressBar(style=3, width=25)
+    orders = list()
+    for (i in seq(length(uniqueIds))) {
+      setTxtProgressBar(pb, i/length(uniqueIds))
+      parentId = parentIds[[i]]
+      nodeId = uniqueIds[[i]]
+      if (is.null(parentId)) {
+        orders[[i]] = 0
+        next
+      }
+      o = lastOrder[[parentId]]
+      if (is.null(o)) {
+        lastOrder[[parentId]] = 0
+        orders[[i]] = 0
+        next
+      }
+
+      lastOrder[[parentId]] = o + 1
+      orders[[i]] = o+1
+    }
+
     cat("\n  Outputting to database...")
     parentIds[[1]] = NA
-    df = data.frame(label=unlist(names), parentId=unlist(parentIds), lineage=unlist(paths), start=unlist(starts), end=unlist(ends))
+    df = data.frame(depth=unlist(depths), label=unlist(names), parentId=unlist(parentIds), lineage=unlist(paths), nchildren=unlist(childCount), start=unlist(starts), end=unlist(ends), leafIndex=unlist(starts), nleaves=unlist(ends)-unlist(starts), order=unlist(orders))
     df$partition = NA
     rownames(df) = unlist(uniqueIds)
 
