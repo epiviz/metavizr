@@ -563,6 +563,7 @@ EpivizMetagenomicsData$methods(
     odbcSetAutoCommit(con, autoCommit = FALSE)
     sqlDrop(con, "levels", errors=FALSE)
     sqlSave(con, df, tablename="levels", addPK=FALSE)
+    sqlQuery(con, "ALTER TABLE `levels` ENGINE = MEMORY ;")
     sqlQuery(con, "ALTER TABLE `levels` DROP COLUMN `rownames` ;")
     odbcSetAutoCommit(con, autoCommit = TRUE)
   }
