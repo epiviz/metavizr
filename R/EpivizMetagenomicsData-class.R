@@ -441,6 +441,28 @@ EpivizMetagenomicsData$methods(
       return(path)
     })
 
+    cat("\n  Computing lineages labels...\n")
+    pathsLabels = Ptr$new(list())
+    pb = txtProgressBar(style=3, width=25)
+    pathsLabels = lapply(seq(length(uniqueIds)), function(i) {
+      setTxtProgressBar(pb, i/length(uniqueIds))
+
+      nodeId = uniqueIds[[i]]
+      pair = .fromMetavizNodeId(nodeId)
+      nodeName = h[pair$leafIndex+1, pair$depth+1]
+
+      parentId = parentIds[[i]]
+
+      if (is.null(parentId) || is.null(pathsList$.[[parentId]])) {
+        pathsList$.[[nodeId]] = nodeName
+        return(nodeName)
+      }
+
+      path = paste(pathsList$.[[parentId]], nodeName, sep=",")
+      pathsList$.[[nodeId]] = path
+      return(path)
+    })
+
     cat("\n  Computing index of first leaf in node subtrees...\n")
     pb = txtProgressBar(style=3, width=25)
     starts = lapply(seq(length(uniqueIds)), function(i) {
@@ -505,13 +527,14 @@ EpivizMetagenomicsData$methods(
 
     cat("\n  Outputting to database...")
     parentIds[[1]] = NA
-    df = data.frame(depth=unlist(depths), label=unlist(names), parentId=unlist(parentIds), lineage=unlist(paths), nchildren=unlist(childCount), start=unlist(starts), end=unlist(ends), leafIndex=unlist(starts), nleaves=unlist(ends)-unlist(starts), order=unlist(orders))
+    df = data.frame(depth=unlist(depths), label=unlist(names), parentId=unlist(parentIds), lineage=unlist(paths), lineageLabel=unlist(pathsLabels), nchildren=unlist(childCount), start=unlist(starts), end=unlist(ends), leafIndex=unlist(starts), nleaves=unlist(ends)-unlist(starts), order=unlist(orders))
     df$partition = NA
     rownames(df) = unlist(uniqueIds)
 
     odbcSetAutoCommit(con, autoCommit = FALSE)
     sqlDrop(con, "hierarchy", errors=FALSE)
     sqlSave(con, df, tablename="hierarchy", addPK=TRUE)
+    sqlQuery(con, "ALTER TABLE `hierarchy` ENGINE = MyISAM;")
     sqlQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL;")
     sqlQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
     sqlQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `name_idx` USING HASH (`label` ASC);")
