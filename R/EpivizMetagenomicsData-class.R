@@ -229,7 +229,7 @@ EpivizMetagenomicsData$methods(
            annotation=as.list(.sampleAnnotation[sample,]),
            minValue=.minValue,
            maxValue=.maxValue,
-           metadata=c(rev(.levels), "colLabel", "ancestors", "hierarchy-path"))
+           metadata=c(rev(.levels), "colLabel", "ancestors", "lineage"))
     })
     out
   },
@@ -281,7 +281,7 @@ EpivizMetagenomicsData$methods(
       metadata = c(list(
         colLabel = sapply(leafInfos, function(info) { info$node$name() }),
         ancestors = sapply(leafAncestors, function(ancestors) { paste(lapply(rev(ancestors), function(node) { node$name() }), collapse=",") }), # TODO: Use tree .ancestryByDepth
-        "hierarchy-path" = sapply(leafAncestors, function(ancestors) { paste(lapply(rev(ancestors), function(node) { node$id() }), collapse=",") })
+        lineage = sapply(leafAncestors, function(ancestors) { paste(lapply(rev(ancestors), function(node) { node$id() }), collapse=",") })
       ), sapply(rev(.levels), function(level) {
         r = list(lapply(leafTaxonomies[[level]], function(node) { if(is.null(node)) { return("<NA>") }; node$name() }))
         if (length(r[[1]]) == 0) {
@@ -299,7 +299,7 @@ EpivizMetagenomicsData$methods(
       ret$end = list(ret$end)
       ret$metadata$colLabel = list(ret$metadata$colLabel)
       ret$metadata$ancestors = list(ret$metadata$ancestors)
-      ret$metadata[["hierarchy-path"]] = list(ret$metadata[["hierarchy-path"]])
+      ret$metadata$lineage = list(ret$metadata$lineage)
     }
 
     return(list(
