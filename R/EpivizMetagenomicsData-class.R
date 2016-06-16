@@ -321,17 +321,20 @@ EpivizMetagenomicsData$methods(
 
 # Database serialization
 EpivizMetagenomicsData$methods(
-  toMySQLDb=function(connectionStr, colLabel=NULL) {
+  toMySQLDb=function(con, colLabel=NULL) {
+    library(RMySQL)
     # TODO: Add logging
-    con = odbcDriverConnect(connectionStr)
-
+    # con = odbcDriverConnect(connectionStr)
+    # con = odbcConnect('myodbc')
+    #con <- dbConnect(MySQL())
+    
     # TODO: Formal log
     cat("Saving column data...")
-    #.saveColData(con, colLabel)
+    .saveColData(con, colLabel)
     cat("Done\n")
 
     cat("Saving row data...")
-    #.saveRowData(con)
+    .saveRowData(con)
     cat("Done\n")
 
     cat("Saving hierarchy...")
@@ -339,29 +342,45 @@ EpivizMetagenomicsData$methods(
     cat("Done\n")
 
     cat("Saving counts...")
-    #.saveValues(con)
+    .saveValues(con)
     cat("Done\n")
 
     cat("Saving levels...")
-    #.saveLevels(con)
+    .saveLevels(con)
     cat("Done\n")
-
-    odbcClose(con)
+    dbDisconnect(con)
+    #odbcClose(con)
+    
   },
   .saveColData=function(con, labelCol=NULL) {
-    odbcSetAutoCommit(con, autoCommit = FALSE)
+    #odbcSetAutoCommit(con, autoCommit = FALSE)
+    
     cols = .sampleAnnotation
     if (!is.null(labelCol)) {
       cols$label = cols[[labelCol]]
     }
     cols$index = seq(dim(cols)[1]) - 1
-    sqlDrop(con, "col_data", errors=FALSE)
-    sqlSave(con, cols, tablename="col_data", addPK=TRUE)
-    sqlQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL;")
-    sqlQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `index` `index` BIGINT NULL DEFAULT NULL;")
-    sqlQuery(con, "ALTER TABLE `col_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
-    sqlQuery(con, "ALTER TABLE `col_data` ADD INDEX `index_idx` (`index` ASC) ;")
-    odbcSetAutoCommit(con, autoCommit = TRUE)
+
+        print(cols)
+    
+    #sqlDrop(con, "col_data", errors=FALSE)
+    #sqlSave(con, cols, tablename="col_data", addPK=TRUE)
+    #sqlQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL;")
+    #sqlQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `index` `index` BIGINT NULL DEFAULT NULL;")
+    #sqlQuery(con, "ALTER TABLE `col_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
+    #sqlQuery(con, "ALTER TABLE `col_data` ADD INDEX `index_idx` (`index` ASC) ;")
+    #odbcSetAutoCommit(con, autoCommit = TRUE)
+    
+    dbSendQuery(con, "DROP TABLE col_data")
+    dbWriteTable(con, value = cols, name = "col_data", append = TRUE, row.names = TRUE )     
+    dbCommit(conn = con)
+    dbSendQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `row_names` `id` VARCHAR(255) NOT NULL;")
+    dbSendQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `index` `index` BIGINT NULL DEFAULT NULL;")
+    dbSendQuery(con, "ALTER TABLE `col_data` ADD COLUMN `label` INT NOT NULL DEFAULT 1;")
+    dbSendQuery(con, "UPDATE `col_data` SET `label` = `index`;")
+    dbSendQuery(con, "ALTER TABLE `col_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
+    dbSendQuery(con, "ALTER TABLE `col_data` ADD INDEX `index_idx` (`index` ASC) ;")
+    dbCommit(conn = con)
   },
 
   .saveRowData=function(con) {
@@ -370,29 +389,51 @@ EpivizMetagenomicsData$methods(
     pb = txtProgressBar(style=3, width=25)
     leafIds = lapply(seq(dim(h)[1]), function(i) {
       setTxtProgressBar(pb, i/dim(h)[1])
-      e$calcNodeId(i, dim(h)[2])
+      #removed e$ in case
+      calcNodeId(i, dim(h)[2])
     })
 
     cat("\n  Outputting to database...")
     leafIndices = seq(dim(h)[1]) - 1
 
-    leafNames = h[,9]
+    print(head(h))
+    leafNames = h[,length(colnames(h))]
+
 
     df = data.frame(label=unlist(leafNames), index=leafIndices, start=leafIndices, end=(leafIndices+1))
     df$partition = NA
     rownames(df) = unlist(leafIds)
 
-    con = odbcDriverConnect('Driver={MySQL ODBC 5.3 Unicode Driver};Server=localhost;Database=epiviz.test_template;User=root;Password=tuculeana;Option=3;')
-    odbcSetAutoCommit(con, autoCommit = FALSE)
-    sqlDrop(con, "row_data", errors=FALSE)
-    sqlSave(con, df, tablename="row_data", addPK=TRUE)
-    sqlQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL  ;")
-    sqlQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `index` `index` BIGINT NULL;")
-    sqlQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
-    sqlQuery(con, "ALTER TABLE `row_data` ADD INDEX `index_idx` USING BTREE (`index` ASC);")
-    sqlQuery(con, "ALTER TABLE `row_data` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
-    sqlQuery(con, "ALTER TABLE `row_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
-    odbcSetAutoCommit(con, autoCommit = TRUE)
+    print(head(df))
+    
+    #odbcSetAutoCommit(con, autoCommit = FALSE)
+    #sqlDrop(con, "row_data", errors=FALSE)
+    #sqlSave(con, df, tablename="row_data", addPK=TRUE)
+    # sqlQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL  ;")
+    # sqlQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `index` `index` BIGINT NULL;")
+    # sqlQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
+    # sqlQuery(con, "ALTER TABLE `row_data` ADD INDEX `index_idx` USING BTREE (`index` ASC);")
+    # sqlQuery(con, "ALTER TABLE `row_data` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
+    # sqlQuery(con, "ALTER TABLE `row_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
+    # odbcSetAutoCommit(con, autoCommit = TRUE)
+    
+    dbSendQuery(con, "DROP TABLE row_data")
+    dbWriteTable(con, value = df, name = "row_data", append = TRUE, row.names = TRUE)     
+    dbCommit(conn = con)
+    dbSendQuery(con, "ALTER TABLE `row_data` ADD COLUMN `id` VARCHAR(255) NOT NULL;")
+    dbSendQuery(con, "UPDATE `row_data` SET `id` = `row_names`;")
+    dbSendQuery(con, "UPDATE `row_data` SET `label` = `row_names`;")
+    
+    # dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `label` `id` VARCHAR(255) NOT NULL  ;")
+    
+    dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `index` `index` BIGINT NULL;")
+    dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
+    dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `index_idx` USING BTREE (`index` ASC);")
+    dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
+    
+    #Will need to do this at some point
+    #dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
+    dbCommit(conn = con)
   },
 
   .saveHierarchy=function(con) {
@@ -529,19 +570,35 @@ EpivizMetagenomicsData$methods(
     parentIds[[1]] = NA
     df = data.frame(depth=unlist(depths), label=unlist(names), parentId=unlist(parentIds), lineage=unlist(paths), lineageLabel=unlist(pathsLabels), nchildren=unlist(childCount), start=unlist(starts), end=unlist(ends), leafIndex=unlist(starts), nleaves=unlist(ends)-unlist(starts), order=unlist(orders))
     df$partition = NA
+
+    print(head(df))
     rownames(df) = unlist(uniqueIds)
 
-    odbcSetAutoCommit(con, autoCommit = FALSE)
-    sqlDrop(con, "hierarchy", errors=FALSE)
-    sqlSave(con, df, tablename="hierarchy", addPK=TRUE)
-    sqlQuery(con, "ALTER TABLE `hierarchy` ENGINE = MyISAM;")
-    sqlQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL;")
-    sqlQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
-    sqlQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `name_idx` USING HASH (`label` ASC);")
-    sqlQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
-    sqlQuery(con, "ALTER TABLE `hierarchy` ADD FULLTEXT INDEX `lineage_idx` (`lineage` ASC);")
-    odbcSetAutoCommit(con, autoCommit = TRUE)
-  },
+    #odbcSetAutoCommit(con, autoCommit = FALSE)
+    #     sqlDrop(con, "hierarchy", errors=FALSE)
+    #     sqlSave(con, df, tablename="hierarchy", addPK=TRUE)
+    #     sqlQuery(con, "ALTER TABLE `hierarchy` ENGINE = MyISAM;")
+    #     sqlQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL;")
+    #     sqlQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
+    #     sqlQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `name_idx` USING HASH (`label` ASC);")
+    #     sqlQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
+    #     sqlQuery(con, "ALTER TABLE `hierarchy` ADD FULLTEXT INDEX `lineage_idx` (`lineage` ASC);")
+    #     odbcSetAutoCommit(con, autoCommit = TRUE)
+
+    dbSendQuery(con, "DROP TABLE hierarchy")
+    dbWriteTable(con, value = df, name = "hierarchy", append = TRUE, row.names = TRUE) 
+    dbCommit(conn = con)
+    dbSendQuery(con, "ALTER TABLE `hierarchy` ADD COLUMN `id` VARCHAR(255) NOT NULL;")
+    dbSendQuery(con, "UPDATE `hierarchy` SET `id` = `row_names`;")
+    dbSendQuery(con, "ALTER TABLE `hierarchy` ENGINE = MyISAM;")
+    dbSendQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
+    #Will do this later
+    #dbSendQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `name_idx` USING HASH (`label` ASC);")
+    dbSendQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
+    dbSendQuery(con, "ALTER TABLE `hierarchy` ADD FULLTEXT INDEX `lineage_idx` (`lineage` ASC);")
+    
+    dbCommit(conn = con)
+    },
 
   .saveValues=function(con) {
     counts = .counts
@@ -550,21 +607,46 @@ EpivizMetagenomicsData$methods(
     df = data.frame(row=countsIndices[,1], col=countsIndices[,2], val=as.vector(counts))
     df = df[df$val != 0,]
 
-    odbcSetAutoCommit(con, autoCommit = FALSE)
-    sqlDrop(con, "values", errors=FALSE)
-    sqlSave(con, df, tablename="values", addPK=TRUE)
-    sqlQuery(con, "ALTER TABLE `values` CHANGE COLUMN `rownames` `id` BIGINT NOT NULL  ;")
-    sqlQuery(con, "ALTER TABLE `values` ADD INDEX `rowcol_idx` USING BTREE (`row` ASC, `col` ASC) ;")
-    odbcSetAutoCommit(con, autoCommit = TRUE)
+    print(head(df))
+
+    #   odbcSetAutoCommit(con, autoCommit = FALSE)
+    #   sqlDrop(con, "values", errors=FALSE)
+    #   sqlSave(con, df, tablename="values", addPK=TRUE)
+    #   sqlQuery(con, "ALTER TABLE `values` CHANGE COLUMN `rownames` `id` BIGINT NOT NULL  ;")
+    #   sqlQuery(con, "ALTER TABLE `values` ADD INDEX `rowcol_idx` USING BTREE (`row` ASC, `col` ASC) ;")
+    #   odbcSetAutoCommit(con, autoCommit = TRUE)
+    
+    #requires user to change name of table to `values` after running this function
+    dbSendQuery(con, "DROP TABLE meta_values")
+    dbWriteTable(con, value = df, name = "meta_values", append = TRUE, row.names = TRUE ) 
+    dbCommit(conn = con)
+    
+    dbSendQuery(con, "ALTER TABLE `meta_values` CHANGE COLUMN `row_names` `id` BIGINT NOT NULL  ;")
+    dbSendQuery(con, "ALTER TABLE `meta_values` ADD INDEX `rowcol_idx` USING BTREE (`row` ASC, `col` ASC) ;")
+    
+    dbCommit(conn = con)
+
   },
 
   .saveLevels=function(con) {
     df = data.frame(depth=seq(length(.levels)) - 1, label=.levels)
-    odbcSetAutoCommit(con, autoCommit = FALSE)
-    sqlDrop(con, "levels", errors=FALSE)
-    sqlSave(con, df, tablename="levels", addPK=FALSE)
-    sqlQuery(con, "ALTER TABLE `levels` ENGINE = MEMORY ;")
-    sqlQuery(con, "ALTER TABLE `levels` DROP COLUMN `rownames` ;")
-    odbcSetAutoCommit(con, autoCommit = TRUE)
+
+    print(head(df))
+    
+    #   odbcSetAutoCommit(con, autoCommit = FALSE)
+    #   sqlDrop(con, "levels", errors=FALSE)
+    #   sqlSave(con, df, tablename="levels", addPK=FALSE)
+    #   sqlQuery(con, "ALTER TABLE `levels` ENGINE = MEMORY ;")
+    #   sqlQuery(con, "ALTER TABLE `levels` DROP COLUMN `rownames` ;")
+    #   odbcSetAutoCommit(con, autoCommit = TRUE)
+    
+    dbSendQuery(con, "DROP TABLE levels")
+    dbWriteTable(con, value = df, name = "levels", append = TRUE , row.names = TRUE) 
+    dbCommit(conn = con)
+    
+    #Do these need to be run?
+    #dbSendQuery(con, "ALTER TABLE `levels` ENGINE = MEMORY ;")
+    #dbSendQuery(con, "ALTER TABLE `levels` DROP COLUMN `rownames` ;")
+    #dbCommit(conn = con)
   }
 )
