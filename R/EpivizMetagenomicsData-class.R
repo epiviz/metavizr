@@ -371,7 +371,7 @@ EpivizMetagenomicsData$methods(
     #sqlQuery(con, "ALTER TABLE `col_data` ADD INDEX `index_idx` (`index` ASC) ;")
     #odbcSetAutoCommit(con, autoCommit = TRUE)
     
-    dbSendQuery(con, "DROP TABLE col_data")
+    dbSendQuery(con, "DROP TABLE IF EXISTS col_data")
     dbWriteTable(con, value = cols, name = "col_data", append = TRUE, row.names = TRUE )     
     dbCommit(conn = con)
     dbSendQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `row_names` `id` VARCHAR(255) NOT NULL;")
@@ -417,7 +417,7 @@ EpivizMetagenomicsData$methods(
     # sqlQuery(con, "ALTER TABLE `row_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
     # odbcSetAutoCommit(con, autoCommit = TRUE)
     
-    dbSendQuery(con, "DROP TABLE row_data")
+    dbSendQuery(con, "DROP TABLE IF EXISTS row_data")
     dbWriteTable(con, value = df, name = "row_data", append = TRUE, row.names = TRUE)     
     dbCommit(conn = con)
     dbSendQuery(con, "ALTER TABLE `row_data` ADD COLUMN `id` VARCHAR(255) NOT NULL;")
@@ -585,7 +585,7 @@ EpivizMetagenomicsData$methods(
     #     sqlQuery(con, "ALTER TABLE `hierarchy` ADD FULLTEXT INDEX `lineage_idx` (`lineage` ASC);")
     #     odbcSetAutoCommit(con, autoCommit = TRUE)
 
-    dbSendQuery(con, "DROP TABLE hierarchy")
+    dbSendQuery(con, "DROP TABLE IF EXISTS hierarchy")
     dbWriteTable(con, value = df, name = "hierarchy", append = TRUE, row.names = TRUE) 
     dbCommit(conn = con)
     dbSendQuery(con, "ALTER TABLE `hierarchy` ADD COLUMN `id` VARCHAR(255) NOT NULL;")
@@ -617,7 +617,7 @@ EpivizMetagenomicsData$methods(
     #   odbcSetAutoCommit(con, autoCommit = TRUE)
     
     #requires user to change name of table to `values` after running this function
-    dbSendQuery(con, "DROP TABLE meta_values")
+    dbSendQuery(con, "DROP TABLE IF EXISTS meta_values")
     dbWriteTable(con, value = df, name = "meta_values", append = TRUE, row.names = TRUE ) 
     dbCommit(conn = con)
     
@@ -640,7 +640,7 @@ EpivizMetagenomicsData$methods(
     #   sqlQuery(con, "ALTER TABLE `levels` DROP COLUMN `rownames` ;")
     #   odbcSetAutoCommit(con, autoCommit = TRUE)
     
-    dbSendQuery(con, "DROP TABLE levels")
+    dbSendQuery(con, "DROP TABLE IF EXISTS levels")
     dbWriteTable(con, value = df, name = "levels", append = TRUE , row.names = TRUE) 
     dbCommit(conn = con)
     
