@@ -10,8 +10,9 @@ import(rjson)
 import(OrganismDbi)
 import(GenomeInfoDb)
 import(GenomicFeatures)
+import(epivizrData)
 
-exportClasses(EpivizTree)
+exportClasses(MetavizTree)
 exportClasses(EpivizMetagenomicsData)
 
 export(startMetaviz)
