@@ -424,15 +424,15 @@ EpivizMetagenomicsData$methods(
     dbSendQuery(con, "UPDATE `row_data` SET `id` = `row_names`;")
     dbSendQuery(con, "UPDATE `row_data` SET `label` = `row_names`;")
     
-    # dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `label` `id` VARCHAR(255) NOT NULL  ;")
     
+    dbSendQuery(con, "ALTER TABLE `row_data` DROP COLUMN `row_names`;")
     dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `index` `index` BIGINT NULL;")
     dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
     dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `index_idx` USING BTREE (`index` ASC);")
     dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
     
-    #Will need to do this at some point
-    #dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
+    dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `label` `label` VARCHAR(255) NOT NULL;")
+    dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `label_idx` USING HASH (`label`(10)) USING HASH;")
     dbCommit(conn = con)
   },
 
