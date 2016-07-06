@@ -348,9 +348,29 @@ EpivizMetagenomicsData$methods(
     cat("Saving levels...")
     .saveLevels(con)
     cat("Done\n")
+    
+    res <- dbSendQuery(con, "RENAME TABLE `meta_values` to `values`;")
+    dbCommit(conn = con)
     dbDisconnect(con)
     #odbcClose(con)
     
+  },
+  .getFieldTypes = function(data) {
+    
+    colNames = colnames(data)
+    colTypes = sapply(colNames, function(x) dbDataType(RMySQL::MySQL(), data[[x]]))
+    colTypes = gsub("text", "VARCHAR(255)", colTypes)
+    colTypes = gsub("double", "BIGINT", colTypes)
+    
+    tableTypes = list()
+    
+    for(i in seq(length(colTypes))) {
+      tableTypes[[colNames[i]]] = colTypes[i]
+    }
+    
+    tableTypes[["row_names"]] = "VARCHAR(255)"
+    
+    tableTypes
   },
   .saveColData=function(con, labelCol=NULL) {
     #odbcSetAutoCommit(con, autoCommit = FALSE)
@@ -360,22 +380,27 @@ EpivizMetagenomicsData$methods(
       cols$label = cols[[labelCol]]
     }
     cols$index = seq(dim(cols)[1]) - 1
-
-        print(cols)
     
     #sqlDrop(con, "col_data", errors=FALSE)
     #sqlSave(con, cols, tablename="col_data", addPK=TRUE)
     #sqlQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `rownames` `id` VARCHAR(255) NOT NULL;")
     #sqlQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `index` `index` BIGINT NULL DEFAULT NULL;")
     #sqlQuery(con, "ALTER TABLE `col_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
-    #sqlQuery(con, "ALTER TABLE `col_data` ADD INDEX `index_idx` (`index` ASC) ;")
+    # sqlQuery(con, "ALTER TABLE `col_data` ADD INDEX `index_idx` (`index` ASC) ;")
     #odbcSetAutoCommit(con, autoCommit = TRUE)
+        
+    tableFieldTypes = .getFieldTypes(cols)
     
     dbSendQuery(con, "DROP TABLE IF EXISTS col_data")
-    dbWriteTable(con, value = cols, name = "col_data", append = TRUE, row.names = TRUE )     
+    dbWriteTable(con, 
+                 value = cols, 
+                 name = "col_data", 
+                 append = TRUE, 
+                 row.names = TRUE, 
+                 field.types = tableFieldTypes)     
     dbCommit(conn = con)
     dbSendQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `row_names` `id` VARCHAR(255) NOT NULL;")
-    dbSendQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `index` `index` BIGINT NULL DEFAULT NULL;")
+    #dbSendQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `index` `index` BIGINT NULL DEFAULT NULL;")
     dbSendQuery(con, "ALTER TABLE `col_data` ADD COLUMN `label` INT NOT NULL DEFAULT 1;")
     dbSendQuery(con, "UPDATE `col_data` SET `label` = `index`;")
     dbSendQuery(con, "ALTER TABLE `col_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
@@ -396,15 +421,12 @@ EpivizMetagenomicsData$methods(
     cat("\n  Outputting to database...")
     leafIndices = seq(dim(h)[1]) - 1
 
-    print(head(h))
     leafNames = h[,length(colnames(h))]
 
 
     df = data.frame(label=unlist(leafNames), index=leafIndices, start=leafIndices, end=(leafIndices+1))
     df$partition = NA
     rownames(df) = unlist(leafIds)
-
-    print(head(df))
     
     #odbcSetAutoCommit(con, autoCommit = FALSE)
     #sqlDrop(con, "row_data", errors=FALSE)
@@ -418,20 +440,24 @@ EpivizMetagenomicsData$methods(
     # odbcSetAutoCommit(con, autoCommit = TRUE)
     
     dbSendQuery(con, "DROP TABLE IF EXISTS row_data")
-    dbWriteTable(con, value = df, name = "row_data", append = TRUE, row.names = TRUE)     
+    
+    tableFieldTypes = .getFieldTypes(df)
+    
+    dbWriteTable(con, value = df, name = "row_data", append = TRUE, 
+                 row.names = TRUE, 
+                 field.types = tableFieldTypes)     
     dbCommit(conn = con)
-    dbSendQuery(con, "ALTER TABLE `row_data` ADD COLUMN `id` VARCHAR(255) NOT NULL;")
-    dbSendQuery(con, "UPDATE `row_data` SET `id` = `row_names`;")
-    dbSendQuery(con, "UPDATE `row_data` SET `label` = `row_names`;")
+    dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `row_names` `id` VARCHAR(255) NOT NULL;")
+    # dbSendQuery(con, "UPDATE `row_data` SET `id` = `row_names`;")
+    # dbSendQuery(con, "UPDATE `row_data` SET `label` = `row_names`;")
     
-    
-    dbSendQuery(con, "ALTER TABLE `row_data` DROP COLUMN `row_names`;")
-    dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `index` `index` BIGINT NULL;")
-    dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
+    # dbSendQuery(con, "ALTER TABLE `row_data` DROP COLUMN `row_names`;")
+    #dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `index` `index` BIGINT NULL;")
+    #dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
     dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `index_idx` USING BTREE (`index` ASC);")
     dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
     
-    dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `label` `label` VARCHAR(255) NOT NULL;")
+    #dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `label` `label` VARCHAR(255) NOT NULL;")
     dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `label_idx` USING HASH (`label`(10)) USING HASH;")
     dbCommit(conn = con)
   },
@@ -571,7 +597,6 @@ EpivizMetagenomicsData$methods(
     df = data.frame(depth=unlist(depths), label=unlist(names), parentId=unlist(parentIds), lineage=unlist(paths), lineageLabel=unlist(pathsLabels), nchildren=unlist(childCount), start=unlist(starts), end=unlist(ends), leafIndex=unlist(starts), nleaves=unlist(ends)-unlist(starts), order=unlist(orders))
     df$partition = NA
 
-    print(head(df))
     rownames(df) = unlist(uniqueIds)
 
     #odbcSetAutoCommit(con, autoCommit = FALSE)
@@ -586,14 +611,18 @@ EpivizMetagenomicsData$methods(
     #     odbcSetAutoCommit(con, autoCommit = TRUE)
 
     dbSendQuery(con, "DROP TABLE IF EXISTS hierarchy")
-    dbWriteTable(con, value = df, name = "hierarchy", append = TRUE, row.names = TRUE) 
+    
+    tableFieldTypes = .getFieldTypes(df)
+    
+    dbWriteTable(con, value = df, name = "hierarchy", append = TRUE, row.names = TRUE, 
+                 field.types = tableFieldTypes) 
     dbCommit(conn = con)
-    dbSendQuery(con, "ALTER TABLE `hierarchy` ADD COLUMN `id` VARCHAR(255) NOT NULL;")
-    dbSendQuery(con, "UPDATE `hierarchy` SET `id` = `row_names`;")
+    dbSendQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `row_names` `id` VARCHAR(255) NOT NULL;")
+    # dbSendQuery(con, "UPDATE `hierarchy` SET `id` = `row_names`;")
     dbSendQuery(con, "ALTER TABLE `hierarchy` ENGINE = MyISAM;")
-    dbSendQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
+    #dbSendQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
     #Will do this later
-    #dbSendQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `name_idx` USING HASH (`label` ASC);")
+    dbSendQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `name_idx` USING HASH (`label` ASC);")
     dbSendQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
     dbSendQuery(con, "ALTER TABLE `hierarchy` ADD FULLTEXT INDEX `lineage_idx` (`lineage` ASC);")
     
@@ -607,8 +636,6 @@ EpivizMetagenomicsData$methods(
     df = data.frame(row=countsIndices[,1], col=countsIndices[,2], val=as.vector(counts))
     df = df[df$val != 0,]
 
-    print(head(df))
-
     #   odbcSetAutoCommit(con, autoCommit = FALSE)
     #   sqlDrop(con, "values", errors=FALSE)
     #   sqlSave(con, df, tablename="values", addPK=TRUE)
@@ -618,7 +645,11 @@ EpivizMetagenomicsData$methods(
     
     #requires user to change name of table to `values` after running this function
     dbSendQuery(con, "DROP TABLE IF EXISTS meta_values")
-    dbWriteTable(con, value = df, name = "meta_values", append = TRUE, row.names = TRUE ) 
+    
+    tableFieldTypes = .getFieldTypes(df)
+    
+    dbWriteTable(con, value = df, name = "meta_values", append = TRUE, row.names = TRUE, 
+                 field.types = tableFieldTypes ) 
     dbCommit(conn = con)
     
     dbSendQuery(con, "ALTER TABLE `meta_values` CHANGE COLUMN `row_names` `id` BIGINT NOT NULL  ;")
@@ -630,8 +661,6 @@ EpivizMetagenomicsData$methods(
 
   .saveLevels=function(con) {
     df = data.frame(depth=seq(length(.levels)) - 1, label=.levels)
-
-    print(head(df))
     
     #   odbcSetAutoCommit(con, autoCommit = FALSE)
     #   sqlDrop(con, "levels", errors=FALSE)
@@ -641,12 +670,16 @@ EpivizMetagenomicsData$methods(
     #   odbcSetAutoCommit(con, autoCommit = TRUE)
     
     dbSendQuery(con, "DROP TABLE IF EXISTS levels")
-    dbWriteTable(con, value = df, name = "levels", append = TRUE , row.names = TRUE) 
+    
+    tableFieldTypes = .getFieldTypes(df)
+    
+    dbWriteTable(con, value = df, name = "levels", append = TRUE , row.names = TRUE, 
+                 field.types = tableFieldTypes) 
     dbCommit(conn = con)
     
     #Do these need to be run?
-    #dbSendQuery(con, "ALTER TABLE `levels` ENGINE = MEMORY ;")
-    #dbSendQuery(con, "ALTER TABLE `levels` DROP COLUMN `rownames` ;")
+    dbSendQuery(con, "ALTER TABLE `levels` ENGINE = MEMORY ;")
+    dbSendQuery(con, "ALTER TABLE `levels` DROP COLUMN `row_names` ;")
     #dbCommit(conn = con)
   }
 )
