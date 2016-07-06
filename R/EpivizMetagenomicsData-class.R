@@ -322,7 +322,6 @@ EpivizMetagenomicsData$methods(
 # Database serialization
 EpivizMetagenomicsData$methods(
   toMySQLDb=function(con, colLabel=NULL) {
-    library(RMySQL)
     # TODO: Add logging
     # con = odbcDriverConnect(connectionStr)
     # con = odbcConnect('myodbc')
@@ -645,6 +644,9 @@ EpivizMetagenomicsData$methods(
     
     #requires user to change name of table to `values` after running this function
     dbSendQuery(con, "DROP TABLE IF EXISTS meta_values")
+    dbSendQuery(con, "DROP TABLE IF EXISTS `values`")
+    
+    dbCommit(conn = con)
     
     tableFieldTypes = .getFieldTypes(df)
     
