@@ -404,6 +404,7 @@ EpivizMetagenomicsData$methods(
     dbCommit(conn = con)
     
     dbSendQuery(con, sql_data_matrix)
+    dbSendQuery(con, "ALTER TABLE `data_matrix` ENGINE=MyISAM;")
     dbSendQuery(con, "ALTER TABLE `data_matrix` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
     dbSendQuery(con, "ALTER TABLE `data_matrix` ADD INDEX `row_idx` (`row` ASC);")
     dbSendQuery(con, "ALTER TABLE `data_matrix` ADD INDEX `measurement_idx` (`measurement` ASC);")
