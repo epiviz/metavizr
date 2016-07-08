@@ -322,10 +322,6 @@ EpivizMetagenomicsData$methods(
 # Database serialization
 EpivizMetagenomicsData$methods(
   toMySQLDb=function(con, colLabel=NULL) {
-    # TODO: Add logging
-    # con = odbcDriverConnect(connectionStr)
-    # con = odbcConnect('myodbc')
-    #con <- dbConnect(MySQL())
     
     # TODO: Formal log
     cat("Saving column data...")
@@ -350,6 +346,11 @@ EpivizMetagenomicsData$methods(
     
     res <- dbSendQuery(con, "RENAME TABLE `meta_values` to `values`;")
     dbCommit(conn = con)
+    
+    cat("Saving Data Matrix...")
+    .saveMatrix(con)
+    cat("Done\n")
+    
     dbDisconnect(con)
     #odbcClose(con)
     
@@ -370,6 +371,44 @@ EpivizMetagenomicsData$methods(
     tableTypes[["row_names"]] = "VARCHAR(255)"
     
     tableTypes
+  },
+  .saveMatrix = function(con) {
+    
+    locationCols = c('index', 'partition', 'start', 'end')
+    
+    sql_cols = paste0("SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = '", dbGetInfo(con)$dbname , "' AND `TABLE_NAME`='row_data';")
+    
+    resultSet = dbSendQuery(con, sql_cols)
+    data = fetch(resultSet, n=-1)
+    
+    metadata_cols = setdiff(data$COLUMN_NAME, locationCols)
+    metadata_cols = sapply(metadata_cols, function(x) paste0("row_data.",x))
+    
+    fields = c("row_data.index as row", "row_data.start", "row_data.end", "row_data.partition",
+               "hierarchy.lineagelabel", "hierarchy.lineage", "hierarchy.depth",
+               "`values`.val",
+               "col_data.index as col", "col_data.id as measurement")
+    
+    fields = paste(c(fields, metadata_cols), collapse=", ")
+    
+    sql_data_matrix = paste0(
+      "CREATE TABLE data_matrix ",
+      "SELECT ",
+      fields,
+      " FROM (row_data JOIN hierarchy ON row_data.id = hierarchy.id) ",
+      " JOIN col_data ",
+      " JOIN `values` ON (row_data.index = `values`.row AND col_data.index = `values`.col) ",
+      " ORDER BY row_data.index ASC; "
+    )
+    
+    dbCommit(conn = con)
+    
+    dbSendQuery(con, sql_data_matrix)
+    dbSendQuery(con, "ALTER TABLE `data_matrix` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
+    dbSendQuery(con, "ALTER TABLE `data_matrix` ADD INDEX `row_idx` (`row` ASC);")
+    dbSendQuery(con, "ALTER TABLE `data_matrix` ADD INDEX `measurement_idx` (`measurement` ASC);")
+    
+    dbCommit(conn = con)
   },
   .saveColData=function(con, labelCol=NULL) {
     #odbcSetAutoCommit(con, autoCommit = FALSE)
@@ -396,7 +435,7 @@ EpivizMetagenomicsData$methods(
                  name = "col_data", 
                  append = TRUE, 
                  row.names = TRUE, 
-                 field.types = tableFieldTypes)     
+                 field.types = tableFieldTypes)
     dbCommit(conn = con)
     dbSendQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `row_names` `id` VARCHAR(255) NOT NULL;")
     #dbSendQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `index` `index` BIGINT NULL DEFAULT NULL;")
@@ -406,7 +445,6 @@ EpivizMetagenomicsData$methods(
     dbSendQuery(con, "ALTER TABLE `col_data` ADD INDEX `index_idx` (`index` ASC) ;")
     dbCommit(conn = con)
   },
-
   .saveRowData=function(con) {
     cat("\n  Computing taxonomy leafs...\n")
     h = taxonomyTable()
