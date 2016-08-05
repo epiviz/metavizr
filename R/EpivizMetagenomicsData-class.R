@@ -21,7 +21,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .maxHistory="numeric"
   ),
   methods=list(
-    initialize=function(object,control=metavizControl(), ...) {
+    initialize=function(object,control=metavizControl(), feature_order=NULL ...) {
 
       # Initialize parameters used here
       aggregateAtDepth = control$aggregateAtDepth
@@ -38,7 +38,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       norm= control$norm
 
       # TODO: Some type checking
-      .taxonomy <<- buildMetavizTree(object)
+      .taxonomy <<- buildMetavizTree(object, feature_order)
       .levels <<- .taxonomy$levels()
       .maxDepth <<- maxDepth
       .aggregateAtDepth <<- aggregateAtDepth
