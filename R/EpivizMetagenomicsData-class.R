@@ -21,7 +21,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .maxHistory="numeric"
   ),
   methods=list(
-    initialize=function(object,control=metavizControl(), feature_order=NULL ...) {
+    initialize=function(object,control=metavizControl(), feature_order=NULL, ...) {
 
       # Initialize parameters used here
       aggregateAtDepth = control$aggregateAtDepth
