@@ -12,6 +12,7 @@ import(GenomeInfoDb)
 import(GenomicFeatures)
 import(epivizrData)
 import(RMySQL)
+import(RNeo4j)
 
 exportClasses(MetavizTree)
 exportClasses(EpivizMetagenomicsData)
