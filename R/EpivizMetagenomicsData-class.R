@@ -446,6 +446,28 @@ EpivizMetagenomicsData$methods(
     dbSendQuery(con, "ALTER TABLE `col_data` ADD INDEX `index_idx` (`index` ASC) ;")
     dbCommit(conn = con)
   },
+  .getValueTable=function() {
+    
+    #get counts
+    counts = .counts
+    countsIndices = expand.grid(seq(dim(counts)[1]), seq(dim(counts)[2]))
+    
+    df = data.frame(row=countsIndices[,1], col=countsIndices[,2], val=as.vector(counts))
+    df = df[df$val != 0,]
+    
+    #get rows
+    h = taxonomyTable()
+    indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
+    
+    leafIds = lapply(seq(dim(h)[1]), function(i) {
+      calcNodeId(i, dim(h)[2])
+    })
+    
+    df$NodeId = leafIds[df$row]
+    df$SampleId = rownames(mobj$.sampleAnnotation)[df$col]
+    
+    df
+  },
   .saveRowData=function(con) {
     cat("\n  Computing taxonomy leafs...\n")
     h = taxonomyTable()
