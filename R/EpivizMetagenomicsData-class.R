@@ -756,10 +756,6 @@ EpivizMetagenomicsData$methods(
     .saveHierarchyNEO4J(graph)
     cat("Done\n")
     
-    cat("Saving levels...")
-    .saveLevelsNEO4J(graph)
-    cat("Done\n")
-
     cat("Saving Data Matrix...")
     .saveMatrixNEO4J(graph)
     cat("Done\n")
@@ -779,15 +775,15 @@ EpivizMetagenomicsData$methods(
       query = "CREATE (:Sample { "
       for (i in 1:(length(keys)-1)){
         if  (typeof(keys[i]) == "numeric")
-          query = paste(query, keys[i], " : ", row[, keys[i]], ", ", sep="")
+          query = paste(query, keys[i], " : ", gsub("'", "", row[, keys[i]]), ", ", sep="")
         else
-          query = paste(query, keys[i], " : '", row[, keys[i]], "', ",sep="")
+          query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "', ",sep="")
       }
       i = length(keys)
       if  (typeof(keys[i]) == "numeric")
-        query = paste(query, keys[i], " : ", row[, keys[i]], "})", sep="")
+        query = paste(query, keys[i], " : ", gsub("'", "",row[, keys[i]]), "})", sep="")
       else
-        query = paste(query, keys[i], " : '", row[, keys[i]], "'})", sep="")
+        query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "'})", sep="")
       print(query)
       cypher(graph,query)
     }
@@ -988,6 +984,26 @@ EpivizMetagenomicsData$methods(
   
   .neo4jUpdateProperties = function(graph) {
     query = "MATCH (f:Feature) SET f.depth = toInt(f.depth) SET f.start = toInt(f.start) SET f.end = toInt(f.end) SET f.leafIndex = toInt(f.leafIndex) SET f.nchildren = toInt(f.nchildren) SET f.nleaves = toInt(f.nleaves) SET f.order = toInt(f.order)"
+    print(query)
+    cypher(graph,query)
+    
+    query = "CREATE INDEX ON :Feature (depth)"
+    print(query)
+    cypher(graph,query)
+    
+    query = "CREATE INDEX ON :Feature (start)"
+    print(query)
+    cypher(graph,query)
+    
+    query = "CREATE INDEX ON :Feature (end)"
+    print(query)
+    cypher(graph,query)
+    
+    query = "CREATE INDEX ON :Feature (id)"
+    print(query)
+    cypher(graph,query)
+    
+    query = "CREATE INDEX ON :Sample (id)"
     print(query)
     cypher(graph,query)
   }
