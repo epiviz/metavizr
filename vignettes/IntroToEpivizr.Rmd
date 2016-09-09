@@ -3,10 +3,10 @@
 %\VignetteIndexEntry{Introduction to epivizr}
 -->
 
-Introduction to epivizr: interactive visualization for functional genomics
+Introduction to metavizr: interactive visualization for metagenomics
 ===================================================================
 
-[`Epiviz`](http://epiviz.cbcb.umd.edu) is an interactive visualization tool for functional genomics data. It supports genome navigation like other genome browsers, but allows multiple visualizations of data within genomic regions using scatterplots, heatmaps and other user-supplied visualizations. It also includes data from the [Gene Expression Barcode project](http://barcode.luhs.org/) for transcriptome visualization. It has a flexible plugin framework so users can add [d3](http://d3js.org/) visualizations. You can find more information about Epiviz at [http://epiviz.cbcb.umd.edu/help](http://epiviz.cbcb.umd.edu/help) and see a video tour [here](http://youtu.be/099c4wUxozA).
+[`Metaviz`](http://epivizwww01.umiacs.umd.edu) is an interactive visualization tool for metagenomic sequencing data. It supports taxonomy navigation of annotated metagenomic features and allows multiple visualizations of data scatterplots, heatmaps and PCA plots. It also includes data from the [Mild to Severe Diahereal Study](http://msd16s/) for  visualization. As with the Epiviz suite, it has a flexible plugin framework so users can add [d3](http://d3js.org/) visualizations. You can find more information about Metaviz at [http://epivizwww01.umiacs.umd.edu/help](http://epivizwww01.umiacs.umd.edu/help) and see a video tour NEED TO CREATE METAVIZ TUTORIAL.
 
 <iframe width="480" height="360" src="http://www.youtube.com/embed/099c4wUxozA" frameborder="1" allowfullscreen></iframe>
 

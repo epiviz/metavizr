@@ -912,12 +912,12 @@ EpivizMetagenomicsData$methods(
       cypher(graph,query)
     }
     
-    query = "MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth:'6'}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)"
+    query = "MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth:'5'}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)"
     print(query)
     cypher(graph,query)
     
     
-    query = "MATCH (fLeaf:Feature {depth:'6'}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)"
+    query = "MATCH (fLeaf:Feature {depth:'5'}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)"
     print(query)
     cypher(graph,query)
   },
