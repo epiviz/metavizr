@@ -13,17 +13,18 @@
 #' @examples
 #' #todo
 metavizHeatmap<-function(obj,mgr,control=metavizControl(title="heatmap"),samples=NULL) {
-  if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
-    stop("Either a MRexperiment or EpivizMetagenomicsData")
-  }
-  if(class(obj)=="MRexperiment"){
-    otuIndices = metavizRank(obj,control)
-    obj = mgr$addMeasurements(obj[otuIndices,],msName=control$title,control=control)
-  }
-  measurements = obj$getMeasurements()
-  if(is.null(samples)){ samples = seq(measurements) }
-  heatmap = mgr$visualize("heatmap", measurements[samples])
-  invisible(obj)
+  # if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
+  #   stop("Either a MRexperiment or EpivizMetagenomicsData")
+  # }
+  # if(class(obj)=="MRexperiment"){
+  #   otuIndices = metavizRank(obj,control)
+  #   obj = mgr$add_measurements(obj[otuIndices,],msName=control$title,control=control)
+  # }
+  # measurements = obj$get_measurements()
+  # if(is.null(samples)){ samples = seq(measurements) }
+  # heatmap = mgr$visualize("heatmap", measurements[samples])
+  # invisible(obj)
+  NULL
 }
 #' Line plot
 #'
@@ -53,17 +54,18 @@ metavizHeatmap<-function(obj,mgr,control=metavizControl(title="heatmap"),samples
 #' obj = metavizTransformSelect(mouseData[,which(pm=="PM10")],fun=rowSums,control=metavizControl(aggregateAtDepth="class",n=5))
 #' # metavizLine(obj,mgr=mgr,metavizControl(aggregateAtDepth="class",n=nrow(obj)))
 metavizLine<-function(obj,mgr,control=metavizControl(title="line plot"),samples=NULL){
-  if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
-    stop("Either a MRexperiment or EpivizMetagenomicsData")
-  }
-  if(class(obj)=="MRexperiment"){
-    otuIndices = metavizRank(obj,control)
-    obj = mgr$addMeasurements(obj[otuIndices,],msName=control$title,control=control)
-  }
-  measurements = obj$getMeasurements()
-  if(is.null(samples)){ samples = seq(measurements) }
-  line = mgr$visualize("lineplot", measurements[samples])
-  invisible(obj)
+  # if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
+  #   stop("Either a MRexperiment or EpivizMetagenomicsData")
+  # }
+  # if(class(obj)=="MRexperiment"){
+  #   otuIndices = metavizRank(obj,control)
+  #   obj = mgr$add_measurements(obj[otuIndices,],msName=control$title,control=control)
+  # }
+  # measurements = obj$get_measurements()
+  # if(is.null(samples)){ samples = seq(measurements) }
+  # line = mgr$visualize("lineplot", measurements[samples])
+  # invisible(obj)
+  NULL
 }
 #' Icicle
 #'
@@ -79,7 +81,8 @@ metavizLine<-function(obj,mgr,control=metavizControl(title="line plot"),samples=
 #' # metavizTree(datasource,mgr)
 #'
 metavizTree<-function(datasource,mgr){
-  invisible(mgr$visualize("icicle", datasource=datasource))
+  # invisible(mgr$visualize("icicle", datasource=datasource))
+  NULL
 }
 #' Stacked plot
 #'
@@ -107,16 +110,17 @@ metavizTree<-function(datasource,mgr){
 #' # gates = metavizStack(obj,mgr,control=metavizControl(aggregateFun=colSums,aggregateAtDepth=5,log=FALSE))
 #'
 metavizStack<-function(obj,mgr,control=metavizControl(title="stacked plot",aggregateFun=colSums),samples=NULL) {
-  if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
-    stop("Either a MRexperiment or EpivizMetagenomicsData")
-  }
-  if(class(obj)=="MRexperiment"){
-    otuIndices = metavizRank(obj,control)
-    obj = mgr$addMeasurements(obj[otuIndices,],msName=control$title,control=control)
-  }
-  measurements = obj$getMeasurements()
-  stack = mgr$visualize("stackedplot", measurements)
-  invisible(obj)
+  # if(!class(obj)%in%c("MRexperiment","EpivizMetagenomicsData")){
+  #   stop("Either a MRexperiment or EpivizMetagenomicsData")
+  # }
+  # if(class(obj)=="MRexperiment"){
+  #   otuIndices = metavizRank(obj,control)
+  #   obj = mgr$add_measurements(obj[otuIndices,],control=control, datasource_name=control$title)
+  # }
+  # measurements = obj$get_measurements()
+  # stack = mgr$visualize("stackedplot", measurements)
+  # invisible(obj)
+  NULL
 }
 
 #' MDS (multiple dimensional scaling) or PCA
@@ -142,40 +146,41 @@ metavizStack<-function(obj,mgr,control=metavizControl(title="stacked plot",aggre
 metavizMDS<-function(obj,mgr,usePCA=FALSE,useDist=TRUE,cord=c(1,2),
           distFun=stats::dist,distMethod="euclidian",tran=FALSE,
           control=metavizControl(title="MDS plot")){
-  if(useDist == FALSE & usePCA == FALSE)
-    stop("Classical MDS requires distances")
-  control$n = min(nrow(obj),control$n)
-  otuIndices = metavizRank(obj,control)
-  d = MRcounts(obj[otuIndices, ],norm=TRUE,log=TRUE)
-  if(tran == FALSE) { d = t(d) }
-  if(useDist == TRUE) { d = distFun(d, method = distMethod) }
-  if(usePCA == FALSE) {
-    ord = cmdscale(d, k = dim(as.matrix(d))[1]-1 )
-    colnames(ord) = paste("MDS",1:ncol(ord),sep="")
-    df = data.frame(root="MDS",components = paste("MDS",1:ncol(ord),sep=""))
-    rownames(df) = colnames(ord)
-  } else {
-    ord = prcomp(d)$x
-    df = data.frame(root="PCA",PCs = paste("PC",1:ncol(ord),sep=""))
-    rownames(df) = colnames(ord)
-  }
-  pd = pData(obj)
-  pd = cbind(Sample = "sample",pd)
-  #pd = cbind(pd,sampleNames = factor(rownames(pd)))
-  tmp = newMRexperiment(ord,featureData=AnnotatedDataFrame(pd),
-  normFactors=rep(1000,ncol(ord)),phenoData=AnnotatedDataFrame(df))
-  # override parameters
-  control$aggregateAtDepth = -1
-  control$aggregateFun = identity
-  control$minValue = min(ord)
-  control$maxValue = max(ord)
-  control$norm=FALSE
-  control$log=FALSE
-
-  metavizrData = mgr$addMeasurements(tmp,control$title,control=control)
-  measurements = metavizrData$getMeasurements()
-  scatterplot = mgr$visualize("scatterplot", list(measurements[[cord[1]]],measurements[[cord[2]]]))
-  invisible(metavizrData)
+  # if(useDist == FALSE & usePCA == FALSE)
+  #   stop("Classical MDS requires distances")
+  # control$n = min(nrow(obj),control$n)
+  # otuIndices = metavizRank(obj,control)
+  # d = MRcounts(obj[otuIndices, ],norm=TRUE,log=TRUE)
+  # if(tran == FALSE) { d = t(d) }
+  # if(useDist == TRUE) { d = distFun(d, method = distMethod) }
+  # if(usePCA == FALSE) {
+  #   ord = cmdscale(d, k = dim(as.matrix(d))[1]-1 )
+  #   colnames(ord) = paste("MDS",1:ncol(ord),sep="")
+  #   df = data.frame(root="MDS",components = paste("MDS",1:ncol(ord),sep=""))
+  #   rownames(df) = colnames(ord)
+  # } else {
+  #   ord = prcomp(d)$x
+  #   df = data.frame(root="PCA",PCs = paste("PC",1:ncol(ord),sep=""))
+  #   rownames(df) = colnames(ord)
+  # }
+  # pd = pData(obj)
+  # pd = cbind(Sample = "sample",pd)
+  # #pd = cbind(pd,sampleNames = factor(rownames(pd)))
+  # tmp = newMRexperiment(ord,featureData=AnnotatedDataFrame(pd),
+  # normFactors=rep(1000,ncol(ord)),phenoData=AnnotatedDataFrame(df))
+  # # override parameters
+  # control$aggregateAtDepth = -1
+  # control$aggregateFun = identity
+  # control$minValue = min(ord)
+  # control$maxValue = max(ord)
+  # control$norm=FALSE
+  # control$log=FALSE
+  # 
+  # metavizrData = mgr$add_measurements(tmp,control$title,control=control)
+  # measurements = metavizrData$get_measurements()
+  # scatterplot = mgr$visualize("scatterplot", list(measurements[[cord[1]]],measurements[[cord[2]]]))
+  # invisible(metavizrData)
+  NULL
 }
 
 #' Indices of ranked features
@@ -196,16 +201,17 @@ metavizMDS<-function(obj,mgr,usePCA=FALSE,useDist=TRUE,cord=c(1,2),
 #' indices = metavizRank(msd16s[,1:10],control=metavizControl(n=20,rankFun=max,log=TRUE))
 #'
 metavizRank<-function(obj,control=metavizControl(log=TRUE)){
-  norm=control$norm
-  log = control$log
-  n   = control$n
-  rankFun = control$rankFun
-  mat = MRcounts(obj,norm=norm,log=log)
-  otusToKeep = which(rowSums(mat) > 0)
-  n = min(length(otusToKeep),n)
-  otuStats = apply(mat[otusToKeep, ], 1, rankFun)
-  otuIndices = otusToKeep[order(otuStats, decreasing = TRUE)[1:n]]
-  otuIndices
+#   norm=control$norm
+#   log = control$log
+#   n   = control$n
+#   rankFun = control$rankFun
+#   mat = MRcounts(obj,norm=norm,log=log)
+#   otusToKeep = which(rowSums(mat) > 0)
+#   n = min(length(otusToKeep),n)
+#   otuStats = apply(mat[otusToKeep, ], 1, rankFun)
+#   otuIndices = otusToKeep[order(otuStats, decreasing = TRUE)[1:n]]
+#   otuIndices
+  NULL
 }
 #' Tranform the tree of a MRexperiment object
 #'
@@ -227,22 +233,23 @@ metavizRank<-function(obj,control=metavizControl(log=TRUE)){
 #' obj = metavizTransformSelect(msd16s[,ind],control=settings)
 #'
 metavizTransformSelect<-function(obj,fun=rowSums ,control=metavizControl(n=100)){
-  aggregateAtDepth = control$aggregateAtDepth
-  if(is.character(aggregateAtDepth)) aggregateAtDepth = assignValues(obj,aggregateAtDepth)
-    n = control$n
-  tree = fData(obj)
-
-  treeLvl = colnames(tree)[aggregateAtDepth+1]
-  agg = aggregateByTaxonomy(obj,treeLvl,out="matrix")
-  topX = rownames(agg)[order(fun(agg),decreasing=TRUE)[1:n]]
-  ind = which(!tree[,aggregateAtDepth+1]%in%topX)
-  for(i in 1:(ncol(tree)-1)) tree[,i] = as.character(tree[,i])
-  for(i in 2:(ncol(tree)-1)) tree[ind,i] = "Other"
-
-  obj = newMRexperiment(MRcounts(obj),phenoData=phenoData(obj),
-    featureData=AnnotatedDataFrame(tree),normFactors=normFactors(obj),
-    libSize=libSize(obj))
-  return(obj)
+  # aggregateAtDepth = control$aggregateAtDepth
+  # if(is.character(aggregateAtDepth)) aggregateAtDepth = assignValues(obj,aggregateAtDepth)
+  #   n = control$n
+  # tree = fData(obj)
+  # 
+  # treeLvl = colnames(tree)[aggregateAtDepth+1]
+  # agg = aggregateByTaxonomy(obj,treeLvl,out="matrix")
+  # topX = rownames(agg)[order(fun(agg),decreasing=TRUE)[1:n]]
+  # ind = which(!tree[,aggregateAtDepth+1]%in%topX)
+  # for(i in 1:(ncol(tree)-1)) tree[,i] = as.character(tree[,i])
+  # for(i in 2:(ncol(tree)-1)) tree[ind,i] = "Other"
+  # 
+  # obj = newMRexperiment(MRcounts(obj),phenoData=phenoData(obj),
+  #   featureData=AnnotatedDataFrame(tree),normFactors=normFactors(obj),
+  #   libSize=libSize(obj))
+  # return(obj)
+  NULL
 }
 #' metavizr settings
 #'
