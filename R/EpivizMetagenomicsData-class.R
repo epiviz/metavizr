@@ -218,6 +218,7 @@ EpivizMetagenomicsData$methods(
 
 # Epiviz Websockets Protocol
 EpivizMetagenomicsData$methods(
+  get_default_chart_type = function() { "Icicle" },
   getMeasurements=function() {
     out <- lapply(colnames(.counts), function(sample) {
       list(id=sample,
