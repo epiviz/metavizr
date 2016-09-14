@@ -218,14 +218,14 @@ EpivizMetagenomicsData$methods(
 
 # Epiviz Websockets Protocol
 EpivizMetagenomicsData$methods(
-  get_default_chart_type = function() { "Icicle" },
+  get_default_chart_type = function() { "epiviz.ui.charts.tree.Icicle" },
   get_measurements=function() {
     out <- lapply(colnames(.counts), function(sample) {
-      list(id=sample,
+      epivizrData:::EpivizMeasurement(id=sample,
            name=sample,
            type="feature",
-           datasourceId=.id,
-           datasourceGroup=.id,
+           datasourceId=.self$.id,
+           datasourceGroup=.self$.id,
            defaultChartType="heatmap",
            annotation=as.list(.sampleAnnotation[sample,]),
            minValue=.minValue,
