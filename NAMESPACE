@@ -14,7 +14,7 @@ import(epivizrData)
 import(RMySQL)
 import(RNeo4j)
 
+export(startMetaviz)
+export(register)
 exportClasses(MetavizTree)
 exportClasses(EpivizMetagenomicsData)
-
-export(startMetaviz)
