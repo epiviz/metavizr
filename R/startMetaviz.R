@@ -61,7 +61,7 @@
 }
 
 
-startMetaviz <- function(register_function = .register_all_metaviz_things, host="http://metaviz.cbcb.umd.edu", ...) {
-  app = startEpiviz(register_function = register_function, host = host, ...)
+startMetaviz <- function(register_function = .register_all_metaviz_things, host="http://metaviz.cbcb.umd.edu", chr="metavizr", start=1, end=1000, ...) {
+  app = startEpiviz(register_function = register_function, host = host, chr=chr, start=start, end=end, ...)
   app
 }
