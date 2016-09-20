@@ -896,12 +896,12 @@ EpivizMetagenomicsData$methods(
       query = "CREATE (:Feature { "
       for (i in 1:(length(keys)-1)){
         if  (typeof(keys[i]) == "numeric")
-          query = paste(query, keys[i], " : ", row[, keys[i]], ", ",sep="")
+          query = paste(query, keys[i], " : ", gsub("'", "",row[, keys[i]]), ", ",sep="")
         else
-          query = paste(query, keys[i], " : '", row[, keys[i]], "', ", sep="")
+          query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "', ", sep="")
       }
       i = length(keys)
-      query = paste(query, keys[i], " : '", row[, keys[i]], "'})", sep="")
+      query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "'})", sep="")
       print(query)
       cypher(graph,query)
     }
