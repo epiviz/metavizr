@@ -1,3 +1,10 @@
+#' Data container for MRexperiment objects
+#' 
+#' Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
+#' \code{\link{MRexperiment}} objects.
+#' @importClassesFrom epivizrData EpivizData
+#' @import RMySQL RNeo4j
+#' @exportClass EpivizMetagenomicsData
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   contains="EpivizData",
   fields=list(
@@ -320,9 +327,9 @@ EpivizMetagenomicsData$methods(
   }
 )
 
-# Database serialization
 EpivizMetagenomicsData$methods(
   toMySQLDb=function(con, colLabel=NULL) {
+    "Save an MRexperiment object to a MySQL database."
     
     # TODO: Formal log
     cat("Saving column data...")
@@ -698,6 +705,7 @@ EpivizMetagenomicsData$methods(
   },
   
   toNEO4JDb=function(graph, colLabel=NULL) {
+    "Save an MRexperiment object to a Neo4j Graph database."
 
     cat("Saving sample data...")
     .saveSampleDataNEO4J(graph)

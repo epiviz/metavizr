@@ -5,17 +5,41 @@ Version: 1.0
 License: Artistic-2.0
 Title: R Interface to the epiviz web app for metagenomics
 Description: TODO This package provides Websocket communication to the
-        epiviz web app (http://epiviz.cbcb.umd.edu) for interactive
-        visualization of genomic data. Objects in R/bioc interactive
-        sessions can be displayed in genome browser tracks or plots to
-        be explored by navigation through genomic regions. Fundamental
-        Bioconductor data structures are supported (e.g., MRexperiment objects), 
-        while providing an easy mechanism to support other data structures. 
-        Visualizations (using d3.js) can be easily added to the web app as well.
+    epiviz web app (http://epiviz.cbcb.umd.edu) for interactive
+    visualization of genomic data. Objects in R/bioc interactive
+    sessions can be displayed in genome browser tracks or plots to
+    be explored by navigation through genomic regions. Fundamental
+    Bioconductor data structures are supported (e.g., MRexperiment objects),
+    while providing an easy mechanism to support other data structures.
+    Visualizations (using d3.js) can be easily added to the web app as well.
 VignetteBuilder: knitr
-Depends: R (>= 3.0.1), methods, Biobase, stringr, epivizr, metagenomeSeq, RMySQL, RNeo4j
-Imports: S4Vectors, httpuv (>= 1.3.0)
-Suggests: knitr, matrixStats, msd16s
-Collate: 'startMetaviz.R' 'utils.R' 'Ptr-class.R' 'MetavizNode-class.R' 'MetavizTree-class.R' 'EpivizMetagenomicsData-class.R' 'register-methods.R' 'plots.R'
+Depends:
+    R (>= 3.0.1),
+    methods,
+    Biobase,
+    stringr,
+    epivizr,
+    epivizrData,
+    metagenomeSeq,
+    RMySQL,
+    RNeo4j
+Imports:
+    S4Vectors,
+    httpuv (>= 1.3.0)
+Suggests:
+    knitr,
+    matrixStats,
+    msd16s
+Collate:
+    'startMetaviz.R'
+    'utils.R'
+    'Ptr-class.R'
+    'MetavizNode-class.R'
+    'MetavizTree-class.R'
+    'EpivizMetagenomicsData-class.R'
+    'register-methods.R'
+    'plots.R'
+    'EpivizMetagenomicsMeasurement-class.R'
 biocViews: Visualization, Infrastructure, GUI
 Video: https://www.youtube.com/watch?v=099c4wUxozA
+RoxygenNote: 5.0.1

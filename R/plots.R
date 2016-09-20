@@ -8,7 +8,6 @@
 #' @param control List of options passed through `metavizControl`.
 #' @param samples Index vector of samples to include in plot.
 #' @return EpivizMetagenomicsData class object
-#' @export
 #' @seealso \code{\link{metavizControl}} \code{\link{metaviztree}} \code{\link{metavizRank}} \code{\link{metavizOptimize}}
 #' @examples
 #' #todo
@@ -36,7 +35,6 @@ metavizHeatmap<-function(obj,mgr,control=metavizControl(title="heatmap"),samples
 #' @param control List of options passed through `metavizControl`.
 #' @param samples Index vector of samples to include in plot.
 #' @return EpivizMetagenomicsData class object
-#' @export
 #' @seealso \code{\link{metavizControl}} \code{\link{metaviztree}} \code{\link{metavizRank}} \code{\link{metavizOptimize}}
 #' @examples
 #' library(msd16s)
@@ -74,7 +72,6 @@ metavizLine<-function(obj,mgr,control=metavizControl(title="line plot"),samples=
 #' @param datasource An EpivizMetagenomicsData class object (i.e. output from one of the metavizPlot functions).
 #' @param mgr manager of a metaviz session.
 #' @return Icicle plot
-#' @export
 #' @seealso \code{\link{startMetaviz}}
 #' @examples
 #' # assuming datasource, and mgr
@@ -94,7 +91,6 @@ metavizTree<-function(datasource,mgr){
 #' @param control List of options passed through `metavizControl`.
 #' @param samples Index vector of samples to include in plot.
 #' @return EpivizMetagenomicsData class object
-#' @export
 #' @seealso \code{\link{metavizControl}} \code{\link{metaviztree}}
 #'     \code{\link{metavizRank}} \code{\link{metavizOptimize}}
 #' @examples
@@ -137,7 +133,6 @@ metavizStack<-function(obj,mgr,control=metavizControl(title="stacked plot",aggre
 #' @param tran Transpose the matrix.
 #' @param control List of options passed through `metavizControl`.
 #' @return EpivizMetagenomicsData class object
-#' @export
 #' @seealso \code{\link{metavizControl}} \code{\link{metavizRank}} \code{\link{cmdscale}} \code{\link{prcomp}}
 #' @examples
 #' data(mouseData)
@@ -190,7 +185,6 @@ metavizMDS<-function(obj,mgr,usePCA=FALSE,useDist=TRUE,cord=c(1,2),
 #' @param obj MRexperiment object.
 #' @param control List of options passed through `metavizControl`.
 #' @return value
-#' @export
 #' @seealso \code{\link{metavizControl}} \code{\link{metavizRank}}
 #' @examples
 #' # 10 highest mean OTUs
@@ -223,7 +217,6 @@ metavizRank<-function(obj,control=metavizControl(log=TRUE)){
 #' @param fun Row based function for ranking top OTUs.
 #' @param control List of options passed through `metavizControl`.
 #' @return Modified MRexperiment object.
-#' @export
 #' @seealso \code{\link{metavizControl}} \code{\link{startMetaviz}}
 #' @examples
 #' library(msd16s)
@@ -268,7 +261,6 @@ metavizTransformSelect<-function(obj,fun=rowSums ,control=metavizControl(n=100))
 #' @param norm Normalize MRexperiment object.
 #' @param log Log tranformation of MRexperiment object.
 #' @return List of setting parameters.
-#' @export
 #' @seealso \code{\link{metavizControl}} \code{\link{metavizRank}} \code{\link{metavizOptimize}}
 #' @examples
 #' settings = metavizControl()
