@@ -18,7 +18,9 @@ In this vignette we will look at the msd16s data.
 
 ```{r, eval=TRUE, echo=TRUE, results='hide', warning=FALSE, error=FALSE}
 require(metavizr)
-require(msd16s)
+require(metagenomeSeq)
+
+data("mouseData")
 ```
 
 ### The metavizr session manager
@@ -56,14 +58,14 @@ app$server$service()
 
 ### Adding Icicle plot to explore metagenomic Features
 
-Once the browser is open we can visualize the metagenomic features from the `msd16s` object.
+Once the browser is open we can visualize the metagenomic features from the `mouseData` object.
 We use the `plot` method to do so. 
 
 ```{r,eval=TRUE}
-icicle_plot <- app$plot(msd16s, datasource_name="msd16s")
+icicle_plot <- app$plot(mouseData, datasource_name="msd16s")
 ```
 
-You should now see an icicle plot to explore the hierarchy of the metagenomic features from the `msd16s` object.
+You should now see an icicle plot to explore the hierarchy of the metagenomic features from the `mouseData` object.
 
 ### SessionInfo
 
