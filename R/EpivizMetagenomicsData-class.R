@@ -704,7 +704,7 @@ EpivizMetagenomicsData$methods(
     dbSendQuery(con, "ALTER TABLE `levels` DROP COLUMN `row_names` ;")
   },
   
-  toNEO4jDump = function(filePath) {
+  toNEO4jDump = function() {
     "Save an MRexperiment object to a Neo4j Graph database. The dump file is location at ~/dump.cypher."
     write("begin", file="~/dump.cypher", append = TRUE)
     .saveSampleDataNEO4J(graph=NULL)
@@ -921,6 +921,8 @@ EpivizMetagenomicsData$methods(
     
     
     keys = colnames(dfToNeo4j)
+    
+    cypherCount = 0
     for (j in 1:nrow(dfToNeo4j)){
       row <- dfToNeo4j[j,]
       query = "CREATE (:Feature { "
@@ -938,9 +940,20 @@ EpivizMetagenomicsData$methods(
       }
       else {
         write(query, file="~/dump.cypher", append = TRUE)
+        
+        cypherCount = cypherCount + 1
+        
+        # write commits if data file is too long
+        if(cypherCount == 250) {
+          write("commit", file="~/dump.cypher", append = TRUE)
+          write("begin", file="~/dump.cypher", append = TRUE)
+          cypherCount = 0
+        }
       }
     }
     
+    
+    cypherCount = 0
     for (j in 1:nrow(dfToNeo4j)){
       row <- dfToNeo4j[j,]
       query = paste("MATCH (fParent:Feature {id :'", row$parentId, "'}) MATCH (f:Feature {id:'", row$id, "'}) CREATE (fParent)-[:PARENT_OF]->(f)", sep="")
@@ -951,6 +964,15 @@ EpivizMetagenomicsData$methods(
       }
       else {
         write(query, file="~/dump.cypher", append = TRUE)
+        
+        cypherCount = cypherCount + 1
+        
+        # write commits if data file is too long
+        if(cypherCount == 250) {
+          write("commit", file="~/dump.cypher", append = TRUE)
+          write("begin", file="~/dump.cypher", append = TRUE)
+          cypherCount = 0
+        }
       }
     }
     
@@ -976,6 +998,8 @@ EpivizMetagenomicsData$methods(
   
   .saveMatrixNEO4J = function(graph) {
     valuesToNeo4j = .getValueTable()
+    
+    cypherCount = 0
 
     for (j in 1:nrow(valuesToNeo4j)){
       row <- valuesToNeo4j[j,]
@@ -988,6 +1012,15 @@ EpivizMetagenomicsData$methods(
       }
       else {
         write(query, file="~/dump.cypher", append = TRUE)
+        
+        cypherCount = cypherCount + 1
+        
+        # write commits if data file is too long
+        if(cypherCount == 250) {
+          write("commit", file="~/dump.cypher", append = TRUE)
+          write("begin", file="~/dump.cypher", append = TRUE)
+          cypherCount = 0
+        }
       }
     }
   },
