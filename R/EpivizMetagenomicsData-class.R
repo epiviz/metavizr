@@ -464,7 +464,7 @@ EpivizMetagenomicsData$methods(
     })
     
     df$NodeId = leafIds[df$row]
-    df$SampleId = rownames(mobj$.sampleAnnotation)[df$col]
+    df$SampleId = rownames(.sampleAnnotation)[df$col]
     
     df
   },
@@ -704,6 +704,22 @@ EpivizMetagenomicsData$methods(
     dbSendQuery(con, "ALTER TABLE `levels` DROP COLUMN `row_names` ;")
   },
   
+  toNEO4jDump = function(filePath) {
+    "Save an MRexperiment object to a Neo4j Graph database. The dump file is location at ~/dump.cypher."
+    write("begin", file="~/dump.cypher", append = TRUE)
+    .saveSampleDataNEO4J(graph=NULL)
+    write("commit", file="~/dump.cypher", append = TRUE)
+    write("begin", file="~/dump.cypher", append = TRUE)
+    .saveHierarchyNEO4J(graph=NULL)
+    write("commit", file="~/dump.cypher", append = TRUE)
+    write("begin", file="~/dump.cypher", append = TRUE)
+    .saveMatrixNEO4J(graph=NULL)
+    write("commit", file="~/dump.cypher", append = TRUE)
+    write("begin", file="~/dump.cypher", append = TRUE)
+    .neo4jUpdateProperties(graph=NULL)
+    write("commit", file="~/dump.cypher", append = TRUE)
+  },
+  
   toNEO4JDb=function(graph, colLabel=NULL) {
     "Save an MRexperiment object to a Neo4j Graph database."
 
@@ -743,8 +759,14 @@ EpivizMetagenomicsData$methods(
         query = paste(query, keys[i], " : ", gsub("'", "",row[, keys[i]]), "})", sep="")
       else
         query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "'})", sep="")
-      print(query)
-      cypher(graph,query)
+      
+      if(!is.null(graph)) {
+        print(query)
+        cypher(graph,query) 
+      }
+      else {
+        write(query, file="~/dump.cypher", append = TRUE)
+      }
     }
   },
   
@@ -752,37 +774,37 @@ EpivizMetagenomicsData$methods(
     h = taxonomyTable()
     indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
     
-    cat("\n  Extracting taxonomy nodes...\n")
-    pb = txtProgressBar(style=3, width=25)
+    # cat("\n  Extracting taxonomy nodes...\n")
+    # pb = txtProgressBar(style=3, width=25)
     nodeIds = lapply(seq(dim(indexCombs)[1]), function(i) {
-      setTxtProgressBar(pb, i/dim(indexCombs)[1])
+      # setTxtProgressBar(pb, i/dim(indexCombs)[1])
       calcNodeId(indexCombs[i, 1], indexCombs[i, 2])
     })
     uniqueIds = unique(nodeIds)
     
-    cat("\n  Generating taxonomy structure...\n")
-    pb = txtProgressBar(style=3, width=25)
+    # cat("\n  Generating taxonomy structure...\n")
+    # pb = txtProgressBar(style=3, width=25)
     names = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
+      # setTxtProgressBar(pb, i/length(uniqueIds))
       nodeId = uniqueIds[[i]]
       #node(nodeId)$name()
       pair = .fromMetavizNodeId(nodeId)
       h[pair$leafIndex+1, pair$depth+1]
     })
     
-    cat("\n  Computing node parents...\n")
-    pb = txtProgressBar(style=3, width=25)
+    # cat("\n  Computing node parents...\n")
+    # pb = txtProgressBar(style=3, width=25)
     parentIds = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
+      # setTxtProgressBar(pb, i/length(uniqueIds))
       nodeId = uniqueIds[[i]]
       node(nodeId)$parentId()
     })
     
-    cat("\n  Computing lineages...\n")
+    # cat("\n  Computing lineages...\n")
     pathsList = Ptr$new(list())
-    pb = txtProgressBar(style=3, width=25)
+    # pb = txtProgressBar(style=3, width=25)
     paths = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
+      # setTxtProgressBar(pb, i/length(uniqueIds))
       nodeId = uniqueIds[[i]]
       parentId = parentIds[[i]]
       if (is.null(parentId) || is.null(pathsList$.[[parentId]])) {
@@ -794,11 +816,11 @@ EpivizMetagenomicsData$methods(
       return(path)
     })
     
-    cat("\n  Computing lineages labels...\n")
+    # cat("\n  Computing lineages labels...\n")
     pathsLabels = Ptr$new(list())
-    pb = txtProgressBar(style=3, width=25)
+    # pb = txtProgressBar(style=3, width=25)
     pathsLabels = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
+      # setTxtProgressBar(pb, i/length(uniqueIds))
       
       nodeId = uniqueIds[[i]]
       pair = .fromMetavizNodeId(nodeId)
@@ -816,26 +838,26 @@ EpivizMetagenomicsData$methods(
       return(path)
     })
     
-    cat("\n  Computing index of first leaf in node subtrees...\n")
-    pb = txtProgressBar(style=3, width=25)
+    # cat("\n  Computing index of first leaf in node subtrees...\n")
+    # pb = txtProgressBar(style=3, width=25)
     starts = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
+      # setTxtProgressBar(pb, i/length(uniqueIds))
       nodeId = uniqueIds[[i]]
       node(nodeId)$leafIndex()
     })
     
-    cat("\n  Computing leaf counts in node subtrees...\n")
-    pb = txtProgressBar(style=3, width=25)
+    # cat("\n  Computing leaf counts in node subtrees...\n")
+    # pb = txtProgressBar(style=3, width=25)
     ends = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
+      # setTxtProgressBar(pb, i/length(uniqueIds))
       nodeId = uniqueIds[[i]]
       node(nodeId)$nleaves() + starts[[i]]
     })
     
-    cat("\n  Computing node depths...\n")
-    pb = txtProgressBar(style=3, width=25)
+    # cat("\n  Computing node depths...\n")
+    # pb = txtProgressBar(style=3, width=25)
     depths = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
+      # setTxtProgressBar(pb, i/length(uniqueIds))
       nodeId = uniqueIds[[i]]
       node(nodeId)$depth()
     })
@@ -848,7 +870,7 @@ EpivizMetagenomicsData$methods(
     })
     
     
-    cat("\n  Computing node children counts...")
+    # cat("\n  Computing node children counts...")
     nchildren = list()
     for (parentId in parentIds) {
       if (is.null(parentId)) { next }
@@ -861,14 +883,14 @@ EpivizMetagenomicsData$methods(
       if (is.null(nchildren[[nodeId]])) { return(0) }
       nchildren[[nodeId]]
     })
-    cat("Done\n")
+    # cat("Done\n")
     
-    cat("\n  Computing nodes order...\n")
+    # cat("\n  Computing nodes order...\n")
     lastOrder = list()
-    pb = txtProgressBar(style=3, width=25)
+    # pb = txtProgressBar(style=3, width=25)
     orders = list()
     for (i in seq(length(uniqueIds))) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
+      # setTxtProgressBar(pb, i/length(uniqueIds))
       parentId = parentIds[[i]]
       nodeId = uniqueIds[[i]]
       if (is.null(parentId)) {
@@ -886,7 +908,7 @@ EpivizMetagenomicsData$methods(
       orders[[i]] = o+1
     }
     
-    cat("\n  Outputting to database...")
+    # cat("\n  Outputting to database...")
     parentIds[[1]] = NA
     dfToNeo4j = data.frame(depth=unlist(depths), label=unlist(names), 
                            parentId=unlist(parentIds), lineage=unlist(paths), 
@@ -910,60 +932,119 @@ EpivizMetagenomicsData$methods(
       }
       i = length(keys)
       query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "'})", sep="")
-      print(query)
-      cypher(graph,query)
+      if(!is.null(graph)) {
+        print(query)
+        cypher(graph,query) 
+      }
+      else {
+        write(query, file="~/dump.cypher", append = TRUE)
+      }
     }
     
     for (j in 1:nrow(dfToNeo4j)){
       row <- dfToNeo4j[j,]
       query = paste("MATCH (fParent:Feature {id :'", row$parentId, "'}) MATCH (f:Feature {id:'", row$id, "'}) CREATE (fParent)-[:PARENT_OF]->(f)", sep="")
-      print(query)
-      cypher(graph,query)
+      
+      if(!is.null(graph)) {
+        print(query)
+        cypher(graph,query) 
+      }
+      else {
+        write(query, file="~/dump.cypher", append = TRUE)
+      }
     }
     
     query = paste("MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth:'", length(.levels), "'}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)")
-    print(query)
-    cypher(graph,query)
+    if(!is.null(graph)) {
+      print(query)
+      cypher(graph,query) 
+    }
+    else {
+      write(query, file="~/dump.cypher", append = TRUE)
+    }
     
     
     query = paste("MATCH (fLeaf:Feature {depth:'", length(.levels),"'}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)")
-    print(query)
-    cypher(graph,query)
+    if(!is.null(graph)) {
+      print(query)
+      cypher(graph,query) 
+    }
+    else {
+      write(query, file="~/dump.cypher", append = TRUE)
+    }
   },
   
   .saveMatrixNEO4J = function(graph) {
-    valuesToNeo4j = .getValueTable() 
+    valuesToNeo4j = .getValueTable()
+
     for (j in 1:nrow(valuesToNeo4j)){
       row <- valuesToNeo4j[j,]
+      # query = paste(query, paste("MATCH (f:Feature {id :'", row$NodeId, "'}) MATCH (s:Sample {id:'", row$SampleId, "'}) CREATE (s)-[:VALUE {val: ", row$val, "}]->(f)", sep=""), sep= " ")
       query = paste("MATCH (f:Feature {id :'", row$NodeId, "'}) MATCH (s:Sample {id:'", row$SampleId, "'}) CREATE (s)-[:VALUE {val: ", row$val, "}]->(f)", sep="")
-      print(query)
-      cypher(graph,query)
+
+      if(!is.null(graph)) {
+        print(query)
+        cypher(graph,query) 
+      }
+      else {
+        write(query, file="~/dump.cypher", append = TRUE)
+      }
     }
   },
   
   .neo4jUpdateProperties = function(graph) {
     query = "MATCH (f:Feature) SET f.depth = toInt(f.depth) SET f.start = toInt(f.start) SET f.end = toInt(f.end) SET f.leafIndex = toInt(f.leafIndex) SET f.nchildren = toInt(f.nchildren) SET f.nleaves = toInt(f.nleaves) SET f.order = toInt(f.order)"
-    print(query)
-    cypher(graph,query)
+    if(!is.null(graph)) {
+      print(query)
+      cypher(graph,query) 
+    }
+    else {
+      write(query, file="~/dump.cypher", append = TRUE)
+    }
     
     query = "CREATE INDEX ON :Feature (depth)"
-    print(query)
-    cypher(graph,query)
+    if(!is.null(graph)) {
+      print(query)
+      cypher(graph,query) 
+    }
+    else {
+      write(query, file="~/dump.cypher", append = TRUE)
+    }
     
     query = "CREATE INDEX ON :Feature (start)"
-    print(query)
-    cypher(graph,query)
+    if(!is.null(graph)) {
+      print(query)
+      cypher(graph,query) 
+    }
+    else {
+      write(query, file="~/dump.cypher", append = TRUE)
+    }
     
     query = "CREATE INDEX ON :Feature (end)"
-    print(query)
-    cypher(graph,query)
+    if(!is.null(graph)) {
+      print(query)
+      cypher(graph,query) 
+    }
+    else {
+      write(query, file="~/dump.cypher", append = TRUE)
+    }
     
     query = "CREATE INDEX ON :Feature (id)"
-    print(query)
-    cypher(graph,query)
+    if(!is.null(graph)) {
+      print(query)
+      cypher(graph,query) 
+    }
+    else {
+      write(query, file="~/dump.cypher", append = TRUE)
+    }
     
     query = "CREATE INDEX ON :Sample (id)"
-    print(query)
-    cypher(graph,query)
+    if(!is.null(graph)) {
+      print(query)
+      cypher(graph,query) 
+    }
+    else {
+      write(query, file="~/dump.cypher", append = TRUE)
+    }
   }
 )
