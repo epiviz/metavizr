@@ -708,16 +708,16 @@ EpivizMetagenomicsData$methods(
     "Save an MRexperiment object to a Neo4j Graph database. The dump file is location at ~/dump.cypher."
     write("begin", file="~/dump.cypher", append = TRUE)
     .saveSampleDataNEO4J(graph=NULL)
-    write("commit", file="~/dump.cypher", append = TRUE)
+    write("commit;", file="~/dump.cypher", append = TRUE)
     write("begin", file="~/dump.cypher", append = TRUE)
     .saveHierarchyNEO4J(graph=NULL)
-    write("commit", file="~/dump.cypher", append = TRUE)
+    write("commit;", file="~/dump.cypher", append = TRUE)
     write("begin", file="~/dump.cypher", append = TRUE)
     .saveMatrixNEO4J(graph=NULL)
-    write("commit", file="~/dump.cypher", append = TRUE)
+    write("commit;", file="~/dump.cypher", append = TRUE)
     write("begin", file="~/dump.cypher", append = TRUE)
     .neo4jUpdateProperties(graph=NULL)
-    write("commit", file="~/dump.cypher", append = TRUE)
+    write("commit;", file="~/dump.cypher", append = TRUE)
   },
   
   toNEO4JDb=function(graph, colLabel=NULL) {
@@ -945,7 +945,7 @@ EpivizMetagenomicsData$methods(
         
         # write commits if data file is too long
         if(cypherCount == 250) {
-          write("commit", file="~/dump.cypher", append = TRUE)
+          write("commit;", file="~/dump.cypher", append = TRUE)
           write("begin", file="~/dump.cypher", append = TRUE)
           cypherCount = 0
         }
@@ -969,14 +969,14 @@ EpivizMetagenomicsData$methods(
         
         # write commits if data file is too long
         if(cypherCount == 250) {
-          write("commit", file="~/dump.cypher", append = TRUE)
+          write("commit;", file="~/dump.cypher", append = TRUE)
           write("begin", file="~/dump.cypher", append = TRUE)
           cypherCount = 0
         }
       }
     }
     
-    query = paste("MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth:'", length(.levels), "'}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)")
+    query = paste("MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth:'", length(.levels) - 1 , "'}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)")
     if(!is.null(graph)) {
       print(query)
       cypher(graph,query) 
@@ -986,7 +986,7 @@ EpivizMetagenomicsData$methods(
     }
     
     
-    query = paste("MATCH (fLeaf:Feature {depth:'", length(.levels),"'}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)")
+    query = paste("MATCH (fLeaf:Feature {depth:'", length(.levels) - 1,"'}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)")
     if(!is.null(graph)) {
       print(query)
       cypher(graph,query) 
@@ -1017,7 +1017,7 @@ EpivizMetagenomicsData$methods(
         
         # write commits if data file is too long
         if(cypherCount == 250) {
-          write("commit", file="~/dump.cypher", append = TRUE)
+          write("commit;", file="~/dump.cypher", append = TRUE)
           write("begin", file="~/dump.cypher", append = TRUE)
           cypherCount = 0
         }
