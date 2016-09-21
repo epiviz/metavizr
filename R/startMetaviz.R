@@ -128,9 +128,9 @@ startMetavizStandalone <- function(branch="metaviz-4.1", register_function = .re
   chr="metavizr"
   start=1
   end=1000
-  seq <- Seqinfo(seqnames=c(chr),
-                 seqlengths=c(end),
-                 isCircular=c(FALSE),
+  seq <- Seqinfo(seqnames=chr,
+                 seqlengths=end,
+                 isCircular=FALSE,
                  genome="metavizr")
   setStandalone(branch=branch)
   app = startStandalone(seqinfo=seq, register_function=register_function, chr=chr, start=start, end=end, ...)
