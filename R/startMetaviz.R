@@ -88,7 +88,10 @@
 #' app$stop_app()
 #' 
 #' @export
-startMetaviz <- function(host="http://metaviz.cbcb.umd.edu", register_function = .register_all_metaviz_things, chr="metavizr", start=1, end=1000, ...) {
+startMetaviz <- function(host="http://metaviz.cbcb.umd.edu", register_function = .register_all_metaviz_things, ...) {
+  chr="metavizr"
+  start=1
+  end=1000
   app = startEpiviz(host = host, register_function = register_function, chr=chr, start=start, end=end, ...)
   app
 }
@@ -121,7 +124,10 @@ startMetaviz <- function(host="http://metaviz.cbcb.umd.edu", register_function =
 #' app$stop_app()
 #' 
 #' @export
-startMetavizStandalone <- function(branch="metaviz-4.1", register_function = .register_all_metaviz_things, chr="metavizr", start=1, end=1000, ...) {
+startMetavizStandalone <- function(branch="metaviz-4.1", register_function = .register_all_metaviz_things, ...) {
+  chr="metavizr"
+  start=1
+  end=1000
   seq <- Seqinfo(seqnames=c(chr),
                  seqlengths=c(end),
                  isCircular=c(FALSE),
