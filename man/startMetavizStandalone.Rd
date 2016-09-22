@@ -5,8 +5,7 @@
 \title{Start metaviz app in standalone (locally) and create \code{\link{EpivizApp}} object to manage connection.}
 \usage{
 startMetavizStandalone(branch = "metaviz-4.1",
-  register_function = .register_all_metaviz_things, chr = "metavizr",
-  start = 1, end = 1000, ...)
+  register_function = .register_all_metaviz_things, ...)
 }
 \arguments{
 \item{branch}{(character) branch to pull from metaviz github repo to run standalone.}

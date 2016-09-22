@@ -5,8 +5,7 @@
 \title{Start metaviz app and create \code{\link{EpivizApp}} object to manage connection.}
 \usage{
 startMetaviz(host = "http://metaviz.cbcb.umd.edu",
-  register_function = .register_all_metaviz_things, chr = "metavizr",
-  start = 1, end = 1000, ...)
+  register_function = .register_all_metaviz_things, ...)
 }
 \arguments{
 \item{host}{(character) host address to launch.}

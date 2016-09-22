@@ -53,9 +53,29 @@
     obj$getValues(measurement, seqName, start, end)
   })
   
+  app$server$register_action("getCombined", function(request_data) {
+    datasource = request_data$datasource
+    measurement = request_data$measurement
+    seqName = request_data$seqName
+    start = request_data$start
+    end = request_data$end
+    
+    obj <- app$data_mgr$.find_datasource(datasource)
+    if (is.null(obj)) {
+      stop("cannot find datasource", datasource)
+    }
+    obj$getValues(measurement, seqName, start, end)
+  })
+  
   app$server$register_action("getSeqInfos", function(request_data) {
     return(list(
-      list("metavizr", 0, .Machine$integer.max)
+      list("metavizr", 0, 100000)
+    ))
+  })
+  
+  app$server$register_action("partitions", function(request_data) {
+    return(list(
+      list("metavizr", 0, 100000)
     ))
   })
 }
@@ -129,7 +149,7 @@ startMetavizStandalone <- function(branch="metaviz-4.1", register_function = .re
   start=1
   end=1000
   seq <- Seqinfo(seqnames=chr,
-                 seqlengths=end,
+                 seqlengths=100000,
                  isCircular=FALSE,
                  genome="metavizr")
   setStandalone(branch=branch)

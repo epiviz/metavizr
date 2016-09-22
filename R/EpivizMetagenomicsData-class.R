@@ -708,16 +708,16 @@ EpivizMetagenomicsData$methods(
     "Save an MRexperiment object to a Neo4j Graph database. The dump file is location at ~/dump.cypher."
     write("begin", file="~/dump.cypher", append = TRUE)
     .saveSampleDataNEO4J(graph=NULL)
-    write("commit;", file="~/dump.cypher", append = TRUE)
+    write(";commit", file="~/dump.cypher", append = TRUE)
     write("begin", file="~/dump.cypher", append = TRUE)
     .saveHierarchyNEO4J(graph=NULL)
-    write("commit;", file="~/dump.cypher", append = TRUE)
+    write(";commit", file="~/dump.cypher", append = TRUE)
     write("begin", file="~/dump.cypher", append = TRUE)
     .saveMatrixNEO4J(graph=NULL)
-    write("commit;", file="~/dump.cypher", append = TRUE)
+    write(";commit", file="~/dump.cypher", append = TRUE)
     write("begin", file="~/dump.cypher", append = TRUE)
     .neo4jUpdateProperties(graph=NULL)
-    write("commit;", file="~/dump.cypher", append = TRUE)
+    write(";commit", file="~/dump.cypher", append = TRUE)
   },
   
   toNEO4JDb=function(graph, colLabel=NULL) {
@@ -945,7 +945,7 @@ EpivizMetagenomicsData$methods(
         
         # write commits if data file is too long
         if(cypherCount == 250) {
-          write("commit;", file="~/dump.cypher", append = TRUE)
+          write(";commit", file="~/dump.cypher", append = TRUE)
           write("begin", file="~/dump.cypher", append = TRUE)
           cypherCount = 0
         }
@@ -969,7 +969,7 @@ EpivizMetagenomicsData$methods(
         
         # write commits if data file is too long
         if(cypherCount == 250) {
-          write("commit;", file="~/dump.cypher", append = TRUE)
+          write(";commit", file="~/dump.cypher", append = TRUE)
           write("begin", file="~/dump.cypher", append = TRUE)
           cypherCount = 0
         }
@@ -1017,7 +1017,7 @@ EpivizMetagenomicsData$methods(
         
         # write commits if data file is too long
         if(cypherCount == 250) {
-          write("commit;", file="~/dump.cypher", append = TRUE)
+          write(";commit", file="~/dump.cypher", append = TRUE)
           write("begin", file="~/dump.cypher", append = TRUE)
           cypherCount = 0
         }

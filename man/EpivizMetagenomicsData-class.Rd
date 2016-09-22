@@ -20,6 +20,8 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 \item{\code{toNEO4JDb(graph, colLabel = NULL)}}{Save an MRexperiment object to a Neo4j Graph database.}
 
+\item{\code{toNEO4jDump()}}{Save an MRexperiment object to a Neo4j Graph database. The dump file is location at ~/dump.cypher.}
+
 \item{\code{update(new_object, send_request = TRUE)}}{Update underlying data object with new object}
 }}
 
