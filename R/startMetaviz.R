@@ -55,16 +55,20 @@
   
   app$server$register_action("getCombined", function(request_data) {
     datasource = request_data$datasource
-    measurement = request_data$measurement
+    measurements = request_data$measurements
     seqName = request_data$seqName
     start = request_data$start
     end = request_data$end
+    order = request_data$order
+    nodeSelection = request_data$selection
+    selectedLevels = request_data$selectedLevels
+    
     
     obj <- app$data_mgr$.find_datasource(datasource)
     if (is.null(obj)) {
       stop("cannot find datasource", datasource)
     }
-    obj$getValues(measurement, seqName, start, end)
+    obj$getCombined(measurements, seqName, start, end, order, nodeSelection, selectedLevels)
   })
   
   app$server$register_action("getSeqInfos", function(request_data) {
