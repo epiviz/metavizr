@@ -327,18 +327,33 @@ EpivizMetagenomicsData$methods(
   },
   getCombined=function(measurements, seqName, start, end, order, nodeSelection, selectedLevels) {
     
-    # get values for each measurement
-    # Combines them together into a data frame
-    # remove nodes from nodeSelection
-    # aggregate at selectedLevels (later)
-    # 
+    # update node selections types to metaviztree
+    if(!is.null(nodeSelection)) {
+      .self$.taxonomy$.updateSelection(nodeSelection)
+    }
     
-    # getValues for all measurements
-    data_matrix = lapply(measurements, function(m) {
-      val = .self$.getValues(m, seqName, start, end)
-      val$values
+    # update order
+    if(!.is.null(order)) {
+      .self$.taxonomy$.updateOrder(order)
+    }
+    
+    # get values
+    data_columns = lapply(measurements, function(m) {
+      val=list()
+      val[[m]] = .self$.getValues(m, seqName, start, end)$values$values
+      val
     })
     
+    # get features for the given range
+    data_rows = .self$.getRows('', start, end)
+    
+    # convert to resp format
+    result = list()
+    result[['cols']] = data_columns
+    result[['rows']] = data_rows$values
+    result[['globalStartIndex']] = data_rows$globalStartIndex
+    
+    return(result)
   }
 )
 
