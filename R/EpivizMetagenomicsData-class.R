@@ -366,7 +366,7 @@ EpivizMetagenomicsData$methods(
     # get values
     data_columns = list()
     for (m in measurements) {
-      data_columns[[m]] = .self$getValues(m, '', 0, 1000)$values$values
+      data_columns[[m]] = .self$getValues(m, '', start, end)$values$values
     }
     
     # get features for the given range
