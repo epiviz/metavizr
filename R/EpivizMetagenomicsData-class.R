@@ -327,6 +327,34 @@ EpivizMetagenomicsData$methods(
   },
   getCombined=function(measurements, seqName, start, end, order, nodeSelection, selectedLevels) {
     
+    # remove current selectionTypes
+    nodeList = lapply(names(.self$.taxonomy$.selectionTypes), function(node) {
+      val = list()
+      val[[node]] = 1
+      val
+    })
+  
+    .self$.taxonomy$.updateSelection(nodeList)
+    .self$.taxonomy$.selectionTypes = list()
+    
+    # update selectedLevels on taxonomy tree
+    if(!is.null(selectedLevels)) {
+      
+      for (level in names(selectedLevels)) {
+        
+        nodesAtLevel = .self$.taxonomy$nodesAtDepth(as.numeric(level))
+        
+        nodeList = lapply(nodesAtLevel, function(node) {
+          val = list()
+          val[[node$.id]] = selectedLevels[[level]]
+          val
+        })
+        
+        .self$.taxonomy$.updateSelection(nodeList)
+        
+      }
+    }
+    
     # update node selections types to metaviztree
     if(!is.null(nodeSelection)) {
       .self$.taxonomy$.updateSelection(nodeSelection)
