@@ -328,14 +328,13 @@ EpivizMetagenomicsData$methods(
   getCombined=function(measurements, seqName, start, end, order, nodeSelection, selectedLevels) {
     
     # remove current selectionTypes
-    nodeList = lapply(names(.self$.taxonomy$.selectionTypes), function(node) {
-      val = list()
-      val[[node]] = 1
-      val
-    })
+    nodeList = list()
+    for (node in names(.self$.taxonomy$.selectionTypes$.)) {
+      nodeList[[node]] = 1
+    }
   
-    .self$.taxonomy$.updateSelection(nodeList)
-    .self$.taxonomy$.selectionTypes = list()
+    .self$.taxonomy$updateSelection(nodeList)
+    # .self$.taxonomy$.selectionTypes = Ptr$new(list())
     
     # update selectedLevels on taxonomy tree
     if(!is.null(selectedLevels)) {
@@ -344,36 +343,34 @@ EpivizMetagenomicsData$methods(
         
         nodesAtLevel = .self$.taxonomy$nodesAtDepth(as.numeric(level))
         
-        nodeList = lapply(nodesAtLevel, function(node) {
-          val = list()
-          val[[node$.id]] = selectedLevels[[level]]
-          val
-        })
+        nodeList = list()
+        for (node in nodesAtLevel) {
+          nodeList[[node$id()]] = selectedLevels[[level]]
+        }
         
-        .self$.taxonomy$.updateSelection(nodeList)
+        .self$.taxonomy$updateSelection(nodeList)
         
       }
     }
     
     # update node selections types to metaviztree
     if(!is.null(nodeSelection)) {
-      .self$.taxonomy$.updateSelection(nodeSelection)
+      .self$.taxonomy$updateSelection(nodeSelection)
     }
     
     # update order
-    if(!.is.null(order)) {
-      .self$.taxonomy$.updateOrder(order)
+    if(!is.null(order)) {
+      .self$.taxonomy$updateOrder(order)
     }
     
     # get values
-    data_columns = lapply(measurements, function(m) {
-      val=list()
-      val[[m]] = .self$.getValues(m, seqName, start, end)$values$values
-      val
-    })
+    data_columns = list()
+    for (m in measurements) {
+      data_columns[[m]] = .self$getValues(m, '', 0, 1000)$values$values
+    }
     
     # get features for the given range
-    data_rows = .self$.getRows('', start, end)
+    data_rows = .self$getRows('', start, end)
     
     # convert to resp format
     result = list()
