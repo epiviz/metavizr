@@ -382,7 +382,7 @@ EpivizMetagenomicsData$methods(
   }
 )
 
-# EpivizMetagenomicsData$methods(
+ EpivizMetagenomicsData$methods(
 #   toMySQLDb=function(con, colLabel=NULL) {
 #     "Save an MRexperiment object to a MySQL database."
 #     
