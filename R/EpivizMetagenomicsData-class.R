@@ -43,6 +43,16 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       if(is.character(maxDepth)){ maxDepth = assignValues(object,maxDepth) }
       log = control$log
       norm= control$norm
+      
+      # validate biom file
+      biomCheck = .checkBiomFormat(object)
+      
+      if(!biomCheck) {
+        stop("Incompatible Biom format")
+      }
+      else {
+        message("biom file validated... PASS")
+      }
 
       # TODO: Some type checking
       .taxonomy <<- buildMetavizTree(object, feature_order)
@@ -85,6 +95,79 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       }
 
       callSuper(object=object, ...)
+    },
+    
+    .checkBiomFormat=function(obj) {
+      
+      # validate feature data
+      featureCheck = TRUE
+      featureData = obj@featureData
+      
+      if (length(colnames(featureData@data)) != length(rownames(featureData@varMetadata))) {
+        featureCheck = FALSE
+        message("mismatch in feature data frame")
+      }
+      
+      featureLength = length(rownames(featureData@data[0]))
+      
+      for (col in colnames(featureData@data)) {
+        if(!(is.vector(featureData@data[[col]]) || is.factor(featureData@data[[col]]))) {
+          featureCheck = FALSE
+          message(paste0(col, " in feature data is not a vector"))
+        }
+        
+        if(length(featureData@data[[col]]) != featureLength) {
+          featureCheck = FALSE
+          message(paste0("size mismatch - ", col, " vector in feature data"))
+        }
+      }
+      
+      # validate sample data
+      sampleCheck = TRUE
+      sampleData = obj@phenoData
+      
+      if (length(colnames(sampleData@data)) != length(rownames(sampleData@varMetadata))) {
+        featureCheck = FALSE
+        message("mismatch in pheno/sample data frame")
+      }
+      
+      sampleLength = length(rownames(sampleData@data[0]))
+      
+      for (col in colnames(sampleData@data)) {
+        if(!(is.vector(sampleData@data[[col]]) || is.factor(sampleData@data[[col]]) )) {
+          sampleCheck = FALSE
+          message(paste0(col, " in sample/pheno data is not a vector"))
+        }
+        
+        if(length(sampleData@data[[col]]) != sampleLength) {
+          sampleCheck = FALSE
+          message(paste0("size mismatch - ", col, " vector in pheno/sample data"))
+        }
+      }
+      
+      # validate count/assay data
+      assayCheck = TRUE
+      assayData = obj@assayData
+      
+      if(!grepl("counts", names(assayData))) {
+        assayCheck = FALSE
+        message("count data does not exist")
+      }
+      else {
+        dimCountMatrix = dim(assayData[["counts"]])
+        
+        if(dimCountMatrix[1] != featureLength) {
+          assayCheck = FALSE
+          message("count Matrix in assayData does not match feature length")
+        }  
+        
+        if(dimCountMatrix[2] != sampleLength) {
+          assayCheck = FALSE
+          message("count Matrix in assayData does not match sample length")
+        }  
+      }
+      
+      return(featureCheck && sampleCheck && assayCheck)
     },
 
     .taxonomyLevels=function(exp) {
