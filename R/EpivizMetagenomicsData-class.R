@@ -759,24 +759,27 @@ EpivizMetagenomicsData$methods(
     dbSendQuery(con, "ALTER TABLE `levels` DROP COLUMN `row_names` ;")
   },
   
-  toNEO4jDump = function() {
-    "Save an MRexperiment object to a Neo4j Graph database. The dump file is location at ~/dump.cypher."
-    write("begin", file="~/dump.cypher", append = TRUE)
-    .saveSampleDataNEO4J(graph=NULL)
-    write(";", file="~/dump.cypher", append = TRUE)
-    write("commit", file="~/dump.cypher", append = TRUE)
-    write("begin", file="~/dump.cypher", append = TRUE)
-    .saveHierarchyNEO4J(graph=NULL)
-    write(";", file="~/dump.cypher", append = TRUE)
-    write("commit", file="~/dump.cypher", append = TRUE)
-    write("begin", file="~/dump.cypher", append = TRUE)
-    .saveMatrixNEO4J(graph=NULL)
-    write(";", file="~/dump.cypher", append = TRUE)
-    write("commit", file="~/dump.cypher", append = TRUE)
-    write("begin", file="~/dump.cypher", append = TRUE)
-    .neo4jUpdateProperties(graph=NULL)
-    write(";", file="~/dump.cypher", append = TRUE)
-    write("commit", file="~/dump.cypher", append = TRUE)
+  toNEO4jDump = function(filePath = "~/", fileName="neo4j_dump.cypher") {
+    "Save an MRexperiment object to a Neo4j Graph database. set the location of the output file with fileName and filePath."
+    
+    file = paste0(filePath, '/' ,fileName)
+    
+    write("begin", file=file, append = TRUE)
+    .saveSampleDataNEO4J(graph=NULL, file=file)
+    write(";", file=file, append = TRUE)
+    write("commit", file=file, append = TRUE)
+    write("begin", file=file, append = TRUE)
+    .saveHierarchyNEO4J(graph=NULL, file=file)
+    write(";", file=file, append = TRUE)
+    write("commit", file=file, append = TRUE)
+    write("begin", file=file, append = TRUE)
+    .saveMatrixNEO4J(graph=NULL, file=file)
+    write(";", file=file, append = TRUE)
+    write("commit", file=file, append = TRUE)
+    write("begin", file=file, append = TRUE)
+    .neo4jUpdateProperties(graph=NULL, file=file)
+    write(";", file=file, append = TRUE)
+    write("commit", file=file, append = TRUE)
   },
   
   toNEO4JDb=function(graph, colLabel=NULL) {
@@ -800,7 +803,7 @@ EpivizMetagenomicsData$methods(
     
   },
   
-  .saveSampleDataNEO4J=function(graph) {
+  .saveSampleDataNEO4J=function(graph, file=NULL) {
     sampleAnnotationToNeo4j = .sampleAnnotation
     sampleAnnotationToNeo4j['id'] = rownames(.sampleAnnotation)
     keys = colnames(sampleAnnotationToNeo4j)
@@ -824,12 +827,12 @@ EpivizMetagenomicsData$methods(
         cypher(graph,query) 
       }
       else {
-        write(query, file="~/dump.cypher", append = TRUE)
+        write(query, file=file, append = TRUE)
       }
     }
   },
   
-  .saveHierarchyNEO4J=function(graph) {
+  .saveHierarchyNEO4J=function(graph, file=NULL) {
     h = taxonomyTable()
     indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
     
@@ -998,15 +1001,15 @@ EpivizMetagenomicsData$methods(
         cypher(graph,query) 
       }
       else {
-        write(query, file="~/dump.cypher", append = TRUE)
+        write(query, file=file, append = TRUE)
         
         cypherCount = cypherCount + 1
         
         # write commits if data file is too long
         if(cypherCount == 250) {
-          write(";", file="~/dump.cypher", append = TRUE)
-          write("commit", file="~/dump.cypher", append = TRUE)
-          write("begin", file="~/dump.cypher", append = TRUE)
+          write(";", file=file, append = TRUE)
+          write("commit", file=file, append = TRUE)
+          write("begin", file=file, append = TRUE)
           cypherCount = 0
         }
       }
@@ -1023,15 +1026,15 @@ EpivizMetagenomicsData$methods(
         cypher(graph,query) 
       }
       else {
-        write(query, file="~/dump.cypher", append = TRUE)
+        write(query, file=file, append = TRUE)
         
         cypherCount = cypherCount + 1
         
         # write commits if data file is too long
         if(cypherCount == 250) {
-          write(";", file="~/dump.cypher", append = TRUE)
-          write("commit", file="~/dump.cypher", append = TRUE)
-          write("begin", file="~/dump.cypher", append = TRUE)
+          write(";", file=file, append = TRUE)
+          write("commit", file=file, append = TRUE)
+          write("begin", file=file, append = TRUE)
           cypherCount = 0
         }
       }
@@ -1043,7 +1046,7 @@ EpivizMetagenomicsData$methods(
       cypher(graph,query) 
     }
     else {
-      write(query, file="~/dump.cypher", append = TRUE)
+      write(query, file=file, append = TRUE)
     }
     
     
@@ -1053,11 +1056,11 @@ EpivizMetagenomicsData$methods(
       cypher(graph,query) 
     }
     else {
-      write(query, file="~/dump.cypher", append = TRUE)
+      write(query, file=file, append = TRUE)
     }
   },
   
-  .saveMatrixNEO4J = function(graph) {
+  .saveMatrixNEO4J = function(graph, file=NULL) {
     valuesToNeo4j = .getValueTable()
     
     cypherCount = 0
@@ -1072,32 +1075,32 @@ EpivizMetagenomicsData$methods(
         cypher(graph,query) 
       }
       else {
-        write(query, file="~/dump.cypher", append = TRUE)
+        write(query, file=file, append = TRUE)
         
         cypherCount = cypherCount + 1
         
         # write commits if data file is too long
         if(cypherCount == 250) {
-          write(";", file="~/dump.cypher", append = TRUE)
-          write("commit", file="~/dump.cypher", append = TRUE)
-          write("begin", file="~/dump.cypher", append = TRUE)
+          write(";", file=file, append = TRUE)
+          write("commit", file=file, append = TRUE)
+          write("begin", file=file, append = TRUE)
           cypherCount = 0
         }
       }
     }
   },
   
-  .neo4jUpdateProperties = function(graph) {
+  .neo4jUpdateProperties = function(graph, file=NULL) {
     query = "MATCH (f:Feature) SET f.depth = toInt(f.depth) SET f.start = toInt(f.start) SET f.end = toInt(f.end) SET f.leafIndex = toInt(f.leafIndex) SET f.nchildren = toInt(f.nchildren) SET f.nleaves = toInt(f.nleaves) SET f.order = toInt(f.order)"
     if(!is.null(graph)) {
       print(query)
       cypher(graph,query) 
     }
     else {
-      write(query, file="~/dump.cypher", append = TRUE)
-      write(";", file="~/dump.cypher", append = TRUE)
-      write("commit", file="~/dump.cypher", append = TRUE)
-      write("begin", file="~/dump.cypher", append = TRUE)
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
     }
     
     query = "CREATE INDEX ON :Feature (depth)"
@@ -1106,10 +1109,10 @@ EpivizMetagenomicsData$methods(
       cypher(graph,query) 
     }
     else {
-      write(query, file="~/dump.cypher", append = TRUE)
-      write(";", file="~/dump.cypher", append = TRUE)
-      write("commit", file="~/dump.cypher", append = TRUE)
-      write("begin", file="~/dump.cypher", append = TRUE)
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
     }
     
     query = "CREATE INDEX ON :Feature (start)"
@@ -1118,10 +1121,10 @@ EpivizMetagenomicsData$methods(
       cypher(graph,query) 
     }
     else {
-      write(query, file="~/dump.cypher", append = TRUE)
-      write(";", file="~/dump.cypher", append = TRUE)
-      write("commit", file="~/dump.cypher", append = TRUE)
-      write("begin", file="~/dump.cypher", append = TRUE)
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
     }
     
     query = "CREATE INDEX ON :Feature (end)"
@@ -1130,10 +1133,10 @@ EpivizMetagenomicsData$methods(
       cypher(graph,query) 
     }
     else {
-      write(query, file="~/dump.cypher", append = TRUE)
-      write(";", file="~/dump.cypher", append = TRUE)
-      write("commit", file="~/dump.cypher", append = TRUE)
-      write("begin", file="~/dump.cypher", append = TRUE)
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
     }
     
     query = "CREATE INDEX ON :Feature (id)"
@@ -1142,10 +1145,10 @@ EpivizMetagenomicsData$methods(
       cypher(graph,query) 
     }
     else {
-      write(query, file="~/dump.cypher", append = TRUE)
-      write(";", file="~/dump.cypher", append = TRUE)
-      write("commit", file="~/dump.cypher", append = TRUE)
-      write("begin", file="~/dump.cypher", append = TRUE)
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
     }
     
     query = "CREATE INDEX ON :Sample (id)"
@@ -1154,7 +1157,7 @@ EpivizMetagenomicsData$methods(
       cypher(graph,query) 
     }
     else {
-      write(query, file="~/dump.cypher", append = TRUE)
+      write(query, file=file, append = TRUE)
     }
   }
 )
