@@ -110,6 +110,11 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       
       featureLength = length(rownames(featureData@data[0]))
       
+      if(length(colnames(featureData@data)) == 0) {
+        featureCheck = FALSE
+        message("feature Data is empty")
+      }
+      
       for (col in colnames(featureData@data)) {
         if(!(is.vector(featureData@data[[col]]) || is.factor(featureData@data[[col]]))) {
           featureCheck = FALSE
@@ -127,11 +132,16 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       sampleData = obj@phenoData
       
       if (length(colnames(sampleData@data)) != length(rownames(sampleData@varMetadata))) {
-        featureCheck = FALSE
+        sampleCheck = FALSE
         message("mismatch in pheno/sample data frame")
       }
       
       sampleLength = length(rownames(sampleData@data[0]))
+      
+      if(length(colnames(sampleData@data)) == 0) {
+        sampleCheck = FALSE
+        message("Sample Data is empty")
+      }
       
       for (col in colnames(sampleData@data)) {
         if(!(is.vector(sampleData@data[[col]]) || is.factor(sampleData@data[[col]]) )) {
