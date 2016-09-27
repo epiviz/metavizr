@@ -382,42 +382,42 @@ EpivizMetagenomicsData$methods(
   }
 )
 
-EpivizMetagenomicsData$methods(
-  toMySQLDb=function(con, colLabel=NULL) {
-    "Save an MRexperiment object to a MySQL database."
-    
-    # TODO: Formal log
-    cat("Saving column data...")
-    .saveColData(con, colLabel)
-    cat("Done\n")
-
-    cat("Saving row data...")
-    .saveRowData(con)
-    cat("Done\n")
-
-    cat("Saving hierarchy...")
-    .saveHierarchy(con)
-    cat("Done\n")
-
-    cat("Saving counts...")
-    .saveValues(con)
-    cat("Done\n")
-
-    cat("Saving levels...")
-    .saveLevels(con)
-    cat("Done\n")
-    
-    res <- dbSendQuery(con, "RENAME TABLE `meta_values` to `values`;")
-    dbCommit(conn = con)
-    
-    cat("Saving Data Matrix...")
-    .saveMatrix(con)
-    cat("Done\n")
-    
-    dbDisconnect(con)
-    #odbcClose(con)
-    
-  },
+# EpivizMetagenomicsData$methods(
+#   toMySQLDb=function(con, colLabel=NULL) {
+#     "Save an MRexperiment object to a MySQL database."
+#     
+#     # TODO: Formal log
+#     cat("Saving column data...")
+#     .saveColData(con, colLabel)
+#     cat("Done\n")
+# 
+#     cat("Saving row data...")
+#     .saveRowData(con)
+#     cat("Done\n")
+# 
+#     cat("Saving hierarchy...")
+#     .saveHierarchy(con)
+#     cat("Done\n")
+# 
+#     cat("Saving counts...")
+#     .saveValues(con)
+#     cat("Done\n")
+# 
+#     cat("Saving levels...")
+#     .saveLevels(con)
+#     cat("Done\n")
+#     
+#     res <- dbSendQuery(con, "RENAME TABLE `meta_values` to `values`;")
+#     dbCommit(conn = con)
+#     
+#     cat("Saving Data Matrix...")
+#     .saveMatrix(con)
+#     cat("Done\n")
+#     
+#     dbDisconnect(con)
+#     #odbcClose(con)
+#     
+#   },
   .getFieldTypes = function(data) {
     
     colNames = colnames(data)
