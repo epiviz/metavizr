@@ -1,14 +1,17 @@
 Package: metavizr
-Maintainer: Hector Corrada Bravo <hcorrada@gmail.com>
-Author: Florin Chelaru, Joseph Nathaniel Paulson, Hector Corrada Bravo
-Version: 1.0
-License: Artistic-2.0
-Title: R Interface to the epiviz web app for metagenomics
-Description: TODO This package provides Websocket communication to the
-    epiviz web app (http://epiviz.cbcb.umd.edu) for interactive
-    visualization of genomic data. Objects in R/bioc interactive
-    sessions can be displayed in genome browser tracks or plots to
-    be explored by navigation through genomic regions. Fundamental
+Type: Package
+Version: 0.99.0
+Authors@R: c( person("Hector", "Corrada Bravo", email="hcorrada@gmail.com", role=c("cre","aut")),
+  person("Florin", "Chelaru", email="florin.chelaru@gmail.com", role=c("aut")),
+  person("Justin", "Wagner", email="wagner.justin1@gmail.com", role=c("aut")),
+  person("Jayaram", "Kancherla", email="jayaram.kancherla@gmail.com", role=c("aut")),
+  person("Jospen", "Paulson", email="nosson@gmail.com", role=c("aut")))
+License: MIT + file LICENSE
+Title: R Interface to the metaviz web app for interactive metagenomics data analysis and visualization
+Description: This package provides Websocket communication to the
+    metaviz web app (http://metaviz.cbcb.umd.edu) for interactive
+    visualization of metagenomics data. Objects in R/bioc interactive
+    sessions can be displayed in plots and data can be explored using a facetzoom visualization. Fundamental
     Bioconductor data structures are supported (e.g., MRexperiment objects),
     while providing an easy mechanism to support other data structures.
     Visualizations (using d3.js) can be easily added to the web app as well.
@@ -40,5 +43,4 @@ Collate:
     'register-methods.R'
     'plots.R'
 biocViews: Visualization, Infrastructure, GUI
-Video: https://www.youtube.com/watch?v=099c4wUxozA
 RoxygenNote: 5.0.1
