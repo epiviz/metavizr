@@ -3,7 +3,7 @@
 #' Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 #' \code{\link{MRexperiment}} objects.
 #' @importClassesFrom epivizrData EpivizData
-#' @import RMySQL RNeo4j
+#' @import RNeo4j
 #' @exportClass EpivizMetagenomicsData
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   contains="EpivizData",

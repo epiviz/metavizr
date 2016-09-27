@@ -265,6 +265,7 @@ metavizTransformSelect<-function(obj,fun=rowSums ,control=metavizControl(n=100))
 #' @examples
 #' settings = metavizControl()
 #'
+#' @export
 metavizControl<-function(aggregateAtDepth=3,aggregateFun=function(x) colSums(x),
             valuesAnnotationFuns=NULL,maxDepth=4,maxHistory=3,maxValue=NULL,
             minValue=NULL,title="",n=10000,rankFun=sd,norm=TRUE,log=FALSE){
