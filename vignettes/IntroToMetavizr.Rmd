@@ -1,12 +1,15 @@
-<!--
-%\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{Introduction to epivizr}
--->
+---
+title: "Introduction to metavizr: interactive visualization for metagenomics"
+author: "Héctor Corrada Bravo, Florin Chelaru, Justin Wagner, Jayaram Kancherla, Joseph Paulson"
+date: "`r Sys.Date()`"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{Introduction to metavizr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
 
-Introduction to metavizr: interactive visualization for metagenomics
-===================================================================
-
-[`Metaviz`](http://epivizwww01.umiacs.umd.edu) is an interactive visualization tool for metagenomic sequencing data. It supports taxonomy navigation of annotated metagenomic features and allows multiple visualizations of data scatterplots, heatmaps and PCA plots. It also includes data from the [Mild to Severe Diahereal Study](http://msd16s/) for visualization. As with the Epiviz suite, it has a flexible plugin framework so users can add [d3](http://d3js.org/) visualizations. You can find more information about Metaviz at [http://epivizwww01.umiacs.umd.edu/help](http://epivizwww01.umiacs.umd.edu/help) and see a video tour NEED TO CREATE METAVIZ TUTORIAL.
+[`Metaviz`](http://metaviz.cbcb.umd.edu) is an interactive visualization tool for metagenomic sequencing data. It supports taxonomy navigation of annotated metagenomic features and allows multiple visualizations of data scatterplots, heatmaps and PCA plots. It also includes data from the [Mild to Severe Diahereal Study](http://msd16s/) for visualization. As with the Epiviz suite, it has a flexible plugin framework so users can add [d3](http://d3js.org/) visualizations. You can find more information about Metaviz at [http://epivizwww01.umiacs.umd.edu/help](http://epivizwww01.umiacs.umd.edu/help) and see a video tour NEED TO CREATE METAVIZ TUTORIAL.
 
 <iframe width="480" height="360" src="http://www.youtube.com/embed/099c4wUxozA" frameborder="1" allowfullscreen></iframe>
 
