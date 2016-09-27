@@ -19,14 +19,13 @@ VignetteBuilder: knitr
 Depends:
     R (>= 3.0.1),
     methods,
-    Biobase,
+    Biobase
+Imports:
     stringr,
     epivizr,
     epivizrData,
     metagenomeSeq,
-    RMySQL,
-    RNeo4j
-Imports:
+    RNeo4j,
     S4Vectors,
     httpuv (>= 1.3.0)
 Suggests:
