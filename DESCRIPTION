@@ -17,13 +17,14 @@ Description: This package provides Websocket communication to the
     Visualizations (using d3.js) can be easily added to the web app as well.
 VignetteBuilder: knitr
 Depends:
-    R (>= 3.0.1),
-    methods,
-    Biobase
+    R (>= 3.0.1)
 Imports:
     stringr,
     epivizr,
     epivizrData,
+    epivizrStandalone,
+    GenomicRanges,
+    GenomeInfoDb,
     metagenomeSeq,
     RNeo4j,
     S4Vectors,
@@ -34,6 +35,7 @@ Suggests:
     matrixStats,
     msd16s
 Collate:
+    'metavizControl.R'
     'startMetaviz.R'
     'utils.R'
     'Ptr-class.R'
@@ -41,6 +43,5 @@ Collate:
     'MetavizTree-class.R'
     'EpivizMetagenomicsData-class.R'
     'register-methods.R'
-    'plots.R'
 biocViews: Visualization, Infrastructure, GUI
 RoxygenNote: 5.0.1

@@ -1,6 +1,5 @@
 .gitignore
-inst/www/minifier.jar
-inst/www-full
-
+inst/www
+work
 ^.*\.Rproj$
 ^\.Rproj\.user$
