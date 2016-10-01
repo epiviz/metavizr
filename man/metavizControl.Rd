@@ -7,7 +7,7 @@
 metavizControl(aggregateAtDepth = 3, aggregateFun = function(x) colSums(x),
   valuesAnnotationFuns = NULL, maxDepth = 4, maxHistory = 3,
   maxValue = NULL, minValue = NULL, title = "", n = 10000,
-  rankFun = sd, norm = TRUE, log = FALSE)
+  rankFun = stats::sd, norm = TRUE, log = FALSE)
 }
 \arguments{
 \item{aggregateAtDepth}{Level of the tree to aggregate counts at by default.}

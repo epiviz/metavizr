@@ -20,11 +20,29 @@
 #' settings = metavizControl()
 #'
 #' @export
-metavizControl<-function(aggregateAtDepth=3,aggregateFun=function(x) colSums(x),
-                         valuesAnnotationFuns=NULL,maxDepth=4,maxHistory=3,maxValue=NULL,
-                         minValue=NULL,title="",n=10000,rankFun=sd,norm=TRUE,log=FALSE){
+metavizControl<-function(aggregateAtDepth=3,
+                         aggregateFun=function(x) colSums(x),
+                         valuesAnnotationFuns=NULL,
+                         maxDepth=4,
+                         maxHistory=3,
+                         maxValue=NULL,
+                         minValue=NULL,
+                         title="",
+                         n=10000,
+                         rankFun=stats::sd,
+                         norm=TRUE,
+                         log=FALSE){
   
-  list(aggregateAtDepth=aggregateAtDepth,aggregateFun=aggregateFun,valuesAnnotationFuns=valuesAnnotationFuns,
-       maxDepth=maxDepth,maxHistory=maxHistory,maxValue=maxValue,minValue=minValue,title=title,
-       n=n,rankFun=sd,norm=norm,log=log)
+  list(aggregateAtDepth=aggregateAtDepth,
+       aggregateFun=aggregateFun,
+       valuesAnnotationFuns=valuesAnnotationFuns,
+       maxDepth=maxDepth,
+       maxHistory=maxHistory,
+       maxValue=maxValue,
+       minValue=minValue,
+       title=title,
+       n=n,
+       rankFun=rankFun,
+       norm=norm,
+       log=log)
 }
