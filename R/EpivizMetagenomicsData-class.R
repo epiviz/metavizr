@@ -1133,7 +1133,7 @@ EpivizMetagenomicsData$methods(
       }
     }
     
-    query = paste("MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth:'", length(.levels) - 1 , "'}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)")
+    query = paste0("MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth:'", length(.levels) - 1 , "'}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)")
     if(!is.null(graph)) {
       print(query)
       cypher(graph,query) 
@@ -1143,7 +1143,7 @@ EpivizMetagenomicsData$methods(
     }
     
     
-    query = paste("MATCH (fLeaf:Feature {depth:'", length(.levels) - 1,"'}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)")
+    query = paste0("MATCH (fLeaf:Feature {depth:'", length(.levels) - 1,"'}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)")
     if(!is.null(graph)) {
       print(query)
       cypher(graph,query) 
