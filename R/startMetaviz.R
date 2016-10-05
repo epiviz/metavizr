@@ -54,21 +54,36 @@
   })
   
   app$server$register_action("getCombined", function(request_data) {
-    datasource = request_data$datasource
-    measurements = request_data$measurements
-    seqName = request_data$seqName
-    start = request_data$start
-    end = request_data$end
-    order = request_data$order
-    nodeSelection = request_data$selection
-    selectedLevels = request_data$selectedLevels
     
+    measurementsList = request_data$measurements
+    result = list()
     
-    obj <- app$data_mgr$.find_datasource(datasource)
-    if (is.null(obj)) {
-      stop("cannot find datasource", datasource)
+    for(m in names(measurementsList)) {
+      datasource = request_data$datasource
+      seqName = request_data$seqName
+      start = request_data$start
+      end = request_data$end
+      order = request_data$order
+      nodeSelection = request_data$selection
+      selectedLevels = request_data$selectedLevels
+      measurements = measurementsList[[m]]
+      
+      if(is.null(start)) {
+        start = 0
+      }
+      
+      if(is.null(end)) {
+        end = 100000
+      }
+      
+      obj <- app$data_mgr$.find_datasource(m)
+      if (is.null(obj)) {
+        stop("cannot find datasource", m)
+      }
+      result[[m]] = obj$getCombined(measurements, seqName, start, end, order, nodeSelection, selectedLevels)
     }
-    obj$getCombined(measurements, seqName, start, end, order, nodeSelection, selectedLevels)
+    
+    result
   })
   
   app$server$register_action("getSeqInfos", function(request_data) {
