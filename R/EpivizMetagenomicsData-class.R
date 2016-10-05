@@ -378,7 +378,7 @@ EpivizMetagenomicsData$methods(
     ret = list(
       id = sapply(leafInfos, function(info) { info$realNodesBefore }),
       start=sapply(leafInfos, function(info) { info$start }),
-      end=sapply(leafInfos, function(info) { info$start + info$node$nleaves() - 1 }),
+      end=sapply(leafInfos, function(info) { info$start + info$node$nleaves()}),
       metadata = c(list(
         colLabel = sapply(leafInfos, function(info) { info$node$name() }),
         ancestors = sapply(leafAncestors, function(ancestors) { paste(lapply(rev(ancestors), function(node) { node$name() }), collapse=",") }), # TODO: Use tree .ancestryByDepth
