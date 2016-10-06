@@ -71,9 +71,15 @@
       if(is.null(start)) {
         start = 0
       }
+      else {
+        start = start - 1
+      }
       
       if(is.null(end)) {
         end = 100000
+      }
+      else {
+        end = end - 1
       }
       
       obj <- app$data_mgr$.find_datasource(m)
