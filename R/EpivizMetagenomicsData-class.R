@@ -51,7 +51,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         stop("Incompatible Biom format")
       }
       else {
-        message("biom file validated... PASS")
+        message("MRExperiment Object validated... PASS")
       }
 
       # TODO: Some type checking

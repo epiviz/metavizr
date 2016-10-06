@@ -9,7 +9,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-[`Metaviz`](http://metaviz.cbcb.umd.edu) is an interactive visualization tool for metagenomic sequencing data. It supports taxonomy navigation of annotated metagenomic features and allows multiple visualizations of data scatterplots, heatmaps and PCA plots. It also includes data from the [Mild to Severe Diahereal Study](http://msd16s/) for visualization. As with the Epiviz suite, it has a flexible plugin framework so users can add [d3](http://d3js.org/) visualizations. You can find more information about Metaviz at [http://epivizwww01.umiacs.umd.edu/help](http://epivizwww01.umiacs.umd.edu/help) and see a video tour NEED TO CREATE METAVIZ TUTORIAL.
+[`Metaviz`](http://metaviz.cbcb.umd.edu) is an interactive visualization tool for metagenomic sequencing data. It supports taxonomy navigation of annotated metagenomic features and allows multiple visualizations of data scatterplots, heatmaps and PCA plots. It also includes data from the [Mild to Severe Diahereal Study](http://msd16s/) for visualization. As with the Epiviz suite, it has a flexible plugin framework so users can add [d3](http://d3js.org/) visualizations. You can find more information about Metaviz at [http://epivizwww01.umiacs.umd.edu/help](http://epivizwww01.umiacs.umd.edu/help) and see a video tour.
 
 <iframe width="480" height="360" src="http://www.youtube.com/embed/099c4wUxozA" frameborder="1" allowfullscreen></iframe>
 
@@ -17,7 +17,7 @@ The `metavizr` package implements two-way communication between the `R/Bioconduc
 
 ### Preliminaries: the data
 
-In this vignette we will look at the msd16s data.
+In this vignette we will look at the mouse data from the `metagenomeSeq` package.
 
 ```{r, eval=TRUE, echo=TRUE, results='hide', warning=FALSE, error=FALSE}
 require(metavizr)
@@ -31,7 +31,7 @@ data("mouseData")
 The connection to `Metaviz` is managed through a session manager object of class `EpivizApp`. We can create this object and open `Metaviz` using the `startMetaviz` function.
 
 ```{r, eval=FALSE, echo=TRUE}
-app <- startMetaviz()
+app <- startMetaviz(host="http://localhost:5555")
 ```
 
 ```{r, eval=TRUE, echo=FALSE}
@@ -45,6 +45,24 @@ js_chart_settings <- list(list(id = "title", type = "string", defaultValue = "",
 js_chart_colors = c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf")
 
 app$chart_mgr$register_chart_type("epiviz.ui.charts.tree.Icicle", "epiviz.ui.charts.tree.Icicle", js_chart_settings=js_chart_settings, js_chart_colors=js_chart_colors)
+
+
+# register HeatpmapPlot
+
+js_chart_settings <- list(list("id"="title","type"="string","defaultValue"="","label"="Title","possibleValues"=NULL),list("id"="marginTop","type"="number","defaultValue"=80,"label"="Top margin","possibleValues"=NULL),list("id"="marginBottom","type"="number","defaultValue"=40,"label"="Bottom margin","possibleValues"=NULL),list("id"="marginLeft","type"="number","defaultValue"=120,"label"="Left margin","possibleValues"=NULL),list("id"="marginRight","type"="number","defaultValue"=40,"label"="Right margin","possibleValues"=NULL),list("id"="measurementGroupsAggregator","type"="categorical","defaultValue"="mean-stdev","label"="Aggregator for measurement groups","possibleValues"=list("mean-stdev","quartiles","count","min","max","sum")),list("id"="colLabel","type"="measurementsMetadata","defaultValue"="colLabel","label"="Columns labels","possibleValues"=NULL),list("id"="rowLabel","type"="measurementsAnnotation","defaultValue"="name","label"="Row labels","possibleValues"=NULL),list("id"="showColorsForRowLabels","type"="boolean","defaultValue"=FALSE,"label"="Row labels as colors","possibleValues"=NULL),list("id"="maxColumns","type"="number","defaultValue"=40,"label"="Max columns","possibleValues"=NULL),list("id"="yMin","type"="number","defaultValue"="default","label"="Min Value","possibleValues"=NULL),list("id"="yMax","type"="number","defaultValue"="default","label"="Max Value","possibleValues"=NULL),list("id"="cluster","type"="categorical","defaultValue"="rows","label"="Cluster","possibleValues"=list("none","rows","columns","both")),list("id"="clusteringAlg","type"="categorical","defaultValue"="none","label"="Clustering Algorithm","possibleValues"=list("none","agglomerative")),list("id"="clusteringMetric","type"="categorical","defaultValue"="euclidean","label"="Clustering Metric","possibleValues"=list("euclidean")),list("id"="clusteringLinkage","type"="categorical","defaultValue"="complete","label"="Clustering Linkage","possibleValues"=list("complete")),list("id"="showDendrogram","type"="boolean","defaultValue"=TRUE,"label"="Show Dendrogram","possibleValues"=NULL))
+
+js_chart_colors = c("#1859a9","#ed2d2e","#008c47","#010101","#f37d22","#662c91","#a11d20","#b33893")
+
+app$chart_mgr$register_chart_type("HeatmapPlot", "epiviz.plugins.charts.HeatmapPlot", js_chart_settings=js_chart_settings, js_chart_colors=js_chart_colors)
+
+
+# register StackedLinePlot
+
+js_chart_settings <- list(list("id"="title","type"="string","defaultValue"="","label"="Title","possibleValues"=NULL),list("id"="marginTop","type"="number","defaultValue"=30,"label"="Top margin","possibleValues"=NULL),list("id"="marginBottom","type"="number","defaultValue"=50,"label"="Bottom margin","possibleValues"=NULL),list("id"="marginLeft","type"="number","defaultValue"=30,"label"="Left margin","possibleValues"=NULL),list("id"="marginRight","type"="number","defaultValue"=15,"label"="Right margin","possibleValues"=NULL),list("id"="measurementGroupsAggregator","type"="categorical","defaultValue"="mean-stdev","label"="Aggregator for measurement groups","possibleValues"=list("mean-stdev","quartiles","count","min","max","sum")),list("id"="colLabel","type"="measurementsMetadata","defaultValue"="colLabel","label"="Color by","possibleValues"=NULL),list("id"="rowLabel","type"="measurementsAnnotation","defaultValue"="name","label"="Labels","possibleValues"=NULL),list("id"="offset","type"="categorical","defaultValue"="zero","label"="Offset","possibleValues"=list("zero","wiggle")),list("id"="interpolation","type"="categorical","defaultValue"="step-after","label"="Interpolation","possibleValues"=list("linear","step-before","step-after","basis","basis-open","basis-closed","bundle","cardinal","cardinal-open","monotone")),list("id"="scaleToPercent","type"="boolean","defaultValue"=TRUE,"label"="Scale to Percent","possibleValues"=NULL),list("id"="useGroupBy","type"="boolean","defaultValue"=FALSE,"label"="Use Group by","possibleValues"=NULL),list("id"="groupBy","type"="measurementsAnnotation","defaultValue"="name","label"="Group By","possibleValues"=NULL),list("id"="hoverOpacity","type"="number","defaultValue"=0.6,"label"="Hover Opacity","possibleValues"=NULL))
+
+js_chart_colors = c("#393b79","#5254a3","#6b6ecf","#9c9ede","#637939","#8ca252","#b5cf6b","#cedb9c","#8c6d31","#bd9e39","#e7ba52","#e7cb94","#843c39","#ad494a","#d6616b","#e7969c","#7b4173","#a55194","#ce6dbd","#de9ed6")
+
+app$chart_mgr$register_chart_type("StackedLinePlot", "epiviz.plugins.charts.StackedLinePlot", js_chart_settings=js_chart_settings, js_chart_colors=js_chart_colors)
 
 app$server$start_server()
 
@@ -61,14 +79,77 @@ app$server$service()
 
 ### Adding Icicle plot to explore metagenomic Features
 
-Once the browser is open we can visualize the metagenomic features from the `mouseData` object.
-We use the `plot` method to do so. 
+Once the browser is open we can visualize the metagenomic features from the `mouseData` object. We use the `plot` method to do so. 
 
 ```{r,eval=TRUE}
-icicle_plot <- app$plot(mouseData, datasource_name="msd16s")
+icicle_plot <- app$plot(mouseData, datasource_name="mouseData")
 ```
 
-You should now see an icicle plot to explore the hierarchy of the metagenomic features from the `mouseData` object.
+You should now see an icicle tree plot to explore the hierarchy of the metagenomic features from the `mouseData` object.
+
+### Visualizing count matrix from the `mouseData` MRExperiment object
+
+To get the count matrix from `mouseData`
+
+```{r,eval=FALSE, echo=TRUE}
+MRcounts(mouseData)
+```
+
+To visualize the count matrix, create a `metavizControl` object. The `metavizControl` object defines various settings like aggregation depth, normalization method, aggregate function etc. on the dataset.
+
+```{r, eval=TRUE}
+control = metavizControl(aggregateAtDepth=3,aggregateFun=function(x) colSums(x),
+                          valuesAnnotationFuns=NULL,maxDepth=4,maxHistory=3,maxValue=NULL,
+                          minValue=NULL,title="",n=10000,rankFun=sd,norm=TRUE,log=FALSE)
+```
+
+First, we'll create a heatmap visualization of the count matrix. For this lets choose all mouse samples whose diet is "Western"
+
+```{r,eval=TRUE}
+sampleIds = which(phenoData(mouseData)$diet == "Western")
+```
+
+We'll then use the `control` object to query for count matrix and plot a heatmap on the metaviz workspace.
+
+```{r, eval=TRUE}
+
+  # from control object
+  norm=control$norm
+  log = control$log
+  n   = control$n
+  rankFun = control$rankFun
+  
+  # query for counts
+  mat = MRcounts(mouseData,norm=norm,log=log)
+  
+  # Since mouse data has > 10000 features choose a subset of features where normalized count values are > 5000
+  otusToKeep = which(rowSums(mat) > 5000)
+  n = min(length(otusToKeep),n)
+  otuStats = apply(mat[otusToKeep,], 1, rankFun)
+  otuIndices = otusToKeep[order(otuStats, decreasing = TRUE)[1:n]]
+```
+
+Now we have the OTU Matrix, lets add this data to metavizr as a new data source.
+
+```{r, eval=TRUE}
+  heatMapObj = app$data_mgr$add_measurements(mouseData[otuIndices,], datasource_name = "heatmapObj")
+  measurements = heatMapObj$get_measurements()
+  heatmap = app$chart_mgr$visualize("HeatmapPlot", measurements[sampleIds])
+```
+
+Using the same data, we can also visualize it in a stacked plot to see the abundance of various features across samples. Since the measurements are already added to metavizr, we only need to add a stacked line plot. 
+
+```{r, eval=TRUE}
+  stackedPlot = app$chart_mgr$visualize("StackedLinePlot", measurements[sampleIds])
+```
+
+### Close Metavizr and end session
+
+To close the connection with metaviz and the R session, we use the stop_app function.
+
+```{r,eval=TRUE}
+  app$stop_app()
+```
 
 ### SessionInfo
 
