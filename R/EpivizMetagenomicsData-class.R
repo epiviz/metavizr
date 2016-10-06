@@ -1,97 +1,107 @@
 #' Data container for MRexperiment objects
 #' 
 #' Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
-#' \code{\link{MRexperiment}} objects.
+#' \code{\link[metagenomeSeq]{MRexperiment-class}} objects.
 #' @importClassesFrom epivizrData EpivizData
+#' @importFrom methods new
 #' @import RNeo4j
 #' @exportClass EpivizMetagenomicsData
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
-  contains="EpivizData",
-  fields=list(
-    .taxonomy="MetavizTree",
-    .levels="character",
-    .maxDepth="numeric",
-    .aggregateAtDepth="numeric",
-    .lastRootId="ANY",
+  contains = "EpivizData",
+  fields = list(
+    .taxonomy = "MetavizTree",
+    .levels = "character",
+    .maxDepth = "numeric",
+    .aggregateAtDepth = "numeric",
+    .lastRootId = "ANY",
 
-    .counts="ANY",
-    .sampleAnnotation="ANY",
+    .counts = "ANY",
+    .sampleAnnotation = "ANY",
 
-    .minValue="ANY",
-    .maxValue="ANY",
-    .aggregateFun="ANY",
-    .valuesAnnotationFuns="ANY",
+    .minValue = "ANY",
+    .maxValue = "ANY",
+    .aggregateFun = "ANY",
+    .valuesAnnotationFuns = "ANY",
 
-    .lastRequestRanges="list",
-    .lastLeafInfos="list",
-    .lastValues="list",
-    .maxHistory="numeric"
+    .lastRequestRanges = "list",
+    .lastLeafInfos = "list",
+    .lastValues = "list",
+    .maxHistory = "numeric"
   ),
   methods=list(
-    initialize=function(object,control=metavizControl(), feature_order=NULL, ...) {
+    # TODO use and check columns
+    initialize=function(object, 
+                        columns=NULL,
+                        control=metavizControl(), 
+                        feature_order=NULL, 
+                        ...) {
 
       # Initialize parameters used here
-      aggregateAtDepth = control$aggregateAtDepth
-      maxDepth         = control$maxDepth
-      maxHistory       = control$maxHistory
-      maxValue         =  control$maxValue
-      minValue         =  control$minValue
-      aggregateFun     =  control$aggregateFun
-      valuesAnnotationFuns=control$valuesAnnotationFuns
+      aggregateAtDepth <- control$aggregateAtDepth
+      maxDepth         <- control$maxDepth
+      maxHistory       <- control$maxHistory
+      maxValue         <-  control$maxValue
+      minValue         <-  control$minValue
+      aggregateFun     <-  control$aggregateFun
+      valuesAnnotationFuns <- control$valuesAnnotationFuns
 
-      if(is.character(aggregateAtDepth)){ aggregateAtDepth = assignValues(object,aggregateAtDepth) }
-      if(is.character(maxDepth)){ maxDepth = assignValues(object,maxDepth) }
-      log = control$log
-      norm= control$norm
+      if (is.character(aggregateAtDepth)) { 
+        aggregateAtDepth <- assignValues(object, aggregateAtDepth) 
+      }
+      
+      if (is.character(maxDepth)) { 
+        maxDepth <- assignValues(object, maxDepth) 
+      }
+      log <- control$log
+      norm <- control$norm
       
       # validate biom file
-      biomCheck = .checkBiomFormat(object)
+      biomCheck <- .checkBiomFormat(object)
       
-      if(!biomCheck) {
+      if (!biomCheck) {
         stop("Incompatible Biom format")
-      }
-      else {
+      } else {
         message("MRExperiment Object validated... PASS")
       }
 
       # TODO: Some type checking
-      .taxonomy <<- buildMetavizTree(object, feature_order)
-      .levels <<- .taxonomy$levels()
-      .maxDepth <<- maxDepth
-      .aggregateAtDepth <<- aggregateAtDepth
-      .lastRootId <<- .taxonomy$root()$id()
+      .self$.taxonomy <- buildMetavizTree(object, feature_order)
+      .self$.levels <- .self$.taxonomy$levels()
+      .self$.maxDepth <- maxDepth
+      .self$.aggregateAtDepth <- aggregateAtDepth
+      .self$.lastRootId <- .self$.taxonomy$root()$id()
 
-      t = .taxonomy$taxonomyTable()
-      .counts <<- MRcounts(object[rownames(t),],norm=norm,log=log)
+      taxonomy_table <- .self$.taxonomy$taxonomyTable()
+      .self$.counts <- MRcounts(object[rownames(taxonomy_table),], norm=norm, log=log)
 
 
       # TODO: Make this consistent with the aggregateFun
       if (is.null(minValue)) {
-        minValue = log2(min(.counts) + 1)
+        minValue <- log2(min(.self$.counts) + 1)
       }
-      .minValue <<- minValue
+      .self$.minValue <- minValue
 
       if (is.null(maxValue)) {
-        maxValue = log2(max(.counts) + 1)
+        maxValue <- log2(max(.self$.counts) + 1)
       }
-      .maxValue <<- maxValue
-      .aggregateFun <<- aggregateFun
-      .valuesAnnotationFuns <<- valuesAnnotationFuns
+      .self$.maxValue <- maxValue
+      .self$.aggregateFun <- aggregateFun
+      .self$.valuesAnnotationFuns <- valuesAnnotationFuns
 
-      .sampleAnnotation <<- pData(object)
+      .self$.sampleAnnotation <- pData(object)
 
-      .maxHistory <<- maxHistory
-      .lastRequestRanges <<- list()
-      .lastLeafInfos <<- list()
-      .lastValues <<- list()
+      .self$.maxHistory <- maxHistory
+      .self$.lastRequestRanges <- list()
+      .self$.lastLeafInfos <- list()
+      .self$.lastValues <- list()
 
-      if (.aggregateAtDepth >= 0) {
-        nodesAtDepth = .taxonomy$nodesAtDepth(.aggregateAtDepth)
+      if (.self$.aggregateAtDepth >= 0) {
+        nodesAtDepth <- .self$.taxonomy$nodesAtDepth(.self$.aggregateAtDepth)
         selection = list()
         for (node in nodesAtDepth) {
           selection[[node$id()]] = SelectionType$NODE
         }
-        .taxonomy$updateSelection(selection)
+        .self$.taxonomy$updateSelection(selection)
       }
 
       callSuper(object=object, ...)

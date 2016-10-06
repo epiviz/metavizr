@@ -15,7 +15,6 @@
 #' @param norm Normalize MRexperiment object.
 #' @param log Log tranformation of MRexperiment object.
 #' @return List of setting parameters.
-#' @seealso \code{\link{metavizControl}} \code{\link{metavizRank}} \code{\link{metavizOptimize}}
 #' @examples
 #' settings = metavizControl()
 #'

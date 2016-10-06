@@ -44,7 +44,4 @@ Default settings for the various plotting functions in metavizr.
 settings = metavizControl()
 
 }
-\seealso{
-\code{\link{metavizControl}} \code{\link{metavizRank}} \code{\link{metavizOptimize}}
-}
 

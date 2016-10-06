@@ -10,18 +10,14 @@
 \arguments{
 \item{object}{The object to register to data server}
 
-\item{...}{Additonal arguments passed to object constructors}
+\item{columns}{Name of columns containing data to register}
 
-\item{object}{Which object to register}
+\item{...}{Additonal arguments passed to object constructors}
 }
 \value{
-Object inheriting from \code{\link{EpivizData}} class
+An \code{\link{EpivizMetagenomicsData-class}} object
 }
 \description{
 Generic method to register data to the epiviz data server
 }
-\section{Methods (by class)}{
-\itemize{
-\item \code{MRexperiment}: Register a \code{\link{MRexperiment}} object
-}}
 

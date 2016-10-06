@@ -2,7 +2,7 @@
 % Please edit documentation in R/startMetaviz.R
 \name{startMetavizStandalone}
 \alias{startMetavizStandalone}
-\title{Start metaviz app in standalone (locally) and create \code{\link{EpivizApp}} object to manage connection.}
+\title{Start metaviz app in standalone (locally) and create \code{\link[epivizr]{EpivizApp}} object to manage connection.}
 \usage{
 startMetavizStandalone(branch = "metaviz-4.1",
   register_function = .register_all_metaviz_things, ...)
@@ -12,32 +12,13 @@ startMetavizStandalone(branch = "metaviz-4.1",
 
 \item{register_function}{(function) function used to register actions and charts on the metaviz app.}
 
-\item{...}{additional parameters passed to \code{\link[epivizrServer]{createServer}}.}
-
-\item{debug}{(logical) start metaviz app in debug mode.}
-
-\item{workspace}{(character) a workspace id to load in the metaviz app on startup.}
-
-\item{scripts}{(character) URLs for JavaScript plugin scripts to be imported when metaviz is loaded (see \url{http://epiviz.cbcb.umd.edu/help} for details).}
-
-\item{gists}{(character) Ids for github gists (\url{http://gist.github.com}) containing JavaScript plugin scripts to
-be imported when metaviz is loaded (see \url{http://epiviz.cbcb.umd.edu/help} for details).}
-
-\item{use_cookie}{(logical) use cookies within the epiviz app.}
-
-\item{open_browser}{(logical) browse to the metaviz URL before exiting function.}
-
-\item{server}{(EpivizServer) if not \code{NULL} use this object as underlying WebSocket and HTTP server}
-
-\item{browser_fun}{(function) function used to browse to URL (\code{browseURL} by default)}
-
-\item{ws_host}{(character) host address to use for websocket connection ("localhost" by default)}
+\item{...}{additional parameters passed to \code{\link[epivizrStandalone]{startStandalone}}.}
 }
 \value{
 An object of class \code{\link{EpivizApp}}
 }
 \description{
-Start metaviz app in standalone (locally) and create \code{\link{EpivizApp}} object to manage connection.
+Start metaviz app in standalone (locally) and create \code{\link[epivizr]{EpivizApp}} object to manage connection.
 }
 \examples{
 # see package vignette for example usage

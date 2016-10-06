@@ -7,7 +7,7 @@
 \title{Data container for MRexperiment objects}
 \description{
 Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
-\code{\link{MRexperiment}} objects.
+\code{\link[metagenomeSeq]{MRexperiment-class}} objects.
 }
 \section{Methods}{
 
@@ -18,7 +18,7 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 \item{\code{toNEO4JDb(graph, colLabel = NULL)}}{Save an MRexperiment object to a Neo4j Graph database.}
 
-\item{\code{toNEO4jDump()}}{Save an MRexperiment object to a Neo4j Graph database. The dump file is location at ~/dump.cypher.}
+\item{\code{toNEO4jDump(filePath = "~/", fileName = "neo4j_dump.cypher")}}{Save an MRexperiment object to a Neo4j Graph database. set the location of the output file with fileName and filePath.}
 
 \item{\code{update(new_object, send_request = TRUE)}}{Update underlying data object with new object}
 }}

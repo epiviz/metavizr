@@ -209,7 +209,7 @@ setGeneric("buildMetavizTree", signature=c("object"),
            function(object, ...) standardGeneric("buildMetavizTree"))
 
 setMethod("buildMetavizTree", "MRexperiment", function(object, feature_order, ...) {
-  taxonomy = fData(object)
+  taxonomy <- Biobase::fData(object)
   if(!is.null(feature_order)) {
     fOrder <- match(feature_order, colnames(taxonomy))
     taxonomy <- taxonomy[fOrder]

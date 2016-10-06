@@ -12,29 +12,10 @@ startMetaviz(host = "http://metaviz.cbcb.umd.edu",
 
 \item{register_function}{(function) function used to register actions and charts on the metaviz app.}
 
-\item{...}{additional parameters passed to \code{\link[epivizrServer]{createServer}}.}
-
-\item{debug}{(logical) start metaviz app in debug mode.}
-
-\item{workspace}{(character) a workspace id to load in the metaviz app on startup.}
-
-\item{scripts}{(character) URLs for JavaScript plugin scripts to be imported when metaviz is loaded (see \url{http://epiviz.cbcb.umd.edu/help} for details).}
-
-\item{gists}{(character) Ids for github gists (\url{http://gist.github.com}) containing JavaScript plugin scripts to
-be imported when metaviz is loaded (see \url{http://epiviz.cbcb.umd.edu/help} for details).}
-
-\item{use_cookie}{(logical) use cookies within the epiviz app.}
-
-\item{open_browser}{(logical) browse to the metaviz URL before exiting function.}
-
-\item{server}{(EpivizServer) if not \code{NULL} use this object as underlying WebSocket and HTTP server}
-
-\item{browser_fun}{(function) function used to browse to URL (\code{browseURL} by default)}
-
-\item{ws_host}{(character) host address to use for websocket connection ("localhost" by default)}
+\item{...}{additional parameters passed to \code{\link[epivizr]{startEpiviz}}.}
 }
 \value{
-An object of class \code{\link{EpivizApp}}
+An object of class \code{\link[epivizr]{EpivizApp}}
 }
 \description{
 Start metaviz app and create \code{\link{EpivizApp}} object to manage connection.
@@ -44,5 +25,8 @@ Start metaviz app and create \code{\link{EpivizApp}} object to manage connection
 app <- startMetaviz(non_interactive=TRUE, open_browser=TRUE)
 app$stop_app()
 
+}
+\seealso{
+\code{\link[epivizr]{EpivizApp}}
 }
 
