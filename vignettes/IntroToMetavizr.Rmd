@@ -31,7 +31,7 @@ data("mouseData")
 The connection to `Metaviz` is managed through a session manager object of class `EpivizApp`. We can create this object and open `Metaviz` using the `startMetaviz` function.
 
 ```{r, eval=FALSE, echo=TRUE}
-app <- startMetaviz(host="http://localhost:5555")
+app <- startMetaviz()
 ```
 
 ```{r, eval=TRUE, echo=FALSE}
