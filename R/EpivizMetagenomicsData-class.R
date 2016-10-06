@@ -116,10 +116,10 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       }
       
       for (col in colnames(featureData@data)) {
-        if(!(is.vector(featureData@data[[col]]) || is.factor(featureData@data[[col]]))) {
-          featureCheck = FALSE
-          message(paste0(col, " in feature data is not a vector"))
-        }
+        # if(!(is.vector(featureData@data[[col]]) || is.factor(featureData@data[[col]]))) {
+        #   featureCheck = FALSE
+        #   message(paste0(col, " in feature data is not a vector"))
+        # }
         
         if(length(featureData@data[[col]]) != featureLength) {
           featureCheck = FALSE
@@ -144,10 +144,10 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       }
       
       for (col in colnames(sampleData@data)) {
-        if(!(is.vector(sampleData@data[[col]]) || is.factor(sampleData@data[[col]]) )) {
-          sampleCheck = FALSE
-          message(paste0(col, " in sample/pheno data is not a vector"))
-        }
+        # if(!(is.vector(sampleData@data[[col]]) || is.factor(sampleData@data[[col]]) )) {
+        #   sampleCheck = FALSE
+        #   message(paste0(col, " in sample/pheno data is not a vector"))
+        # }
         
         if(length(sampleData@data[[col]]) != sampleLength) {
           sampleCheck = FALSE

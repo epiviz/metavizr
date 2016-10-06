@@ -9,9 +9,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-[`Metaviz`](http://metaviz.cbcb.umd.edu) is an interactive visualization tool for metagenomic sequencing data. It supports taxonomy navigation of annotated metagenomic features and allows multiple visualizations of data scatterplots, heatmaps and PCA plots. It also includes data from the [Mild to Severe Diahereal Study](http://msd16s/) for visualization. As with the Epiviz suite, it has a flexible plugin framework so users can add [d3](http://d3js.org/) visualizations. You can find more information about Metaviz at [http://epivizwww01.umiacs.umd.edu/help](http://epivizwww01.umiacs.umd.edu/help) and see a video tour.
-
-<iframe width="480" height="360" src="http://www.youtube.com/embed/099c4wUxozA" frameborder="1" allowfullscreen></iframe>
+[`Metaviz`](http://metaviz.cbcb.umd.edu) is an interactive visualization tool for metagenomic sequencing data. It supports taxonomy navigation of annotated metagenomic features and allows multiple visualizations of data scatterplots, heatmaps and PCA plots. It also includes data from the [Mild to Severe Diahereal Study](http://msd16s/) for visualization. As with the Epiviz suite, it has a flexible plugin framework so users can add [d3](http://d3js.org/) visualizations. You can find more information about Metaviz at [http://metaviz.cbcb.umd.edu/help](http://metaviz.cbcb.umd.edu/help) and see a video tour.
 
 The `metavizr` package implements two-way communication between the `R/Bioconductor` computational genomics environment and `Metaviz`. Objects in an `R` session can be displayed as tracks or plots on Metaviz Metavizr uses Websockets for communication between the browser Javascript client and the R environmen, the same technology underlying the popular [Shiny](http://www.rstudio.com/shiny/) system for authoring interactive web-based reports in R.
 
@@ -142,6 +140,11 @@ Using the same data, we can also visualize it in a stacked plot to see the abund
 ```{r, eval=TRUE}
   stackedPlot = app$chart_mgr$visualize("StackedLinePlot", measurements[sampleIds])
 ```
+
+The screenshot of the above workflow on the metaviz workspace.
+
+![Mouse Data metaviz workspace](images/Metaviz.png)
+
 
 ### Close Metavizr and end session
 
