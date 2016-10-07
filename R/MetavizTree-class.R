@@ -1,3 +1,9 @@
+#' Taxonomy tree structure wrapper
+#'
+#' Used to manage tree-cut queries from the
+#' Metaviz app UI. 
+#' 
+#' 
 MetavizTree <- setRefClass("MetavizTree",
   fields=list(
     .taxonomyTablePtr="Ptr",
@@ -246,9 +252,17 @@ MetavizTree <- setRefClass("MetavizTree",
   )
 )
 
+#' Build a MetavizTree object from another object
+#' 
+#' @param object The object from which taxonomy data is extracted
+#' @param ... Additional arguments
+#' @return a \code{\link{MetavizTree}} object
 setGeneric("buildMetavizTree", signature=c("object"),
            function(object, ...) standardGeneric("buildMetavizTree"))
 
+#' @describeIn buildMetavizTree Build tree from a \code{\link[metagenomeSeq]{MRexperiment-class}} object
+#' @importFrom Biobase fData
+#' @param feature_order Ordering of leaves (features) in taxonomy tree
 setMethod("buildMetavizTree", "MRexperiment", function(object, feature_order, ...) {
   taxonomy <- Biobase::fData(object)
   if(!is.null(feature_order)) {
