@@ -4,8 +4,8 @@ Ptr <- setRefClass("Ptr",
   ),
   methods=list(
     initialize=function(obj) {
-      if (missing(obj)) { obj = NULL }
-      . <<- obj
+      if (missing(obj)) { obj <- NULL }
+      .self$. <- obj
     }
   )
 )

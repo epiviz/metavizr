@@ -97,144 +97,144 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
       if (.self$.aggregateAtDepth >= 0) {
         nodesAtDepth <- .self$.taxonomy$nodesAtDepth(.self$.aggregateAtDepth)
-        selection = list()
-        for (node in nodesAtDepth) {
-          selection[[node$id()]] = SelectionType$NODE
-        }
+        node_ids <- sapply(nodesAtDepth, function(node) node$id())
+        selection <- lapply(node_ids, function(node_id) SelectionType$NODE)
+        names(selection) <- node_ids
         .self$.taxonomy$updateSelection(selection)
       }
 
       callSuper(object=object, ...)
     },
-    
+    # TODO rename this to .validateObject    
     .checkBiomFormat=function(obj) {
       
       # validate feature data
-      featureCheck = TRUE
-      featureData = obj@featureData
+      featureCheck <- TRUE
+      fdata <- featureData(obj)
       
-      if (length(colnames(featureData@data)) != length(rownames(featureData@varMetadata))) {
-        featureCheck = FALSE
+      # TODO: This shouldn't happen to a valid AnnotatedDataFrame
+      # TODO: remove this check
+      if (ncol(pData(fdata)) != nrow(fdata@varMetadata)) {
+        featureCheck <- FALSE
         message("mismatch in feature data frame")
       }
       
-      featureLength = length(rownames(featureData@data[0]))
+      fdata <- pData(fdata)
+      featureLength <- nrow(fdata)
       
-      if(length(colnames(featureData@data)) == 0) {
-        featureCheck = FALSE
+      if (ncol(fdata) == 0) {
+        featureCheck <- FALSE
         message("feature Data is empty")
       }
       
-      for (col in colnames(featureData@data)) {
-        # if(!(is.vector(featureData@data[[col]]) || is.factor(featureData@data[[col]]))) {
-        #   featureCheck = FALSE
-        #   message(paste0(col, " in feature data is not a vector"))
-        # }
-        
-        if(length(featureData@data[[col]]) != featureLength) {
-          featureCheck = FALSE
+      # TODO: remove this check, this wouldn't happen to an AnnotatedDataFrame
+      for (col in colnames(fdata)) {
+        if(length(fdata[[col]]) != featureLength) {
+          featureCheck <- FALSE
           message(paste0("size mismatch - ", col, " vector in feature data"))
         }
       }
       
       # validate sample data
-      sampleCheck = TRUE
-      sampleData = obj@phenoData
+      sampleCheck <- TRUE
+      sampleData <- phenoData(obj)
       
-      if (length(colnames(sampleData@data)) != length(rownames(sampleData@varMetadata))) {
-        sampleCheck = FALSE
+      # TODO: remove this check
+      # TODO: this shouldn't never be true for a valid AnnotatedDataFrame
+      if (ncol(pData(sampleData)) != nrow(sampleData@varMetadata)) {
+        sampleCheck <- FALSE
         message("mismatch in pheno/sample data frame")
       }
       
-      sampleLength = length(rownames(sampleData@data[0]))
+      sampleData <- pData(sampleData)
+      sampleLength <- nrow(sampleData)
       
-      if(length(colnames(sampleData@data)) == 0) {
-        sampleCheck = FALSE
+      if(ncol(sampleData) == 0) {
+        sampleCheck <- FALSE
         message("Sample Data is empty")
       }
       
-      for (col in colnames(sampleData@data)) {
-        # if(!(is.vector(sampleData@data[[col]]) || is.factor(sampleData@data[[col]]) )) {
-        #   sampleCheck = FALSE
-        #   message(paste0(col, " in sample/pheno data is not a vector"))
-        # }
-        
-        if(length(sampleData@data[[col]]) != sampleLength) {
-          sampleCheck = FALSE
+      # TODO: remove this check
+      # TODO: this shouldn't happen to a valid AnnotatedDataFrame
+      for (col in colnames(sampleData)) {
+        if(length(sampleData[[col]]) != sampleLength) {
+          sampleCheck <- FALSE
           message(paste0("size mismatch - ", col, " vector in pheno/sample data"))
         }
       }
       
       # validate count/assay data
-      assayCheck = TRUE
-      assayData = obj@assayData
+      assayCheck <- TRUE
+      assayData <- assayData(obj)
       
       if(!grepl("counts", names(assayData))) {
-        assayCheck = FALSE
+        assayCheck <- FALSE
         message("count data does not exist")
       }
       else {
         dimCountMatrix = dim(assayData[["counts"]])
         
         if(dimCountMatrix[1] != featureLength) {
-          assayCheck = FALSE
+          assayCheck <- FALSE
           message("count Matrix in assayData does not match feature length")
         }  
         
         if(dimCountMatrix[2] != sampleLength) {
-          assayCheck = FALSE
+          assayCheck <- FALSE
           message("count Matrix in assayData does not match sample length")
         }  
       }
       
-      return(featureCheck && sampleCheck && assayCheck)
+      featureCheck && sampleCheck && assayCheck
     },
 
     .taxonomyLevels=function(exp) {
-      .levels
+      .self$.levels
     },
 
     .getSelectedLeaves=function(start, end) {
-      ret = NULL
-      if (length(.lastRequestRanges) > 0) {
-        for (i in rev(seq_along(.lastRequestRanges))) {
-          if (.lastRequestRanges[[i]]$start == start || .lastRequestRanges[[i]]$end == end) {
-            ret = .lastLeafInfos[[i]]
+      ret <- NULL
+      if (length(.self$.lastRequestRanges) > 0) {
+        for (i in rev(seq_along(.self$.lastRequestRanges))) {
+          if (.self$.lastRequestRanges[[i]]$start == start || 
+              .self$.lastRequestRanges[[i]]$end == end) {
+            ret <- .lastLeafInfos[[i]]
             break
           }
         }
       }
       if (is.null(ret)) {
-        requestRange = list(start=start, end=end)
-        ret = Ptr$new(.taxonomy$selectedLeaves(start, end))
+        requestRange <- list(start=start, end=end)
+        ret <- Ptr$new(.self$.taxonomy$selectedLeaves(start, end))
 
-        if (.maxHistory > 0) {
-          .lastLeafInfos <<- c(.lastLeafInfos, ret)
-          .lastRequestRanges <<- c(.lastRequestRanges, list(requestRange))
-          .lastValues <<- c(.lastValues, list(NULL))
+        if (.self$.maxHistory > 0) {
+          .self$.lastLeafInfos <- c(.self$.lastLeafInfos, ret)
+          .self$.lastRequestRanges <- c(.self$.lastRequestRanges, list(requestRange))
+          .self$.lastValues <- c(.self$.lastValues, list(NULL))
 
-          if (length(.lastRequestRanges) > .maxHistory) {
-            .lastRequestRanges <<- .lastRequestRanges[2:(.maxHistory+1)]
-            .lastLeafInfos <<- .lastLeafInfos[2:(.maxHistory+1)]
-            .lastValues <<- .lastValues[2:(.maxHistory+1)] # Not yet a value
+          if (length(.self$.lastRequestRanges) > .self$.maxHistory) {
+            .self$.lastRequestRanges <- .self$.lastRequestRanges[2:(.self$.maxHistory+1)]
+            .self$.lastLeafInfos <- .self$.lastLeafInfos[2:(.self$.maxHistory+1)]
+            .self$.lastValues <- .self$.lastValues[2:(.self$.maxHistory+1)] # Not yet a value
           }
         }
       }
 
-      return(ret$.)
+      ret$.
     },
 
     .getSelectedValues=function(measurement, start, end) {
-      leafInfos = .getSelectedLeaves(start, end)
-      index = -1
-      values = NULL
-      if (length(.lastRequestRanges) > 0) {
-        for (i in rev(seq_along(.lastRequestRanges))) {
-          if (.lastRequestRanges[[i]]$start == start || .lastRequestRanges[[i]]$end == end) {
-            if (!is.null(.lastValues[[i]])) {
-              values = .lastValues[[i]]
+      leafInfos <- .self$.getSelectedLeaves(start, end)
+      index <- -1
+      values <- NULL
+      if (length(.self$.lastRequestRanges) > 0) {
+        for (i in rev(seq_along(.self$.lastRequestRanges))) {
+          if (.self$.lastRequestRanges[[i]]$start == start || 
+              .self$.lastRequestRanges[[i]]$end == end) {
+            if (!is.null(.self$.lastValues[[i]])) {
+              values <- .self$.lastValues[[i]]
             } else {
-              index = i
+              index <- i
             }
             break
           }
@@ -242,24 +242,28 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       }
 
       if (is.null(values)) {
-        values = Ptr$new(list(values=unname(lapply(leafInfos, function(info) {
-          lind = info$node$leafIndex()
-          ind = (lind+1):(lind+info$node$nleaves())
-          return(.aggregateFun(.counts[ind,, drop=FALSE]))
-        }))))
-        if (!is.null(.valuesAnnotationFuns)) {
-          for (anno in names(.valuesAnnotationFuns)) {
-            fun = .valuesAnnotationFuns[[anno]]
-            values$.[[anno]] = unname(lapply(leafInfos, function(info) {
-              lind = info$node$leafIndex()
-              ind = (lind+1):(lind+info$node$nleaves())
-              return(fun(.counts[ind,, drop=FALSE]))
+        values <- Ptr$new(list(
+          values=unname(lapply(leafInfos, function(info) {
+            lind <- info$node$leafIndex()
+            ind = seq(lind+1, lind+info$node$nleaves())
+            .self$.aggregateFun(.self$.counts[ind,, drop=FALSE])
+          }))
+        ))
+        
+        if (!is.null(.self$.valuesAnnotationFuns)) {
+          for (anno in names(.self$.valuesAnnotationFuns)) {
+            fun <- .self$.valuesAnnotationFuns[[anno]]
+            values$.[[anno]] <- unname(lapply(leafInfos, function(info) {
+              lind <- info$node$leafIndex()
+              ind <- seq(lind+1, lind+info$node$nleaves())
+              fun(.self$.counts[ind,, drop=FALSE])
             }))
           }
         }
       }
+      
       if (index > 0) {
-        .lastValues[[index]] <<- values
+        .self$.lastValues[[index]] <- values
       }
 
       lapply(values$., function(vals) {
@@ -283,46 +287,47 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 # Data analysis features
 EpivizMetagenomicsData$methods(
   nleaves=function() {
-    if (is.null(dim(.counts))) {
-      if (length(.counts) > 0) { return(1) }
+    if (is.null(dim(.self$.counts))) {
+      if (length(.self$.counts) > 0) { return(1) }
       return(0)
     }
 
-    nrow(.counts)
+    nrow(.self$.counts)
   },
   nmeasurements=function() {
-    if (is.null(dim(.counts))) {
-      return(length(.counts))
+    if (is.null(dim(.self$.counts))) {
+      return(length(.self$.counts))
     }
 
-    ncol(.counts)
+    ncol(.self$.counts)
   },
 
   nlevels=function() {
-    length(.levels)
+    length(.self$.levels)
   },
 
-  taxonomyTable=function() { .taxonomy$taxonomyTable() },
-  calcNodeId=function(rowIndex, colIndex) { .taxonomy$calcNodeId(rowIndex, colIndex) },
-  node=function(nodeId) { .taxonomy$node(nodeId) },
-  parent=function(node) { .taxonomy$parent(node) },
-  siblings=function(node) { .taxonomy$siblings(node) },
+  taxonomyTable=function() { .self$.taxonomy$taxonomyTable() },
+  calcNodeId=function(rowIndex, colIndex) { .self$.taxonomy$calcNodeId(rowIndex, colIndex) },
+  node=function(nodeId) { .self$.taxonomy$node(nodeId) },
+  parent=function(node) { .self$.taxonomy$parent(node) },
+  siblings=function(node) { .self$.taxonomy$siblings(node) },
 
   changeAggregation=function(mgr, nodeId, aggregationType) {
-    selection = list()
-    selection[[nodeId]] = aggregationType
-    .taxonomy$updateSelection(selection)
-    mgr$.clearDatasourceGroupCache(.self, TRUE)
+    selection <- list()
+    selection[[nodeId]] <- aggregationType
+    .self$.taxonomy$updateSelection(selection)
+    mgr$.clear_DatasourceGroup_cache(.self)
   },
+  
   changeAggregationAtDepth=function(mgr, depth, aggregationType) {
     if (depth < 0) { return() }
-    nodesAtDepth = .taxonomy$nodesAtDepth(depth)
-    selection = list()
+    nodesAtDepth <- .self$.taxonomy$nodesAtDepth(depth)
+    selection <- list()
     for (node in nodesAtDepth) {
-      selection[[node$id()]] = aggregationType
+      selection[[node$id()]] <- aggregationType
     }
-    .taxonomy$updateSelection(selection)
-    mgr$.clearDatasourceGroupCache(.self, TRUE)
+    .self$.taxonomy$updateSelection(selection)
+    mgr$.clear_datasourceGroup_cache(.self)
   }
 )
 
@@ -330,14 +335,14 @@ EpivizMetagenomicsData$methods(
 EpivizMetagenomicsData$methods(
   get_default_chart_type = function() { "epiviz.ui.charts.tree.Icicle" },
   get_measurements=function() {
-    out <- lapply(colnames(.counts), function(sample) {
+    out <- lapply(colnames(.self$.counts), function(sample) {
       epivizrData:::EpivizMeasurement(id=sample,
            name=sample,
            type="feature",
            datasourceId=.self$.id,
            datasourceGroup=.self$.id,
            defaultChartType="heatmap",
-           annotation=as.list(.sampleAnnotation[sample,]),
+           annotation=as.list(.self$.sampleAnnotation[sample,]),
            minValue=.minValue,
            maxValue=.maxValue,
            metadata=c(rev(.levels), "colLabel", "ancestors", "lineage"))
@@ -345,43 +350,48 @@ EpivizMetagenomicsData$methods(
     out
   },
   getHierarchy=function(nodeId) {
-    root = NULL
-    if (missing(nodeId) || is.null(nodeId)) { root = .taxonomy$root() }
-    else {
-      root = .taxonomy$parent(.taxonomy$node(nodeId))
-      if (is.null(root)) { root = .taxonomy$root() }
+    root <- NULL
+    if (missing(nodeId) || is.null(nodeId)) { 
+      root <- .self$.taxonomy$root() 
+    } else {
+      root <- .self$.taxonomy$parent(.self$.taxonomy$node(nodeId))
+      if (is.null(root)) { root <- .self$.taxonomy$root() }
     }
-    .lastRootId <<- nodeId
+    .self$.lastRootId <- nodeId
 
-    return(root$raw(maxDepth=.maxDepth))
+    return(root$raw(maxDepth=.self$.maxDepth))
   },
   propagateHierarchyChanges=function(selection, order) {
-    if (missing(selection) && missing(order)) { return(getHierarchy(.lastRootId)) }
+    if (missing(selection) && missing(order)) { 
+      return(getHierarchy(.self$.lastRootId)) 
+    }
 
     if (!missing(selection)) {
-      .taxonomy$updateSelection(selection)
+      .self$.taxonomy$updateSelection(selection)
     }
 
     if (!missing(order)) {
-      .taxonomy$updateOrder(order)
+      .self$.taxonomy$updateOrder(order)
     }
 
-    .lastRequestRanges <<- list()
-    .lastLeafInfos <<- list()
-    .lastValues <<- list()
+    .self$.lastRequestRanges <- list()
+    .self$.lastLeafInfos <- list()
+    .self$.lastValues <- list()
 
-    getHierarchy(.lastRootId)
+    getHierarchy(.self$.lastRootId)
   },
   getRows=function(seqName, start, end, metadata) {
-    leafInfos = .self$.getSelectedLeaves(start, end)
-    leafAncestors = lapply(leafInfos, function(info) { .taxonomy$ancestors(info$node) })
+    leafInfos <- .self$.getSelectedLeaves(start, end)
+    leafAncestors <- lapply(leafInfos, function(info) { 
+      .self$.taxonomy$ancestors(info$node) 
+    })
 
-    leafTaxonomies = list()
-    for (i in seq_along(.levels)) {
-      leafTaxonomies[[.levels[[i]]]] = list()
+    leafTaxonomies <- list()
+    for (i in seq_along(.self$.levels)) {
+      leafTaxonomies[[.self$.levels[[i]]]] <- list()
       for (j in seq_along(leafInfos)) {
         if (i > length(leafAncestors[[j]])) { next }
-        leafTaxonomies[[.levels[[i]]]][[j]] = leafAncestors[[j]][[i]]
+        leafTaxonomies[[.self$.levels[[i]]]][[j]] = leafAncestors[[j]][[i]]
       }
     }
 
@@ -391,12 +401,20 @@ EpivizMetagenomicsData$methods(
       end=sapply(leafInfos, function(info) { info$start + info$node$nleaves()}),
       metadata = c(list(
         colLabel = sapply(leafInfos, function(info) { info$node$name() }),
-        ancestors = sapply(leafAncestors, function(ancestors) { paste(lapply(rev(ancestors), function(node) { node$name() }), collapse=",") }), # TODO: Use tree .ancestryByDepth
-        lineage = sapply(leafAncestors, function(ancestors) { paste(lapply(rev(ancestors), function(node) { node$id() }), collapse=",") })
-      ), sapply(rev(.levels), function(level) {
-        r = list(lapply(leafTaxonomies[[level]], function(node) { if(is.null(node)) { return("<NA>") }; node$name() }))
+        ancestors = sapply(leafAncestors, function(ancestors) { 
+          paste(lapply(rev(ancestors), function(node) { node$name() }), collapse=",") 
+        }), # TODO: Use tree .ancestryByDepth
+        lineage = sapply(leafAncestors, function(ancestors) { 
+          paste(lapply(rev(ancestors), function(node) { node$id() }), collapse=",") 
+        })
+      ), sapply(rev(.self$.levels), function(level) {
+        r <- list(lapply(leafTaxonomies[[level]], function(node) { 
+          if (is.null(node)) { return("<NA>") } 
+          node$name() 
+        }))
+        
         if (length(r[[1]]) == 0) {
-          r[[1]] = lapply(seq_along(leafInfos), function(i) { "<NA>" })
+          r[[1]] <- lapply(seq_along(leafInfos), function(i) { "<NA>" })
         }
         return(r)
       }))
@@ -405,12 +423,12 @@ EpivizMetagenomicsData$methods(
     globalStartIndex = NULL
     if (length(leafInfos) > 0) { globalStartIndex = leafInfos[[1]]$realNodesBefore }
     if (length(leafInfos) == 1) {
-      ret$id = list(ret$id)
-      ret$start = list(ret$start)
-      ret$end = list(ret$end)
-      ret$metadata$colLabel = list(ret$metadata$colLabel)
-      ret$metadata$ancestors = list(ret$metadata$ancestors)
-      ret$metadata$lineage = list(ret$metadata$lineage)
+      ret$id <- list(ret$id)
+      ret$start <- list(ret$start)
+      ret$end <- list(ret$end)
+      ret$metadata$colLabel <- list(ret$metadata$colLabel)
+      ret$metadata$ancestors <- list(ret$metadata$ancestors)
+      ret$metadata$lineage <- list(ret$metadata$lineage)
     }
 
     return(list(
@@ -419,21 +437,27 @@ EpivizMetagenomicsData$methods(
     ))
   },
   getValues=function(measurement, seqName, start, end) {
-    leafInfos = .self$.getSelectedLeaves(start, end)
-    globalStartIndex = NULL
-    if (length(leafInfos) > 0) { globalStartIndex = leafInfos[[1]]$realNodesBefore }
-    ret = list(
+    leafInfos <- .self$.getSelectedLeaves(start, end)
+    globalStartIndex <- NULL
+    
+    if (length(leafInfos) > 0) { 
+      globalStartIndex <- leafInfos[[1]]$realNodesBefore 
+    }
+    
+    ret <- list(
       globalStartIndex = globalStartIndex,
       values = .self$.getSelectedValues(measurement, start, end)
     )
     return(ret)
   },
-  getCombined=function(measurements, seqName, start, end, order, nodeSelection, selectedLevels) {
+  getCombined=function(measurements, 
+                       seqName, start, end, 
+                       order, nodeSelection, selectedLevels) {
     
     # remove current selectionTypes
-    nodeList = list()
+    nodeList <- list()
     for (node in names(.self$.taxonomy$.selectionTypes$.)) {
-      nodeList[[node]] = 1
+      nodeList[[node]] <- 1
     }
   
     .self$.taxonomy$updateSelection(nodeList)
@@ -486,43 +510,8 @@ EpivizMetagenomicsData$methods(
 )
 
  EpivizMetagenomicsData$methods(
-#   toMySQLDb=function(con, colLabel=NULL) {
-#     "Save an MRexperiment object to a MySQL database."
-#     
-#     # TODO: Formal log
-#     cat("Saving column data...")
-#     .saveColData(con, colLabel)
-#     cat("Done\n")
-# 
-#     cat("Saving row data...")
-#     .saveRowData(con)
-#     cat("Done\n")
-# 
-#     cat("Saving hierarchy...")
-#     .saveHierarchy(con)
-#     cat("Done\n")
-# 
-#     cat("Saving counts...")
-#     .saveValues(con)
-#     cat("Done\n")
-# 
-#     cat("Saving levels...")
-#     .saveLevels(con)
-#     cat("Done\n")
-#     
-#     res <- dbSendQuery(con, "RENAME TABLE `meta_values` to `values`;")
-#     dbCommit(conn = con)
-#     
-#     cat("Saving Data Matrix...")
-#     .saveMatrix(con)
-#     cat("Done\n")
-#     
-#     dbDisconnect(con)
-#     #odbcClose(con)
-#     
-#   },
+   # TODO: do we need these MySQL functions still?
   .getFieldTypes = function(data) {
-    
     colNames = colnames(data)
     colTypes = sapply(colNames, function(x) dbDataType(RMySQL::MySQL(), data[[x]]))
     colTypes = gsub("text", "VARCHAR(255)", colTypes)

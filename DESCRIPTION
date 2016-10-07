@@ -17,7 +17,7 @@ Description: This package provides Websocket communication to the
     Visualizations (using d3.js) can be easily added to the web app as well.
 VignetteBuilder: knitr
 Depends:
-    R (>= 3.0.1)
+    R (>= 3.3)
 Imports:
     methods,
     Biobase,
@@ -42,5 +42,5 @@ Collate:
     'MetavizTree-class.R'
     'EpivizMetagenomicsData-class.R'
     'register-methods.R'
-biocViews: Visualization, Infrastructure, GUI
+biocViews: Visualization, Infrastructure, GUI, Metagenomics
 RoxygenNote: 5.0.1
