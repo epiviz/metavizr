@@ -197,7 +197,7 @@ validObject(annotatedDFFeatures)
 Finally, we create an MRexperiment with the x-coordinates and y-coordinates as well as the sample and feature data AnnotatedDataFrames.  We then start a Metaviz session and add the MRexperiment as a measurement for Metaviz to plot.
 
 ```{r, eval=TRUE}
-splinesMRexp <- metagenomeSeq:::newMRexperiment(counts = results, phenoData = annotatedDFSamples, featureData = annotatedDFFeatures)
+splinesMRexp <- metagenomeSeq::newMRexperiment(counts = results, phenoData = annotatedDFSamples, featureData = annotatedDFFeatures)
 app <- startMetaviz()
 app$data_mgr$add_measurements(splinesMRexp, datasource_name = "splines", control = metavizControl(norm=FALSE))
 ```
