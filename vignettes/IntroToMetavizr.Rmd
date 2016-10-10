@@ -145,6 +145,64 @@ The screenshot of the above workflow on the metaviz workspace.
 
 ![Mouse Data metaviz workspace](images/Metaviz.png)
 
+Another feature of metavizr is to visualize data using a line plot.  To illustrate, we describe a use case with data from Pop et al. [1].  In the study, 12 subjects were exposed to enterogenic E. coli and then treated with antibiotics.  Samples were collected at 2 days before treatment and then on each day afterwards for 10 days.  Paulson et al. describe analyzing this time series data with a smoothing-spline [2].  We detail the steps to perform this analysis and create a line plot using Metaviz. 
+
+First, import the etec16s dataset, select sample data from the first 9 days, and choose the feature annotations of interest.
+
+```{r, eval=TRUE}
+library(etec16s)
+data(etec16s)
+etec16s = etec16s[,-which(pData(etec16s)$Day>9)]
+featuresOfInterest = c('Escherichia/Shigella','Faecalibacterium prausnitzii')
+```
+
+Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
+
+```{r, eval=TRUE}
+timeSeriesFits = lapply(bacteria,function(i){
+  try(
+    fitTimeSeries(obj=etec16s,
+                  formula = abundance~id + time*class + AntiGiven,
+                  feature=i,
+                  class="AnyDayDiarrhea",
+                  id="SubjectID",
+                  time="Day",
+                  lvl="Species",
+                  C=0.3,
+                  B=1)
+  )
+})
+```
+
+For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to create two AnnotatedDataFrame objects which contain the timepoints as sample data and annotations for feature data.  
+
+```{r, eval=TRUE}
+results <- rbind(t(timeSeriesFits[[1]]$fit)[1,], t(timeSeriesFits[[2]]$fit)[1,])
+
+dfSamples <- data.frame(x=1:11,row.names=paste("Timepoint", 1:11, sep="_"))
+metaDataSamples <-data.frame(labelDescription="timepoints")
+annotatedDFSamples <- AnnotatedDataFrame()
+pData(annotatedDFSamples) <- dfSamples
+varMetadata(annotatedDFSamples) <- metaDataSamples
+validObject(annotatedDFSamples)
+
+dfFeatures <- data.frame(taxonomy1 = c("bacteria", "bacteria"),taxonomy2=featuresOfInterest)
+metaDataFeatures <-data.frame(labelDescription=c("taxonomy1", "taxonomy2"))
+annotatedDFFeatures <- AnnotatedDataFrame()
+pData(annotatedDFFeatures) <- dfFeatures
+varMetadata(annotatedDFFeatures) <- metaDataFeatures
+validObject(annotatedDFFeatures)
+```
+
+Finally, we create an MRexperiment with the x-coordinates and y-coordinates as well as the sample and feature data AnnotatedDataFrames.  We then start a Metaviz session and add the MRexperiment as a measurement for Metaviz to plot.
+
+```{r, eval=TRUE}
+splinesMRexp <- metagenomeSeq:::newMRexperiment(counts = results, phenoData = annotatedDFSamples, featureData = annotatedDFFeatures)
+app <- startMetaviz()
+app$data_mgr$add_measurements(splinesMRexp, datasource_name = "splines", control = metavizControl(norm=FALSE))
+```
+
+![Spline metavizr](images/Spline.png)
 
 ### Close Metavizr and end session
 
@@ -160,4 +218,9 @@ To close the connection with metaviz and the R session, we use the stop_app func
 sessionInfo()
 ```
 
+References:
+
+[1] Pop, M., Paulson, J.N., Chakraborty, S., Astrovskaya, I., Lindsay, B.R., Li, S., Bravo, H.C., Harro, C., Parkhill, J., Walker, A.W. and Walker, R.I., 2016. Individual-specific changes in the human gut microbiota after challenge with enterotoxigenic Escherichia coli and subsequent ciprofloxacin treatment. BMC genomics, 17(1), p.1.
+
+[2] Paulson J.N., Talukder H., and Bravo H.C, Longitudinal differential abundance analysis of microbial marker-gene surveys using smoothing splines. In Submission. 
 
