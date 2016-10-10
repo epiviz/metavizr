@@ -55,11 +55,11 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       log <- control$log
       norm <- control$norm
       
-      # validate biom file
-      biomCheck <- .checkBiomFormat(object)
+      # validate MRexperiment object
+      MRExpCheck <- validateObject(object)
       
-      if (!biomCheck) {
-        stop("Incompatible Biom format")
+      if (!MRExpCheck) {
+        stop("Incompatible MRexperiment objects")
       } else {
         message("MRExperiment Object validated... PASS")
       }
@@ -104,88 +104,6 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       }
 
       callSuper(object=object, ...)
-    },
-    # TODO rename this to .validateObject    
-    .checkBiomFormat=function(obj) {
-      
-      # validate feature data
-      featureCheck <- TRUE
-      fdata <- featureData(obj)
-      
-      # TODO: This shouldn't happen to a valid AnnotatedDataFrame
-      # TODO: remove this check
-      if (ncol(pData(fdata)) != nrow(fdata@varMetadata)) {
-        featureCheck <- FALSE
-        message("mismatch in feature data frame")
-      }
-      
-      fdata <- pData(fdata)
-      featureLength <- nrow(fdata)
-      
-      if (ncol(fdata) == 0) {
-        featureCheck <- FALSE
-        message("feature Data is empty")
-      }
-      
-      # TODO: remove this check, this wouldn't happen to an AnnotatedDataFrame
-      for (col in colnames(fdata)) {
-        if(length(fdata[[col]]) != featureLength) {
-          featureCheck <- FALSE
-          message(paste0("size mismatch - ", col, " vector in feature data"))
-        }
-      }
-      
-      # validate sample data
-      sampleCheck <- TRUE
-      sampleData <- phenoData(obj)
-      
-      # TODO: remove this check
-      # TODO: this shouldn't never be true for a valid AnnotatedDataFrame
-      if (ncol(pData(sampleData)) != nrow(sampleData@varMetadata)) {
-        sampleCheck <- FALSE
-        message("mismatch in pheno/sample data frame")
-      }
-      
-      sampleData <- pData(sampleData)
-      sampleLength <- nrow(sampleData)
-      
-      if(ncol(sampleData) == 0) {
-        sampleCheck <- FALSE
-        message("Sample Data is empty")
-      }
-      
-      # TODO: remove this check
-      # TODO: this shouldn't happen to a valid AnnotatedDataFrame
-      for (col in colnames(sampleData)) {
-        if(length(sampleData[[col]]) != sampleLength) {
-          sampleCheck <- FALSE
-          message(paste0("size mismatch - ", col, " vector in pheno/sample data"))
-        }
-      }
-      
-      # validate count/assay data
-      assayCheck <- TRUE
-      assayData <- assayData(obj)
-      
-      if(!grepl("counts", names(assayData))) {
-        assayCheck <- FALSE
-        message("count data does not exist")
-      }
-      else {
-        dimCountMatrix = dim(assayData[["counts"]])
-        
-        if(dimCountMatrix[1] != featureLength) {
-          assayCheck <- FALSE
-          message("count Matrix in assayData does not match feature length")
-        }  
-        
-        if(dimCountMatrix[2] != sampleLength) {
-          assayCheck <- FALSE
-          message("count Matrix in assayData does not match sample length")
-        }  
-      }
-      
-      featureCheck && sampleCheck && assayCheck
     },
 
     .taxonomyLevels=function(exp) {

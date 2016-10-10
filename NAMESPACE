@@ -3,6 +3,7 @@
 export(metavizControl)
 export(startMetaviz)
 export(startMetavizStandalone)
+export(validateObject)
 exportClasses(EpivizMetagenomicsData)
 import(GenomeInfoDb)
 import(GenomicRanges)
