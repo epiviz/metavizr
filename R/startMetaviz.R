@@ -92,13 +92,13 @@
   
   app$server$register_action("getSeqInfos", function(request_data) {
     return(list(
-      list("metavizr", 0, 100000)
+      "metavizr" = c(0, 100000)
     ))
   })
   
   app$server$register_action("partitions", function(request_data) {
     return(list(
-      list("metavizr", 0, 100000)
+      "metavizr" = c(0, 100000)
     ))
   })
 }
