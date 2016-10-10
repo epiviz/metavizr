@@ -198,8 +198,24 @@ Finally, we create an MRexperiment with the x-coordinates and y-coordinates as w
 
 ```{r, eval=TRUE}
 splinesMRexp <- metagenomeSeq::newMRexperiment(counts = results, phenoData = annotatedDFSamples, featureData = annotatedDFFeatures)
-app <- startMetaviz()
-app$data_mgr$add_measurements(splinesMRexp, datasource_name = "splines", control = metavizControl(norm=FALSE))
+splineObj <- app$data_mgr$add_measurements(splinesMRexp, datasource_name = "splines", control = metavizControl(norm=FALSE))
+splineMeasurements <- splineObj$get_measurements()
+splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
+```
+
+We can update the colors and settings on the spline chart. For example, lets limit the y axis to be between -10 and 10. To do so we use the `set_chart_settings` method. We can list existing settings for a chart using the `list_chart_settings` function.
+
+```{r, eval=TRUE}
+
+# list available charts
+app$chart_mgr$list_charts()
+
+# list available settings for "LinePlot"
+app$chart_mgr$list_chart_type_settings("LinePlot")
+
+# update settings on splineChart 
+settings <- list(yMin = -10, yMax = 10)
+app$chart_mgr$set_chart_settings(splineChart, settings=settings)
 ```
 
 ![Spline metavizr](images/Spline.png)
