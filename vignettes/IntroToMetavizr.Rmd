@@ -62,6 +62,14 @@ js_chart_colors = c("#393b79","#5254a3","#6b6ecf","#9c9ede","#637939","#8ca252",
 
 app$chart_mgr$register_chart_type("StackedLinePlot", "epiviz.plugins.charts.StackedLinePlot", js_chart_settings=js_chart_settings, js_chart_colors=js_chart_colors)
 
+# register LinePlot
+
+js_chart_settings <- list(list("id"="title","type"="string","defaultValue"="","label"="Title","possibleValues"=NULL),list("id"="marginTop","type"="number","defaultValue"=30,"label"="Top margin","possibleValues"=NULL),list("id"="marginBottom","type"="number","defaultValue"=50,"label"="Bottom margin","possibleValues"=NULL),list("id"="marginLeft","type"="number","defaultValue"=30,"label"="Left margin","possibleValues"=NULL),list("id"="marginRight","type"="number","defaultValue"=15,"label"="Right margin","possibleValues"=NULL),list("id"="measurementGroupsAggregator","type"="categorical","defaultValue"="mean-stdev","label"="Aggregator for measurement groups","possibleValues"=list("mean-stdev","quartiles","count","min","max","sum")),list("id"="colLabel","type"="measurementsMetadata","defaultValue"="colLabel","label"="Columns labels","possibleValues"=NULL),list("id"="rowLabel","type"="measurementsAnnotation","defaultValue"="name","label"="Row labels","possibleValues"=NULL),list("id"="showPoints","type"="boolean","defaultValue"=FALSE,"label"="Show points","possibleValues"=NULL),list("id"="showLines","type"="boolean","defaultValue"=TRUE,"label"="Show lines","possibleValues"=NULL),list("id"="showErrorBars","type"="boolean","defaultValue"=TRUE,"label"="Show error bars","possibleValues"=NULL),list("id"="pointRadius","type"="number","defaultValue"=4,"label"="Point radius","possibleValues"=NULL),list("id"="lineThickness","type"="number","defaultValue"=3,"label"="Line thickness","possibleValues"=NULL),list("id"="yMin","type"="number","defaultValue"="default","label"="Min Y","possibleValues"=NULL),list("id"="yMax","type"="number","defaultValue"="default","label"="Max Y","possibleValues"=NULL),list("id"="interpolation","type"="categorical","defaultValue"="basis","label"="Interpolation","possibleValues"=list("linear","step-before","step-after","basis","basis-open","basis-closed","bundle","cardinal","cardinal-open","monotone")))
+
+js_chart_colors = c("#393b79","#5254a3","#6b6ecf","#9c9ede","#637939","#8ca252","#b5cf6b","#cedb9c","#8c6d31","#bd9e39","#e7ba52","#e7cb94","#843c39","#ad494a","#d6616b","#e7969c","#7b4173","#a55194","#ce6dbd","#de9ed6")
+
+app$chart_mgr$register_chart_type("LinePlot", "epiviz.plugins.charts.LinePlot", js_chart_settings=js_chart_settings, js_chart_colors=js_chart_colors)
+
 app$server$start_server()
 
 ```
@@ -159,7 +167,7 @@ featuresOfInterest = c('Escherichia/Shigella','Faecalibacterium prausnitzii')
 Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
 
 ```{r, eval=TRUE}
-timeSeriesFits = lapply(bacteria,function(i){
+timeSeriesFits = lapply(featuresOfInterest,function(i){
   try(
     fitTimeSeries(obj=etec16s,
                   formula = abundance~id + time*class + AntiGiven,
@@ -208,7 +216,7 @@ We can update the colors and settings on the spline chart. For example, lets lim
 ```{r, eval=TRUE}
 
 # list available charts
-app$chart_mgr$list_charts()
+app$chart_mgr$list_chart_types()
 
 # list available settings for "LinePlot"
 app$chart_mgr$list_chart_type_settings("LinePlot")
