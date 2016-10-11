@@ -168,7 +168,6 @@ Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
 
 ```{r, eval=TRUE}
 timeSeriesFits = lapply(featuresOfInterest,function(i){
-  try(
     fitTimeSeries(obj=etec16s,
                   formula = abundance~id + time*class + AntiGiven,
                   feature=i,
@@ -178,34 +177,23 @@ timeSeriesFits = lapply(featuresOfInterest,function(i){
                   lvl="Species",
                   C=0.3,
                   B=1)
-  )
 })
 ```
 
-For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to create two AnnotatedDataFrame objects which contain the timepoints as sample data and annotations for feature data.  
+For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `toMRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
 
 ```{r, eval=TRUE}
-results <- rbind(t(timeSeriesFits[[1]]$fit)[1,], t(timeSeriesFits[[2]]$fit)[1,])
-
-dfSamples <- data.frame(x=1:11,row.names=paste("Timepoint", 1:11, sep="_"))
-metaDataSamples <-data.frame(labelDescription="timepoints")
-annotatedDFSamples <- AnnotatedDataFrame()
-pData(annotatedDFSamples) <- dfSamples
-varMetadata(annotatedDFSamples) <- metaDataSamples
-validObject(annotatedDFSamples)
-
-dfFeatures <- data.frame(taxonomy1 = c("bacteria", "bacteria"),taxonomy2=featuresOfInterest)
-metaDataFeatures <-data.frame(labelDescription=c("taxonomy1", "taxonomy2"))
-annotatedDFFeatures <- AnnotatedDataFrame()
-pData(annotatedDFFeatures) <- dfFeatures
-varMetadata(annotatedDFFeatures) <- metaDataFeatures
-validObject(annotatedDFFeatures)
+sampleNames <- paste("Timepoint", 1:11, sep="_")
+sampleDescription <- "timepoints"
+featureNames <- bacteria
+featureHierarchyRoot <- "bacteria"
+featureDescription <- "taxonomy"
+splinesMRexp <- toMRexperiment(timeSeriesFits, sampleNames = sampleNames, sampleDescription = sampleDescription, featureNames = featureNames, featureDescription = featureDescription)
 ```
 
-Finally, we create an MRexperiment with the x-coordinates and y-coordinates as well as the sample and feature data AnnotatedDataFrames.  We then start a Metaviz session and add the MRexperiment as a measurement for Metaviz to plot.
+Finally, we add the MRexperiment as a measurement for Metaviz to plot.
 
 ```{r, eval=TRUE}
-splinesMRexp <- metagenomeSeq::newMRexperiment(counts = results, phenoData = annotatedDFSamples, featureData = annotatedDFFeatures)
 splineObj <- app$data_mgr$add_measurements(splinesMRexp, datasource_name = "splines", control = metavizControl(norm=FALSE))
 splineMeasurements <- splineObj$get_measurements()
 splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
@@ -223,7 +211,8 @@ app$chart_mgr$list_chart_type_settings("LinePlot")
 
 # update settings on splineChart 
 settings <- list(yMin = -10, yMax = 10)
-app$chart_mgr$set_chart_settings(splineChart, settings=settings)
+colors <- c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf")
+app$chart_mgr$set_chart_settings(splineChart, settings=settings, colors = colors)
 ```
 
 ![Spline metavizr](images/Spline.png)
