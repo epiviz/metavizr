@@ -178,31 +178,27 @@ document.addEventListener("DOMContentLoaded", function() {
 <p>First, import the etec16s dataset, select sample data from the first 9 days, and choose the feature annotations of interest.</p>
 <pre class="r"><code>library(etec16s)
 data(etec16s)
-etec16s = etec16s[,-which(pData(etec16s)$Day&gt;9)]
-featuresOfInterest = c('Escherichia/Shigella','Faecalibacterium prausnitzii')</code></pre>
+etec16s &lt;- etec16s[,-which(pData(etec16s)$Day&gt;9)]
+featuresOfInterest &lt;- c('Escherichia/Shigella','Faecalibacterium prausnitzii')</code></pre>
 <p>Next, use metagenomeSeq to fit a smoothing-spline to the time series data.</p>
-<pre class="r"><code>timeSeriesFits = lapply(featuresOfInterest,function(i){
-    fitTimeSeries(obj=etec16s,
-                  formula = abundance~id + time*class + AntiGiven,
-                  feature=i,
-                  class=&quot;AnyDayDiarrhea&quot;,
-                  id=&quot;SubjectID&quot;,
-                  time=&quot;Day&quot;,
-                  lvl=&quot;Species&quot;,
-                  C=0.3,
-                  B=1)
-})</code></pre>
+<pre class="r"><code>timeSeriesFits &lt;- fitMultipleTimeSeries(obj=etec16s,
+                             formula = abundance~id + time*class + AntiGiven,
+                             class=&quot;AnyDayDiarrhea&quot;,
+                             id=&quot;SubjectID&quot;,
+                             time=&quot;Day&quot;,
+                             lvl=&quot;Species&quot;,
+                             C=0.3,
+                             B=1)</code></pre>
 <pre><code>## Loading required namespace: gss</code></pre>
+<pre><code>## Warning in mspreg1(s, r, id.basis, y, wt, method, alpha, varht, random, :
+## gss warning in ssanova: iteration for model selection fails to converge</code></pre>
 <p>For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates. We need to call <code>toMRexperiment</code> with arguments for the sample and feature data, in this case timepoints and annotations, respectively.</p>
-<pre class="r"><code>sampleNames &lt;- paste(&quot;Timepoint&quot;, 1:11, sep=&quot;_&quot;)
-sampleDescription &lt;- &quot;timepoints&quot;
-featureNames &lt;- featuresOfInterest
-featureHierarchyRoot &lt;- &quot;bacteria&quot;
-featureDescription &lt;- &quot;taxonomy&quot;
-splinesMRexp &lt;- toMRexperiment(timeSeriesFits, sampleNames = sampleNames, sampleDescription = sampleDescription, featureNames = featureNames, featureDescription = featureDescription)</code></pre>
+<pre class="r"><code>splinesMRexp &lt;- ts2MRexperiment(timeSeriesFits, featuresOfInterest = featuresOfInterest)</code></pre>
 <p>Finally, we add the MRexperiment as a measurement for Metaviz to plot.</p>
 <pre class="r"><code>splineObj &lt;- app$data_mgr$add_measurements(splinesMRexp, datasource_name = &quot;splines&quot;, control = metavizControl(norm=FALSE))</code></pre>
 <pre><code>## MRExperiment Object validated... PASS</code></pre>
+<pre><code>## Warning in `[&lt;-.factor`(`*tmp*`, thisvar, value = c(&quot;NA&quot;, &quot;NA&quot;)): invalid
+## factor level, NA generated</code></pre>
 <pre><code>## Warning in .Object$initialize(...): NaNs produced</code></pre>
 <pre class="r"><code>splineMeasurements &lt;- splineObj$get_measurements()
 splineChart &lt;- app$chart_mgr$visualize(&quot;LinePlot&quot;, splineMeasurements)</code></pre>
