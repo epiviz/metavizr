@@ -160,35 +160,27 @@ First, import the etec16s dataset, select sample data from the first 9 days, and
 ```{r, eval=TRUE}
 library(etec16s)
 data(etec16s)
-etec16s = etec16s[,-which(pData(etec16s)$Day>9)]
-featuresOfInterest = c('Escherichia/Shigella','Faecalibacterium prausnitzii')
+etec16s <- etec16s[,-which(pData(etec16s)$Day>9)]
+featuresOfInterest <- c('Escherichia/Shigella','Faecalibacterium prausnitzii')
 ```
 
 Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
 
 ```{r, eval=TRUE}
-timeSeriesFits = lapply(featuresOfInterest,function(i){
-    fitTimeSeries(obj=etec16s,
-                  formula = abundance~id + time*class + AntiGiven,
-                  feature=i,
-                  class="AnyDayDiarrhea",
-                  id="SubjectID",
-                  time="Day",
-                  lvl="Species",
-                  C=0.3,
-                  B=1)
-})
+timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
+                             formula = abundance~id + time*class + AntiGiven,
+                             class="AnyDayDiarrhea",
+                             id="SubjectID",
+                             time="Day",
+                             lvl="Species",
+                             C=0.3,
+                             B=1)
 ```
 
 For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `toMRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
 
 ```{r, eval=TRUE}
-sampleNames <- paste("Timepoint", 1:11, sep="_")
-sampleDescription <- "timepoints"
-featureNames <- bacteria
-featureHierarchyRoot <- "bacteria"
-featureDescription <- "taxonomy"
-splinesMRexp <- toMRexperiment(timeSeriesFits, sampleNames = sampleNames, sampleDescription = sampleDescription, featureNames = featureNames, featureDescription = featureDescription)
+splinesMRexp <- ts2MRexperiment(timeSeriesFits, featuresOfInterest = featuresOfInterest)
 ```
 
 Finally, we add the MRexperiment as a measurement for Metaviz to plot.
