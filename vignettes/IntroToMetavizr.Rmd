@@ -185,7 +185,7 @@ For plotting the data using Metaviz, we set the fit values as y-coordinates and 
 ```{r, eval=TRUE}
 sampleNames <- paste("Timepoint", 1:11, sep="_")
 sampleDescription <- "timepoints"
-featureNames <- bacteria
+featureNames <- featuresOfInterest
 featureHierarchyRoot <- "bacteria"
 featureDescription <- "taxonomy"
 splinesMRexp <- toMRexperiment(timeSeriesFits, sampleNames = sampleNames, sampleDescription = sampleDescription, featureNames = featureNames, featureDescription = featureDescription)
@@ -201,7 +201,7 @@ splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
 
 We can update the colors and settings on the spline chart. For example, lets limit the y axis to be between -10 and 10. To do so we use the `set_chart_settings` method. We can list existing settings for a chart using the `list_chart_settings` function.
 
-```{r, eval=TRUE}
+```{r, eval=TRUE, echo=FALSE}
 
 # list available charts
 app$chart_mgr$list_chart_types()
