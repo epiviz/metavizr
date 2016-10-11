@@ -283,7 +283,9 @@ MetavizNode <- setRefClass("MetavizNode", # TODO: Rename to MRexperimentNode
         nchildren=length(groups),
         size=1,
         selectionType=selectionType,
-        nleaves=nrow(t)
+        nleaves=nrow(t),
+        start=rowIndex,
+        end=rowIndex+nrow(t)
       )
       if (!is.null(ord)) { ret$order <- ord }
       if (length(nodes) > 0) { ret$children <- nodes }
