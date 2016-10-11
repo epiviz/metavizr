@@ -193,7 +193,7 @@ splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
 
 We can update the colors and settings on the spline chart. For example, lets limit the y axis to be between -10 and 10. To do so we use the `set_chart_settings` method. We can list existing settings for a chart using the `list_chart_settings` function.
 
-```{r, eval=TRUE}
+```{r, eval=TRUE, echo=FALSE}
 
 # list available charts
 app$chart_mgr$list_chart_types()
