@@ -833,7 +833,6 @@ EpivizMetagenomicsData$methods(
         query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "'})", sep="")
       
       if(!is.null(graph)) {
-        print(query)
         cypher(graph,query) 
       }
       else {
@@ -1007,7 +1006,6 @@ EpivizMetagenomicsData$methods(
       i = length(keys)
       query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "'})", sep="")
       if(!is.null(graph)) {
-        print(query)
         cypher(graph,query) 
       }
       else {
@@ -1032,7 +1030,6 @@ EpivizMetagenomicsData$methods(
       query = paste("MATCH (fParent:Feature {id :'", row$parentId, "'}) MATCH (f:Feature {id:'", row$id, "'}) CREATE (fParent)-[:PARENT_OF]->(f)", sep="")
       
       if(!is.null(graph)) {
-        print(query)
         cypher(graph,query) 
       }
       else {
@@ -1052,7 +1049,6 @@ EpivizMetagenomicsData$methods(
     
     query = paste0("MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth:'", length(.levels) - 1 , "'}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)")
     if(!is.null(graph)) {
-      print(query)
       cypher(graph,query) 
     }
     else {
@@ -1062,7 +1058,6 @@ EpivizMetagenomicsData$methods(
     
     query = paste0("MATCH (fLeaf:Feature {depth:'", length(.levels) - 1,"'}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)")
     if(!is.null(graph)) {
-      print(query)
       cypher(graph,query) 
     }
     else {
@@ -1081,7 +1076,6 @@ EpivizMetagenomicsData$methods(
       query = paste("MATCH (f:Feature {id :'", row$NodeId, "'}) MATCH (s:Sample {id:'", row$SampleId, "'}) CREATE (s)-[:VALUE {val: ", row$val, "}]->(f)", sep="")
 
       if(!is.null(graph)) {
-        print(query)
         cypher(graph,query) 
       }
       else {
@@ -1103,7 +1097,6 @@ EpivizMetagenomicsData$methods(
   .neo4jUpdateProperties = function(graph, file=NULL) {
     query = "MATCH (f:Feature) SET f.depth = toInt(f.depth) SET f.start = toInt(f.start) SET f.end = toInt(f.end) SET f.leafIndex = toInt(f.leafIndex) SET f.nchildren = toInt(f.nchildren) SET f.nleaves = toInt(f.nleaves) SET f.order = toInt(f.order)"
     if(!is.null(graph)) {
-      print(query)
       cypher(graph,query) 
     }
     else {
@@ -1115,7 +1108,6 @@ EpivizMetagenomicsData$methods(
     
     query = "CREATE INDEX ON :Feature (depth)"
     if(!is.null(graph)) {
-      print(query)
       cypher(graph,query) 
     }
     else {
@@ -1127,7 +1119,6 @@ EpivizMetagenomicsData$methods(
     
     query = "CREATE INDEX ON :Feature (start)"
     if(!is.null(graph)) {
-      print(query)
       cypher(graph,query) 
     }
     else {
@@ -1139,7 +1130,6 @@ EpivizMetagenomicsData$methods(
     
     query = "CREATE INDEX ON :Feature (end)"
     if(!is.null(graph)) {
-      print(query)
       cypher(graph,query) 
     }
     else {
@@ -1151,7 +1141,6 @@ EpivizMetagenomicsData$methods(
     
     query = "CREATE INDEX ON :Feature (id)"
     if(!is.null(graph)) {
-      print(query)
       cypher(graph,query) 
     }
     else {
@@ -1163,7 +1152,6 @@ EpivizMetagenomicsData$methods(
     
     query = "CREATE INDEX ON :Sample (id)"
     if(!is.null(graph)) {
-      print(query)
       cypher(graph,query) 
     }
     else {
