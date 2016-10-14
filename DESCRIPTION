@@ -3,7 +3,7 @@ Type: Package
 Version: 0.99.5
 Authors@R: c( person("Hector", "Corrada Bravo", email="hcorrada@gmail.com", role=c("cre","aut")),
   person("Florin", "Chelaru", email="florin.chelaru@gmail.com", role=c("aut")),
-  person("Justin", "Wagner", email="wagner.justin1@gmail.com", role=c("aut")),
+  person("Justin", "Wagner", email="jwagner@cs.umd.edu", role=c("aut")),
   person("Jayaram", "Kancherla", email="jayaram.kancherla@gmail.com", role=c("aut")),
   person("Joseph", "Paulson", email="nosson@gmail.com", role=c("aut")))
 License: MIT + file LICENSE

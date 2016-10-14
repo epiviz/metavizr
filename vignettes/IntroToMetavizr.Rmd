@@ -13,18 +13,18 @@ vignette: >
 
 The `metavizr` package implements two-way communication between the `R/Bioconductor` computational genomics environment and `Metaviz`. Objects in an `R/Bioconductor` session can be visualized and explored using the `Metaviz` navigation tool and plots. Metavizr uses Websockets to communicate between the browser Javascript client and the `R/Bioconductor` session.  Websockets are the protocols underlying the popular [Shiny](http://www.rstudio.com/shiny/) system for authoring interactive web-based reports in R.
 
-### Preliminaries: the data
+# Preliminaries: the data
 
-In this vignette, we will explore the humanized gnotobiotic mouse gut data from Turnbaugh et al. that is released as an `MRexperiment` object in the `metagenomeSeq` package [1].  In the experiment, twelve gnotobiotic adult male mice were fed a low-fat, plant polysaccharide–rich diet. Each mouse then received a fecal transplant of healthy adult human fecal material.  All mice continued on the low-fat, plant polysaccharide–rich diet for 4 weeks.  A subset of six mice were  then switched to a high-fat and high-sugar diet for 8 weeks. The V2 region of the bacterial 16s rRNA gene was PCR ampilified in fecal samples taken weekly for each mouse. OTUs dervied from sequencing were classified by RDP and annotated using a minimum confidence level of 0.8. The sequences are available at  http://gordonlab.wustl.edu/TurnbaughSE_10_09/STM_2009.html.
+In this vignette, we will explore the humanized gnotobiotic mouse gut data from Turnbaugh et al. that is released as an `MRexperiment` object in the `metagenomeSeq` package [1].  In the experiment, twelve gnotobiotic adult male mice were fed a low-fat, plant polysaccharide–rich diet. Each mouse then received a fecal transplant of healthy adult human fecal material.  All mice continued on the low-fat, plant polysaccharide–rich diet for 4 weeks.  A subset of six mice were  then switched to a high-fat and high-sugar diet for 8 weeks. The V2 region of the bacterial 16s rRNA gene was PCR ampilified in fecal samples taken weekly for each mouse.
 
-```{r, eval=TRUE, echo=TRUE, results='hide', warning=FALSE, error=FALSE}
+```{r, eval=TRUE, echo=TRUE, results='hide', warning=FALSE, error=FALSE, message=FALSE}
 require(metavizr)
 require(metagenomeSeq)
 
 data("mouseData")
 ```
 
-### The metavizr session manager
+# The metavizr session manager
 
 The connection to `Metaviz` is managed through a session manager object of class `EpivizApp`. We can create this object and open `Metaviz` using the `startMetaviz` function.
 
@@ -73,87 +73,91 @@ app$chart_mgr$register_chart_type("LinePlot", "epiviz.plugins.charts.LinePlot", 
 app$server$start_server()
 
 ```
+
 This opens a websocket connection between the interactive `R` session and the browser client. This will allow us to visualize data stored in the `Metaviz` server along with data in the interactive `R` session.
 
 ----
+
 *Windows users:* In Windows platforms we need to use the `service` function to let the interactive `R` session connect to the `epiviz` web app and serve data requests. We then escape (using `ctl-c` or `esc` depending on your environment) to continue with the interactive `R` session. This is required anytime you want `metavizr` to serve data to the web app, for example, when interacting with the UI. (We are actively developing support for non-blocking sessions in Windows platforms).
 
 ```{r, eval=TRUE}
 app$server$service()
 ```
+
 ----
 
-### Adding Icicle plot to explore metagenomic Features
+To start our analysis we normalize count data using the `metagenomeSeq::cumNorm` function,
+choose genera that have more than 5 OTUs in the dataset and select the 10 genera with largest 
+standard deviation of log-transformed normalized counts across samples.
 
-To navigate the complex, hierarchical structure of the feature space, we developed an icicle/facet zoom visualization. Because of the limitations in the screen size and performance rendering big trees, the icicle plot is an efficient visualization for navigating trees. The icicle visualization helps zoom in and out of trees and traverse subtrees. Every node in the icicle has a state associated with it. There are three possible states for a node 1) expand - use all subtree nodes during analysis 2) collapse - aggregate all nodes under the subtree to the selected node 3) remove - discard all nodes in the subtree for the analysis. The state of a node is also propagated to all its children and can be identified by the opacity of the node. Row level controls are available to the left of the icicle - to set the state of all nodes at a selected depth/taxonomic class of the hierarchy. Icicle is traversible if the ends on the row controls are chevrons. Users can set states on the nodes to define a cut over the feature space. The cut defines how the count data is queried, analyzed and visualized in other plots like heat maps or stacked line plots. In addition to defining the cut, we also have a navigation bar on top of the icicle to limit the range of features when querying for count data. Navigation bar is a flexible component (increase/decrease the length) and controls are available to move the bar left/right and extend over the entire range of the current tree in the icicle. Each of these actions would query the count data and automatically propagate the changes to other visualizations in the workspace. When navigating outside the scope of the navigation bar, chevrons (left/right) appear on the navigation bar to help identify the current position. Brushing/hovering is another important visual element we focused on our implementation of an icicle. Hovering over a node hovers its path in the tree i.e. highlight both its parents and children. When there are other visualizations like heat maps or stacked line plots in the workspace, hovering over a chart element highlights the mapped feature nodes in all the other plots.
+```{r, eval=TRUE}
+# normalize data using CSS at 3rd quartile
+md <- cumNorm(mouseData, p=.75)
+
+# keep genera that have more than 5 OTUs in dataset
+taxonomy_table <- pData(featureData(md))
+otus_per_genus <- table(taxonomy_table$genus)
+genera_to_keep <- names(otus_per_genus)[otus_per_genus > 5]
+
+# aggregate counts to genus level and log-transform
+genus_counts <- aggTax(md, lvl="genus", out="matrix")[genera_to_keep,]
+log_genus_counts <- log2(genus_counts + 1)
+
+# select the 10 genera with larges variance
+genus_sds <- matrixStats::rowSds(log_genus_counts)
+o <- order(genus_sds)
+genera_to_keep <- rownames(genus_counts)[o[1:10]]
+
+# filter the dataset to the OTUs in those genera
+otus_to_keep <- taxonomy_table$genus %in% genera_to_keep
+filtered_md <- md[otus_to_keep,]
+
+taxonomy <- pData(featureData(filtered_md))
+for (i in seq(len=ncol(taxonomy))) {
+  taxonomy[,i] <- factor(taxonomy[,i])
+}
+pData(featureData(filtered_md)) <- taxonomy
+```
+
+# Adding an Icicle navigation widget to explore metagenomic features
 
 Once the browser is open we can visualize the metagenomic features from the `mouseData` object. We use the `plot` method to do so. 
 
 ```{r,eval=TRUE}
-icicle_plot <- app$plot(mouseData, datasource_name="mouseData")
+icicle_plot <- app$plot(filtered_md, datasource_name="mouseData")
 ```
 
-You should now see an icicle tree plot to explore the hierarchy of the metagenomic features from the `mouseData` object.
+You should now see an icicle widget to explore the hierarchy of the metagenomic features from the `mouseData` object. To navigate the complex, hierarchical structure of the feature space, we developed an icicle/facet zoom visualization. Because of the limitations in the screen size and performance rendering big trees, the icicle plot is an efficient visualization for navigating trees. The icicle visualization helps zoom in and out of trees and traverse subtrees. Every node in the icicle has a state associated with it. There are three possible states for a node 1) expand - use all subtree nodes during analysis 2) collapse - aggregate all nodes under the subtree to the selected node 3) remove - discard all nodes in the subtree for the analysis. The state of a node is also propagated to all its children and can be identified by the opacity of the node. Row level controls are available to the left of the icicle - to set the state of all nodes at a selected depth/taxonomic class of the hierarchy. Icicle is traversible if the ends on the row controls are chevrons. Users can set states on the nodes to define a cut over the feature space. The cut defines how the count data is queried, analyzed and visualized in other plots like heat maps or stacked line plots. In addition to defining the cut, we also have a navigation bar on top of the icicle to limit the range of features when querying for count data. Navigation bar is a flexible component (increase/decrease the length) and controls are available to move the bar left/right and extend over the entire range of the current tree in the icicle. Each of these actions would query the count data and automatically propagate the changes to other visualizations in the workspace. When navigating outside the scope of the navigation bar, chevrons (left/right) appear on the navigation bar to help identify the current position. Brushing/hovering is another important visual element we focused on our implementation of an icicle. Hovering over a node hovers its path in the tree i.e. highlight both its parents and children. When there are other visualizations like heat maps or stacked line plots in the workspace, hovering over a chart element highlights the mapped feature nodes in all the other plots.
 
-### Visualizing count matrix from the `mouseData` MRExperiment object
+# Visualizing count data from the `mouseData` MRExperiment object
 
-To get the count matrix from `mouseData`
-
-```{r,eval=FALSE, echo=TRUE}
-MRcounts(mouseData)
-```
-
-To visualize the count matrix, create a `metavizControl` object. The `metavizControl` object defines various settings like aggregation depth, normalization method, aggregate function etc. on the dataset.
-
-```{r, eval=TRUE}
-control = metavizControl(aggregateAtDepth=3,aggregateFun=function(x) colSums(x),
-                          valuesAnnotationFuns=NULL,maxDepth=4,maxHistory=3,maxValue=NULL,
-                          minValue=NULL,title="",n=10000,rankFun=sd,norm=TRUE,log=FALSE)
-```
-
-First, we'll create a heatmap visualization of the count matrix. For this lets choose all mouse samples whose diet is "Western"
+Next, we will add an interactive heatmap to visualize count data from the filtered 
+data object we have created. Let's choose all mouse samples whose diet is "Western"
 
 ```{r,eval=TRUE}
-sampleIds = which(phenoData(mouseData)$diet == "Western")
-```
-
-We'll then use the `control` object to query for count matrix and plot a heatmap on the metaviz workspace.
-
-```{r, eval=TRUE}
-
-  # from control object
-  norm=control$norm
-  log = control$log
-  n   = control$n
-  rankFun = control$rankFun
-  
-  # query for counts
-  mat = MRcounts(mouseData,norm=norm,log=log)
-  
-  # Since mouse data has > 10000 features choose a subset of features where normalized count values are > 5000
-  otusToKeep = which(rowSums(mat) > 5000)
-  n = min(length(otusToKeep),n)
-  otuStats = apply(mat[otusToKeep,], 1, rankFun)
-  otuIndices = otusToKeep[order(otuStats, decreasing = TRUE)[1:n]]
+western_ids <- which(phenoData(filtered_md)$diet == "Western")
 ```
 
 Now we have the OTU Matrix, lets add this data to metavizr as a new data source.
 
 ```{r, eval=TRUE}
-  heatMapObj = app$data_mgr$add_measurements(mouseData[otuIndices,], datasource_name = "heatmapObj")
-  measurements = heatMapObj$get_measurements()
-  heatmap = app$chart_mgr$visualize("HeatmapPlot", measurements[sampleIds])
+# first access the measurements object we created when plotting the icicle
+md_obj <- app$get_ms_object(icicle_plot)
+measurements <- md_obj$get_measurements()[western_ids]
+heatmap <- app$chart_mgr$visualize("HeatmapPlot", md_obj, measurements=measurements)
 ```
 
 Using the same data, we can also visualize it in a stacked plot to see the abundance of various features across samples. Since the measurements are already added to metavizr, we only need to add a stacked line plot. 
 
 ```{r, eval=TRUE}
-  stackedPlot = app$chart_mgr$visualize("StackedLinePlot", measurements[sampleIds])
+stackedPlot <- app$chart_mgr$visualize("StackedLinePlot", md_obj, measurements=measurements)
 ```
 
 The screenshot of the above workflow on the metaviz workspace.
 
 ![Mouse Data metaviz workspace](images/Metaviz.png)
+
+# Longitudinal Data Analysis
 
 Another feature of metavizr is to visualize data using a line plot.  To illustrate, we describe a use case with data from Pop et al. [2].  In the study, 12 subjects were exposed to enterogenic E. coli and then treated with antibiotics.  Samples were collected at 2 days before treatment and then on each day afterwards for 10 days.  Paulson et al. describe analyzing this time series data with a smoothing-spline [3].  We detail the steps to perform this analysis and create a line plot using Metaviz. 
 
