@@ -9,13 +9,13 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-[`Metaviz`](http://metaviz.cbcb.umd.edu) is an interactive visualization tool for metagenomic sequencing data. It supports taxonomy navigation of annotated metagenomic features and allows multiple visualizations of data scatterplots, heatmaps and PCA plots. It has a flexible plugin framework so users can add [d3](http://d3js.org/) visualizations. You can find more information about Metaviz at [http://metaviz.cbcb.umd.edu/help](http://metaviz.cbcb.umd.edu/help).
+[`Metaviz`](http://metaviz.cbcb.umd.edu) is tool for interactive visualization and exploration of metagenomic sequencing data. Metaviz a provides main navigation tool for exploring hierarchical feature data that is coupled with multiple data visualizations including heatmaps, stacked bar charts, and scatter plots. Metaviz supports a flexible plugin framework so users can add new [d3](http://d3js.org/) visualizations. You can find more information about Metaviz at [http://metaviz.cbcb.umd.edu/help](http://metaviz.cbcb.umd.edu/help).
 
-The `metavizr` package implements two-way communication between the `R/Bioconductor` computational genomics environment and `Metaviz`. Objects in an `R` session can be displayed as tracks or plots on Metaviz Metavizr uses Websockets for communication between the browser Javascript client and the R environmen, the same technology underlying the popular [Shiny](http://www.rstudio.com/shiny/) system for authoring interactive web-based reports in R.
+The `metavizr` package implements two-way communication between the `R/Bioconductor` computational genomics environment and `Metaviz`. Objects in an `R/Bioconductor` session can be visualized and explored using the `Metaviz` navigation tool and plots. Metavizr uses Websockets to communicate between the browser Javascript client and the `R/Bioconductor` session.  Websockets are the protocols underlying the popular [Shiny](http://www.rstudio.com/shiny/) system for authoring interactive web-based reports in R.
 
 ### Preliminaries: the data
 
-In this vignette we will look at the mouse data from the `metagenomeSeq` package.
+In this vignette, we will explore the humanized gnotobiotic mouse gut data from Turnbaugh et al. that is released as an `MRexperiment` object in the `metagenomeSeq` package [1].  In the experiment, twelve gnotobiotic adult male mice were fed a low-fat, plant polysaccharide–rich diet. Each mouse then received a fecal transplant of healthy adult human fecal material.  All mice continued on the low-fat, plant polysaccharide–rich diet for 4 weeks.  A subset of six mice were  then switched to a high-fat and high-sugar diet for 8 weeks. The V2 region of the bacterial 16s rRNA gene was PCR ampilified in fecal samples taken weekly for each mouse. OTUs dervied from sequencing were classified by RDP and annotated using a minimum confidence level of 0.8. The sequences are available at  http://gordonlab.wustl.edu/TurnbaughSE_10_09/STM_2009.html.
 
 ```{r, eval=TRUE, echo=TRUE, results='hide', warning=FALSE, error=FALSE}
 require(metavizr)
@@ -153,7 +153,7 @@ The screenshot of the above workflow on the metaviz workspace.
 
 ![Mouse Data metaviz workspace](images/Metaviz.png)
 
-Another feature of metavizr is to visualize data using a line plot.  To illustrate, we describe a use case with data from Pop et al. [1].  In the study, 12 subjects were exposed to enterogenic E. coli and then treated with antibiotics.  Samples were collected at 2 days before treatment and then on each day afterwards for 10 days.  Paulson et al. describe analyzing this time series data with a smoothing-spline [2].  We detail the steps to perform this analysis and create a line plot using Metaviz. 
+Another feature of metavizr is to visualize data using a line plot.  To illustrate, we describe a use case with data from Pop et al. [2].  In the study, 12 subjects were exposed to enterogenic E. coli and then treated with antibiotics.  Samples were collected at 2 days before treatment and then on each day afterwards for 10 days.  Paulson et al. describe analyzing this time series data with a smoothing-spline [3].  We detail the steps to perform this analysis and create a line plot using Metaviz. 
 
 First, import the etec16s dataset, select sample data from the first 9 days, and choose the feature annotations of interest.
 
@@ -225,7 +225,9 @@ sessionInfo()
 
 References:
 
-[1] Pop, M., Paulson, J.N., Chakraborty, S., Astrovskaya, I., Lindsay, B.R., Li, S., Bravo, H.C., Harro, C., Parkhill, J., Walker, A.W. and Walker, R.I., 2016. Individual-specific changes in the human gut microbiota after challenge with enterotoxigenic Escherichia coli and subsequent ciprofloxacin treatment. BMC genomics, 17(1), p.1.
+[1] Turnbaugh, P.J., Ridaura, V.K., Faith, J.J., Rey, F.E., Knight, R. and Gordon, J.I., 2009. The effect of diet on the human gut microbiome: a metagenomic analysis in humanized gnotobiotic mice. Science translational medicine, 1(6), pp.6ra14-6ra14.
 
-[2] Paulson J.N., Talukder H., and Bravo H.C, Longitudinal differential abundance analysis of microbial marker-gene surveys using smoothing splines. In Submission. 
+[2] Pop, M., Paulson, J.N., Chakraborty, S., Astrovskaya, I., Lindsay, B.R., Li, S., Bravo, H.C., Harro, C., Parkhill, J., Walker, A.W. and Walker, R.I., 2016. Individual-specific changes in the human gut microbiota after challenge with enterotoxigenic Escherichia coli and subsequent ciprofloxacin treatment. BMC genomics, 17(1), p.1.
+
+[3] Paulson J.N., Talukder H., and Bravo H.C, Longitudinal differential abundance analysis of microbial marker-gene surveys using smoothing splines. In Submission. 
 
