@@ -234,7 +234,7 @@ EpivizMetagenomicsData$methods(
     selection <- list()
     selection[[nodeId]] <- aggregationType
     .self$.taxonomy$updateSelection(selection)
-    mgr$.clear_DatasourceGroup_cache(.self)
+    mgr$data_mgr$.clear_DatasourceGroup_cache(.self)
   },
   
   changeAggregationAtDepth=function(mgr, depth, aggregationType) {
@@ -245,7 +245,7 @@ EpivizMetagenomicsData$methods(
       selection[[node$id()]] <- aggregationType
     }
     .self$.taxonomy$updateSelection(selection)
-    mgr$.clear_datasourceGroup_cache(.self)
+    mgr$data_mgr$.clear_datasourceGroup_cache(.self)
   }
 )
 
@@ -279,9 +279,35 @@ EpivizMetagenomicsData$methods(
 
     return(root$raw(maxDepth=.self$.maxDepth))
   },
-  propagateHierarchyChanges=function(selection, order) {
-    if (missing(selection) && missing(order)) { 
+  propagateHierarchyChanges=function(selection, order, selectedLevels) {
+    
+    # clear last requests and values
+    .self$.lastRequestRanges <- list()
+    .self$.lastLeafInfos <- list()
+    .self$.lastValues <- list()
+    
+    if (missing(selection) && missing(order) && missing(selectedLevels)) { 
       return(getHierarchy(.self$.lastRootId)) 
+    }
+    
+    if(!is.null(selectedLevels)) {
+      # remove current selectionTypes
+      nodeList <- list()
+      for (node in names(.self$.taxonomy$.selectionTypes$.)) {
+        nodeList[[node]] <- 1
+      }
+      
+      .self$.taxonomy$updateSelection(nodeList)
+      
+      # add new selectedLevel nodes
+      for (level in names(selectedLevels)) {
+        nodesAtLevel <- .self$.taxonomy$nodesAtDepth(as.numeric(level))
+        nodeList <- list()
+        for (node in nodesAtLevel) {
+          nodeList[[node$id()]] <- selectedLevels[[level]]
+        }
+        .self$.taxonomy$updateSelection(nodeList)
+      }
     }
 
     if (!missing(selection)) {
@@ -296,6 +322,10 @@ EpivizMetagenomicsData$methods(
     .self$.lastLeafInfos <- list()
     .self$.lastValues <- list()
 
+    if (!is.null(.self$.mgr)) {
+      .self$.mgr$.clear_datasourceGroup_cache(.self)
+    }
+    
     getHierarchy(.self$.lastRootId)
   },
   getRows=function(seqName, start, end, metadata) {
@@ -372,17 +402,21 @@ EpivizMetagenomicsData$methods(
                        seqName, start, end, 
                        order, nodeSelection, selectedLevels) {
     
-    # remove current selectionTypes
-    nodeList <- list()
-    for (node in names(.self$.taxonomy$.selectionTypes$.)) {
-      nodeList[[node]] <- 1
-    }
-  
-    .self$.taxonomy$updateSelection(nodeList)
-    # .self$.taxonomy$.selectionTypes = Ptr$new(list())
+    # clear last request ranges and values
+    .self$.lastRequestRanges <- list()
+    .self$.lastLeafInfos <- list()
+    .self$.lastValues <- list()
     
     # update selectedLevels on taxonomy tree
     if(!is.null(selectedLevels)) {
+      
+      # remove current selectionTypes
+      nodeList <- list()
+      for (node in names(.self$.taxonomy$.selectionTypes$.)) {
+        nodeList[[node]] <- 1
+      }
+      
+      .self$.taxonomy$updateSelection(nodeList)
       
       for (level in names(selectedLevels)) {
         
