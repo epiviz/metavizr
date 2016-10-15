@@ -5,7 +5,7 @@
   })
   
   app$server$register_action("getHierarchy", function(request_data) {
-    datasource = request_data$datasourceGroup # TODO: Change to datasource
+    datasource = request_data$datasourceGroup
     nodeId = request_data$nodeId
     obj <- app$data_mgr$.find_datasource(datasource)
     if (is.null(obj)) {
@@ -15,14 +15,18 @@
   })
   
   app$server$register_action("propagateHierarchyChanges", function(request_data) {
-    datasource = request_data$datasourceGroup # TODO: Change to datasource
+    
+    datasource = request_data$datasourceGroup
     selection = request_data$selection
     order = request_data$order
+    selectedLevels <- request_data$selectedLevels
+    
     obj <- app$data_mgr$.find_datasource(datasource)
     if (is.null(obj)) {
       stop("cannot find datasource", datasource)
     }
-    obj$propagateHierarchyChanges(selection, order)
+    
+    obj$propagateHierarchyChanges(selection, order, selectedLevels)
   })
   
   app$server$register_action("getRows", function(request_data) {
