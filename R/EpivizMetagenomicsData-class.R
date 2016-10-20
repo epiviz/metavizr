@@ -263,7 +263,7 @@ EpivizMetagenomicsData$methods(
            annotation=as.list(.self$.sampleAnnotation[sample,]),
            minValue=.minValue,
            maxValue=.maxValue,
-           metadata=c(rev(.levels), "colLabel", "ancestors", "lineage"))
+           metadata=c(rev(.levels), "colLabel", "ancestors", "lineage", "label"))
     })
     out
   },
@@ -371,12 +371,18 @@ EpivizMetagenomicsData$methods(
     globalStartIndex = NULL
     if (length(leafInfos) > 0) { globalStartIndex = leafInfos[[1]]$realNodesBefore }
     if (length(leafInfos) == 1) {
+      ret$index <- list(ret$id)
       ret$id <- list(ret$id)
       ret$start <- list(ret$start)
       ret$end <- list(ret$end)
       ret$metadata$colLabel <- list(ret$metadata$colLabel)
+      ret$metadata$label <- list(ret$metadata$colLabel)
       ret$metadata$ancestors <- list(ret$metadata$ancestors)
       ret$metadata$lineage <- list(ret$metadata$lineage)
+    }
+    else {
+      ret$index <- ret$id
+      ret$metadata$label <- ret$metadata$colLabel
     }
 
     return(list(
