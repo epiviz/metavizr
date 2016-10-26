@@ -94,8 +94,12 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .self$.lastRequestRanges <- list()
       .self$.lastLeafInfos <- list()
       .self$.lastValues <- list()
-
-      if (.self$.aggregateAtDepth >= 0) {
+      featureSelection = control$featureSelection
+      
+      if(!is.null(featureSelection)){
+        .self$featureSelection(featureSelection$featureNames, featureSelection$featureOrder, featureSelection$featureLevel, featureSelection$selectionType)
+      }
+      else if (.self$.aggregateAtDepth >= 0) {
         nodesAtDepth <- .self$.taxonomy$nodesAtDepth(.self$.aggregateAtDepth)
         node_ids <- sapply(nodesAtDepth, function(node) node$id())
         selection <- lapply(node_ids, function(node_id) SelectionType$NODE)
@@ -190,6 +194,27 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
           return(v[[measurement]])
         })
       })
+    },
+
+    featureSelection=function(featureNames, featureOrder, featureLevel, selectionType){
+      featureDepth <- (which(featureOrder == featureLevel) -1)
+      
+      nodes <- .self$.taxonomy$nodesAtDepth(depth=featureDepth)
+      node_names <- sapply(1:length(nodes), function(i) {nodes[[i]]$.name})
+      node_indices <- match(featureNames, node_names)
+      node_ids <- sapply(node_indices, function(i) {nodes[[i]]$.id})
+      node_all_ids <- sapply(1:length(nodes), function(i){nodes[[i]]$.id})
+      
+      selections <- list()
+      selection_vals <- as.numeric(!is.na(match(node_names, featureNames)))
+      selection_vals[which(selection_vals == 1)] <- selectionType
+      selection_keys <- node_all_ids
+      
+      for(i in 1:length(nodes)) {selections[[selection_keys[i]]] <- selection_vals[i]}
+      
+      .self$.taxonomy$updateSelection(selection = selections)
+      
+      .self$.aggregateAtDepth = featureDepth
     },
 
     update=function(newObject, ...) {
