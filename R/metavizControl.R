@@ -30,7 +30,8 @@ metavizControl<-function(aggregateAtDepth=3,
                          n=10000,
                          rankFun=stats::sd,
                          norm=TRUE,
-                         log=FALSE){
+                         log=FALSE,
+                         featureSelection = NULL){
   
   list(aggregateAtDepth=aggregateAtDepth,
        aggregateFun=aggregateFun,
@@ -43,5 +44,6 @@ metavizControl<-function(aggregateAtDepth=3,
        n=n,
        rankFun=rankFun,
        norm=norm,
-       log=log)
+       log=log,
+       featureSelection = featureSelection)
 }
