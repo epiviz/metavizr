@@ -136,19 +136,16 @@ You should now see an icicle widget to explore the hierarchy of the metagenomic 
 
 # Visualizing count data from the `mouseData` MRExperiment object
 
-Now we have the OTU Matrix, lets add this data to metavizr as a new data source.
+Now we can view the data as a heatmap calling `revisualize`:
 
 ```{r, eval=TRUE}
-# first access the measurements object we created when plotting the icicle
-md_obj <- app$get_ms_object(icicle_plot)
-measurements <- md_obj$get_measurements()
-heatmap <- app$chart_mgr$visualize("HeatmapPlot", md_obj, measurements=measurements)
+heatmap <- app$chart_mgr$revisualize(chartType = "HeatmapPlot", chart = icicle_plot)
 ```
 
-Using the same data, we can also visualize it in a stacked plot to see the abundance of various features across samples. Since the measurements are already added to metavizr, we only need to add a stacked line plot. 
+Using the same data, we can also revisualize it in a stacked plot to see the abundance of various features across samples. Since the measurements are added from creating the icicle_plot, we only need to add a stacked line plot. 
 
 ```{r, eval=TRUE}
-stackedPlot <- app$chart_mgr$visualize("StackedLinePlot", md_obj, measurements=measurements)
+stackedPlot <- app$chart_mgr$revisualize(chartType ="StackedLinePlot", chart = icicle_plot)
 ```
 
 The screenshot of the above workflow on the metaviz workspace.
