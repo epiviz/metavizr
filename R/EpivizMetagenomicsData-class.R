@@ -212,6 +212,8 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       
       for(i in 1:length(nodes)) {selections[[selection_keys[i]]] <- selection_vals[i]}
       
+      .self$clearSelection()
+      
       .self$.taxonomy$updateSelection(selection = selections)
       
       .self$.aggregateAtDepth = featureDepth
@@ -219,6 +221,9 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
     update=function(newObject, ...) {
       # TODO
+      if (!is.null(.self$.mgr)) {
+        .self$.mgr$.clear_datasourceGroup_cache(.self)
+      }
       callSuper(newObject, ...)
     },
     plot=function(...) {
@@ -248,7 +253,25 @@ EpivizMetagenomicsData$methods(
   nlevels=function() {
     length(.self$.levels)
   },
-
+  clearSelection=function(){
+    #if(!is.null(selectedLevels)) {
+      # remove current selectionTypes
+      nodeList <- list()
+      for (node in names(.self$.taxonomy$.selectionTypes$.)) {
+        nodeList[[node]] <- 1
+      }
+      
+      print(nodeList)
+      
+      .self$.taxonomy$updateSelection(nodeList)
+      
+      if (!is.null(.self$.mgr)) {
+        .self$.mgr$.clear_datasourceGroup_cache(.self)
+      }
+      
+      .self$getHierarchy(.self$.lastRootId)
+    #}
+  },
   taxonomyTable=function() { .self$.taxonomy$taxonomyTable() },
   calcNodeId=function(rowIndex, colIndex) { .self$.taxonomy$calcNodeId(rowIndex, colIndex) },
   node=function(nodeId) { .self$.taxonomy$node(nodeId) },
