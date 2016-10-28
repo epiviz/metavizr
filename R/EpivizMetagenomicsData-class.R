@@ -14,6 +14,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .maxDepth = "numeric",
     .aggregateAtDepth = "numeric",
     .lastRootId = "ANY",
+    .feature_order = "character",
 
     .counts = "ANY",
     .sampleAnnotation = "ANY",
@@ -25,6 +26,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
     .lastRequestRanges = "list",
     .lastLeafInfos = "list",
+    .lastSelectionTypes = "list",
     .lastValues = "list",
     .maxHistory = "numeric"
   ),
@@ -64,6 +66,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         message("MRExperiment Object validated... PASS")
       }
 
+      .self$.feature_order <- feature_order
       # TODO: Some type checking
       .self$.taxonomy <- buildMetavizTree(object, feature_order)
       .self$.levels <- .self$.taxonomy$levels()
@@ -73,7 +76,6 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
       taxonomy_table <- .self$.taxonomy$taxonomyTable()
       .self$.counts <- MRcounts(object[rownames(taxonomy_table),], norm=norm, log=log)
-
 
       # TODO: Make this consistent with the aggregateFun
       if (is.null(minValue)) {
@@ -210,20 +212,26 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       selection_vals[which(selection_vals == 1)] <- selectionType
       selection_keys <- node_all_ids
       
-      for(i in 1:length(nodes)) {selections[[selection_keys[i]]] <- selection_vals[i]}
+      nodeSelections <- list()
+      
+      for(i in 1:length(nodes)) {
+        # if(selection_vals[i] == 0) {
+          selections[[selection_keys[i]]] <- selection_vals[i] 
+        # }
+          
+        if(selection_vals[i] == 0) {
+          nodeSelections[[selection_keys[i]]] <- selection_vals[i] 
+        }
+      }
       
       .self$clearSelection()
-      
+      .self$.lastSelectionTypes <- nodeSelections
       .self$.taxonomy$updateSelection(selection = selections)
-      
-      .self$.aggregateAtDepth = featureDepth
+      .self$.aggregateAtDepth <- featureDepth
     },
 
     update=function(newObject, ...) {
       # TODO
-      if (!is.null(.self$.mgr)) {
-        .self$.mgr$.clear_datasourceGroup_cache(.self)
-      }
       callSuper(newObject, ...)
     },
     plot=function(...) {
@@ -261,15 +269,13 @@ EpivizMetagenomicsData$methods(
         nodeList[[node]] <- 1
       }
       
-      print(nodeList)
+      .self$.lastSelectionTypes <- list()
       
       .self$.taxonomy$updateSelection(nodeList)
       
       if (!is.null(.self$.mgr)) {
         .self$.mgr$.clear_datasourceGroup_cache(.self)
       }
-      
-      .self$getHierarchy(.self$.lastRootId)
     #}
   },
   taxonomyTable=function() { .self$.taxonomy$taxonomyTable() },
@@ -316,6 +322,12 @@ EpivizMetagenomicsData$methods(
     out
   },
   getHierarchy=function(nodeId) {
+    
+    # clear last request ranges and values
+    .self$.lastRequestRanges <- list()
+    .self$.lastLeafInfos <- list()
+    .self$.lastValues <- list()
+    
     root <- NULL
     if (missing(nodeId) || is.null(nodeId)) { 
       root <- .self$.taxonomy$root() 
@@ -324,8 +336,13 @@ EpivizMetagenomicsData$methods(
       if (is.null(root)) { root <- .self$.taxonomy$root() }
     }
     .self$.lastRootId <- nodeId
-
-    return(root$raw(maxDepth=.self$.maxDepth))
+    
+    resp <- list()
+    resp[['tree']] <- root$raw(maxDepth=.self$.maxDepth)
+    resp[['nodeSelectionTypes']] <- .self$.lastSelectionTypes
+    resp[['selectionLevel']] <- .self$.aggregateAtDepth
+  
+    return(resp)
   },
   propagateHierarchyChanges=function(selection, order, selectedLevels) {
     
@@ -338,7 +355,7 @@ EpivizMetagenomicsData$methods(
       return(getHierarchy(.self$.lastRootId)) 
     }
     
-    if(!is.null(selectedLevels)) {
+    if(!is.null(selectedLevels) && length(selectedLevels) != 0) {
       # remove current selectionTypes
       nodeList <- list()
       for (node in names(.self$.taxonomy$.selectionTypes$.)) {
@@ -355,11 +372,13 @@ EpivizMetagenomicsData$methods(
           nodeList[[node$id()]] <- selectedLevels[[level]]
         }
         .self$.taxonomy$updateSelection(nodeList)
+        .self$.aggregateAtDepth <- as.numeric(level)
       }
     }
 
     if (!missing(selection)) {
-      .self$.taxonomy$updateSelection(selection)
+      .self$.lastSelectionTypes <- selection
+      .self$.taxonomy$updateSelection(.lastSelectionTypes)
     }
 
     if (!missing(order)) {
