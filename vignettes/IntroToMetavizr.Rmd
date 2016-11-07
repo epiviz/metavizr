@@ -28,7 +28,7 @@ require(msd16s)
 The connection to `Metaviz` is managed through a session manager object of class `EpivizApp`. We can create this object and open `Metaviz` using the `startMetaviz` function.
 
 ```{r, eval=FALSE, echo=TRUE}
-app <- startMetaviz(host="http://localhost:7200")
+app <- startMetaviz()
 ```
 
 ```{r, eval=TRUE, echo=FALSE}
