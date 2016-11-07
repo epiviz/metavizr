@@ -15,14 +15,12 @@ The `metavizr` package implements two-way communication between the `R/Bioconduc
 
 # Preliminaries: the data
 
-In this vignette, we will explore data from 12 human subjects that were exposed to enterogenic E. coli and then treated with antibiotics.  Samples were collected at 1 day before treatment and then on each day afterwards for 9 days.  The experiment is described in Pop et al. [1] and the data is available as an `MRexperiment` in the `etec16s` Bioconductor package.  
+In this vignette we will look at two data sets one from a case/control study and another with a time series. We load the first data set from the `msd16s` Bioconductor package.  This data is from the Moderate to Severe Diaherrial disease study in children from four countries: Banglash, Kenya, Mali, and the Gambia.  Case and control stool samples were gathered from each country across several age ranges, 0-6 months, 6-12 months, 12-18 months, 18-24 months, and 24-60 months.  An analysis of this data is described in Pop et al. [1].  
 
 ```{r, eval=TRUE, echo=TRUE, results='hide', warning=FALSE, error=FALSE, message=FALSE}
 require(metavizr)
 require(metagenomeSeq)
-require(etec16s)
-
-data(etec16s)
+require(msd16s)
 ```
 
 # The metavizr session manager
@@ -30,7 +28,7 @@ data(etec16s)
 The connection to `Metaviz` is managed through a session manager object of class `EpivizApp`. We can create this object and open `Metaviz` using the `startMetaviz` function.
 
 ```{r, eval=FALSE, echo=TRUE}
-app <- startMetaviz()
+app <- startMetaviz(host="http://localhost:7200")
 ```
 
 ```{r, eval=TRUE, echo=FALSE}
@@ -87,38 +85,36 @@ app$server$service()
 
 ----
 
-To start our analysis we normalize count data using the `metagenomeSeq::cumNorm` function,
-choose genera that have more than 5 OTUs in the dataset and select the 10 genera with largest 
-standard deviation of log-transformed normalized counts across samples.
+For vignette purposes, we will subset the 992 `msd16s` samples to those 301 from Bangladesh.  Also, we will aggregate the count matrix to the species level.  We have found that 
+matrix sizes with YYY elements perform well for interactive visualization with an R session using WebSockets.  For larger abundance matrices, we recommend using the graph database backend available at [NEED TO ADD LINK].  Once having subset the data, we normalize count data using the `metagenomeSeq::cumNorm` function, choose genera that have more than 5 OTUs in the dataset and select the 10 genera with largest standard deviation of log-transformed normalized counts across samples. Set aggregation level to "class", will find features DA at this level and then change an push those changes to an MRexperiment that is aggreagted to "species" level, and then explore the hiearchy.
 
 ```{r, eval=TRUE}
-data_obj <- etec16s
-#change the OTU.ID from 'integer' to 'character'
-featureData(data_obj)$OTU.ID <- sapply(featureData(data_obj)$OTU.ID, as.character)
 
-#provide a hierarchy root node for dataset
-featureData(data_obj)$Kingdom <- "Bacteria"
+bangladesh <- msd16s[, which(pData(msd16s)$Country == "Bangladesh")]
 
-# normalize data using CSS at 3rd quartile
-md <- cumNorm(data_obj, p=.75)
+feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
+species_level_agg <-  cumNorm(aggregateByTaxonomy(bangladesh, feature_order = feature_order, lvl="species"), p = 0.75)
+aggregated_feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species")
 
-# keep species that have more than 5 OTUs in dataset
-taxonomy_table <- pData(featureData(md))
-otus_per_species <- table(taxonomy_table$Species)
-species_to_keep <- names(otus_per_species)[otus_per_species > 5]
+aggregation_level <- "class"
+aggregated_bangladesh <- aggregateByTaxonomy(bangladesh, lvl=aggregation_level, feature_order = feature_order)
 
-# aggregate counts to species level and log-transform
-species_counts <- aggTax(md, lvl="Species", out="matrix")
-log_species_counts <- log2(species_counts + 1)
+normed_bangladesh <-  cumNorm(aggregated_bangladesh, p = 0.75)
+bangladesh_sample_data <-  pData(normed_bangladesh)
+mod <-  model.matrix(~1+Dysentery, data = bangladesh_sample_data)
+results_bangladesh <-  fitFeatureModel(normed_bangladesh, mod)
+logFC_bangladesh <- MRcoefs(results_bangladesh, number = dim(normed_bangladesh)[1])
 
-# select the 50 species with larges variance
-species_sds <- matrixStats::rowSds(log_species_counts)
-o <- order(species_sds)
-species_of_interest <- rownames(species_counts)[o[1:50]]
 
-# filter the dataset to the OTUs in those species
-otus_to_keep <- taxonomy_table$Species %in% species_of_interest
-filtered_md <- md[otus_to_keep,]
+fSelection <- list()
+fSelection$featureNames <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 2),]$adjPvalues < .05),])
+fSelection$featureOrder <- feature_order
+fSelection$featureLevel <- aggregation_level
+fSelection$selectionType <- 2
+
+control <- metavizr::metavizControl(featureSelection = fSelection)
+
+
 ```
 
 # Adding an Icicle navigation widget to explore metagenomic features
@@ -127,9 +123,7 @@ Once the browser is open we can visualize the metagenomic features from the `mou
 
 ```{r,eval=TRUE}
 #specify the feature hierarchy for the dataset
-feature_order <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "OTU.ID")
-
-icicle_plot <- app$plot(filtered_md, feature_order = feature_order, datasource_name="etec16sData")
+icicle_plot <- app$plot(species_level_agg, datasource_name="mmssdd", feature_order = aggregated_feature_order, control=control)
 ```
 
 You should now see an icicle widget to explore the hierarchy of the metagenomic features from the `mouseData` object. To navigate the complex, hierarchical structure of the feature space, we developed an icicle/facet zoom visualization. Because of the limitations in the screen size and performance rendering big trees, the icicle plot is an efficient visualization for navigating trees. The icicle visualization helps zoom in and out of trees and traverse subtrees. Every node in the icicle has a state associated with it. There are three possible states for a node 1) expand - use all subtree nodes during analysis 2) collapse - aggregate all nodes under the subtree to the selected node 3) remove - discard all nodes in the subtree for the analysis. The state of a node is also propagated to all its children and can be identified by the opacity of the node. Row level controls are available to the left of the icicle - to set the state of all nodes at a selected depth/taxonomic class of the hierarchy. Icicle is traversible if the ends on the row controls are chevrons. Users can set states on the nodes to define a cut over the feature space. The cut defines how the count data is queried, analyzed and visualized in other plots like heat maps or stacked line plots. In addition to defining the cut, we also have a navigation bar on top of the icicle to limit the range of features when querying for count data. Navigation bar is a flexible component (increase/decrease the length) and controls are available to move the bar left/right and extend over the entire range of the current tree in the icicle. Each of these actions would query the count data and automatically propagate the changes to other visualizations in the workspace. When navigating outside the scope of the navigation bar, chevrons (left/right) appear on the navigation bar to help identify the current position. Brushing/hovering is another important visual element we focused on our implementation of an icicle. Hovering over a node hovers its path in the tree i.e. highlight both its parents and children. When there are other visualizations like heat maps or stacked line plots in the workspace, hovering over a chart element highlights the mapped feature nodes in all the other plots.
@@ -139,25 +133,32 @@ You should now see an icicle widget to explore the hierarchy of the metagenomic 
 Now we can view the data as a heatmap calling `revisualize`:
 
 ```{r, eval=TRUE}
-heatmap <- app$chart_mgr$revisualize(chartType = "HeatmapPlot", chart = icicle_plot)
+heatmap <- app$chart_mgr$revisualize(chart_type = "HeatmapPlot", chart = icicle_plot)
 ```
 
 Using the same data, we can also revisualize it in a stacked plot to see the abundance of various features across samples. Since the measurements are added from creating the icicle_plot, we only need to add a stacked line plot. 
 
 ```{r, eval=TRUE}
-stackedPlot <- app$chart_mgr$revisualize(chartType ="StackedLinePlot", chart = icicle_plot)
+stackedPlot <- app$chart_mgr$revisualize(chart_type ="StackedLinePlot", chart = icicle_plot)
 ```
 
-The screenshot of the above workflow on the metaviz workspace.
+Finally, we can update the threshold cutoff we had for fold change, pass those modifications the icicle plot, and see the updates propogate to the heat map and stacked plot.  This shows the use case of statistically-guided interactive visualizations.
 
-![etec 16s metaviz workspace](images/Metaviz.png)
+```{r, eval=TRUE}
+fSelection2 <- list()
+fSelection2$featureNames <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 1),]$adjPvalues < .05),])
+fSelection2$featureOrder <- feature_order
+fSelection2$featureLevel <- aggregation_level
+fSelection2$selectionType <- 2
+app$get_ms_object(icicle_plot)$featureSelection(featureNames=fSelection2$featureNames, featureOrder=fSelection2$featureOrder, featureLevel=fSelection2$featureLevel, selectionType=fSelection2$selectionType)
+```
+
 
 # Longitudinal Data Analysis
 
 Another feature of metavizr is to visualize data using a line plot.  We detail the steps to perform this analysis and create a line plot using Metaviz such as those used in Paulson et al. when analyzing this time series data with a smoothing-spline [2].
 
 First, import the etec16s dataset, select sample data from the first 9 days, and choose the feature annotations of interest.
-
 ```{r, eval=TRUE}
 library(etec16s)
 data(etec16s)
