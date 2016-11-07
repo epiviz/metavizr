@@ -284,22 +284,23 @@ EpivizMetagenomicsData$methods(
   parent=function(node) { .self$.taxonomy$parent(node) },
   siblings=function(node) { .self$.taxonomy$siblings(node) },
 
-  changeAggregation=function(mgr, nodeId, aggregationType) {
+  changeAggregation=function(nodeId, aggregationType) {
     selection <- list()
     selection[[nodeId]] <- aggregationType
     .self$.taxonomy$updateSelection(selection)
-    mgr$data_mgr$.clear_DatasourceGroup_cache(.self)
+    .self$.mgr$.clear_DatasourceGroup_cache(.self)
   },
   
-  changeAggregationAtDepth=function(mgr, depth, aggregationType) {
+  changeAggregationAtDepth=function(depth, aggregationType) {
     if (depth < 0) { return() }
     nodesAtDepth <- .self$.taxonomy$nodesAtDepth(depth)
     selection <- list()
     for (node in nodesAtDepth) {
-      selection[[node$id()]] <- aggregationType
+      nodeId <- node$.id
+      selection[[nodeId]] <- aggregationType
     }
     .self$.taxonomy$updateSelection(selection)
-    mgr$data_mgr$.clear_datasourceGroup_cache(.self)
+    .self$.mgr$.clear_datasourceGroup_cache(.self)
   }
 )
 
