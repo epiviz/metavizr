@@ -288,7 +288,9 @@ EpivizMetagenomicsData$methods(
     selection <- list()
     selection[[nodeId]] <- aggregationType
     .self$.taxonomy$updateSelection(selection)
-    .self$.mgr$.clear_DatasourceGroup_cache(.self)
+    if (!is.null(.self$.mgr)) {
+      .self$.mgr$.clear_datasourceGroup_cache(.self)
+    }
   },
   
   changeAggregationAtDepth=function(depth, aggregationType) {
@@ -300,7 +302,9 @@ EpivizMetagenomicsData$methods(
       selection[[nodeId]] <- aggregationType
     }
     .self$.taxonomy$updateSelection(selection)
-    .self$.mgr$.clear_datasourceGroup_cache(.self)
+    if (!is.null(.self$.mgr)) {
+      .self$.mgr$.clear_datasourceGroup_cache(.self)
+    }
   }
 )
 
