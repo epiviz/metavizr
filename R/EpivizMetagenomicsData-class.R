@@ -536,6 +536,30 @@ EpivizMetagenomicsData$methods(
     result[['globalStartIndex']] = data_rows$globalStartIndex
     
     return(result)
+  },
+  searchTaxonomy=function(query, max_results) {
+    
+    results = list()
+    nCount <- 1
+    for (i in seq_along(.self$.levels)) {
+      nodesAtLevel <- .self$.taxonomy$nodesAtDepth(i)
+      for(j in seq_along(nodesAtLevel)) {
+        node <- nodesAtLevel[[j]]
+        if(length(grep(query, node$name(), value = TRUE)) != 0) {
+          results[[nCount]] <- list("gene" = node$name(), "start" = node$leafIndex(),
+                                    "end" = (node$leafIndex() + node$nleaves()), 
+                                    "seqName" = "metavizr", "nodeId" = node$id(), "level" = .self$.levels[i]
+          )
+          nCount = nCount+1
+          
+          if(length(results) >= max_results) {break;}
+        }  
+      }
+      if(length(results) >= max_results) { break;}
+    }
+    
+    results <- unname(results, force=TRUE)
+    return(results)
   }
 )
 

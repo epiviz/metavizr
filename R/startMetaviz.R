@@ -105,6 +105,19 @@
       "metavizr" = c(0, 100000)
     ))
   })
+  
+  app$server$register_action("search", function(request_data) {
+    query <- request_data$q
+    max_results <- request_data$maxResults
+    datasource = request_data$datasourceGroup
+    
+    obj <- app$data_mgr$.find_datasource(datasource)
+    if (is.null(obj)) {
+      stop("cannot find datasource", datasource)
+    }
+    
+    list(nodes = obj$searchTaxonomy(query, max_results))
+  })
 }
 
 #' Start metaviz app and create \code{\link{EpivizApp}} object to manage connection.
