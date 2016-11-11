@@ -44,5 +44,6 @@ Collate:
     'EpivizMetagenomicsData-class.R'
     'register-methods.R'
     'validateMRExperiment.R'
+    'MetavizApp-class.R'
 biocViews: Visualization, Infrastructure, GUI, Metagenomics
 RoxygenNote: 5.0.1
