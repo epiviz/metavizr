@@ -66,7 +66,10 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         message("MRExperiment Object validated... PASS")
       }
 
-      .self$.feature_order <- feature_order
+      if(!is.null(feature_order)) {
+        .self$.feature_order <- feature_order
+      }
+      
       # TODO: Some type checking
       .self$.taxonomy <- buildMetavizTree(object, feature_order)
       .self$.levels <- .self$.taxonomy$levels()
