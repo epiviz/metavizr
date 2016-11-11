@@ -16,6 +16,8 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 \item{\code{get_measurements()}}{Get description of measurements served by this object}
 
+\item{\code{toMySQLDb(con, colLabel = NULL)}}{Save an MRexperiment object to a MySQL database.}
+
 \item{\code{toNEO4JDb(graph, colLabel = NULL)}}{Save an MRexperiment object to a Neo4j Graph database.}
 
 \item{\code{toNEO4jDump(filePath = "~/", fileName = "neo4j_dump.cypher")}}{Save an MRexperiment object to a Neo4j Graph database. set the location of the output file with fileName and filePath.}

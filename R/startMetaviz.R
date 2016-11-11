@@ -146,7 +146,9 @@ startMetaviz <- function(host="http://metaviz.cbcb.umd.edu",
   end <- 1000
   app <- startEpiviz(host = host, register_function = register_function, 
                      chr=chr, start=start, end=end, ...)
-  app
+  mApp <- MetavizApp$new(.url_parms=app$.url_parms, .browser_fun=app$.browser_fun,
+                         server=app$server, data_mgr=app$data_mgr, chart_mgr=app$chart_mgr)
+  mApp
 }
 
 #' Start metaviz app in standalone (locally) and create \code{\link[epivizr]{EpivizApp}} object to manage connection.
@@ -179,5 +181,8 @@ startMetavizStandalone <- function(branch="metaviz-4.1",
   app <- startStandalone(seqinfo=seq, 
                          register_function=register_function, 
                          chr=chr, start=start, end=end, ...)
-  app
+  
+  mApp <- MetavizApp$new(.url_parms=app$.url_parms, .browser_fun=app$.browser_fun,
+                         server=app$server, data_mgr=app$data_mgr, chart_mgr=app$chart_mgr)
+  mApp
 }
