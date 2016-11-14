@@ -29,6 +29,7 @@ The connection to `Metaviz` is managed through a session manager object of class
 
 ```{r, eval=FALSE, echo=TRUE}
 app <- startMetaviz()
+
 ```
 
 ```{r, eval=TRUE, echo=FALSE}
@@ -89,32 +90,31 @@ For vignette purposes, we will subset the 992 `msd16s` samples to those 301 from
 matrix sizes with YYY elements perform well for interactive visualization with an R session using WebSockets.  For larger abundance matrices, we recommend using the graph database backend available at [NEED TO ADD LINK].  Once having subset the data, we normalize count data using the `metagenomeSeq::cumNorm` function, choose genera that have more than 5 OTUs in the dataset and select the 10 genera with largest standard deviation of log-transformed normalized counts across samples. Set aggregation level to "class", will find features DA at this level and then change an push those changes to an MRexperiment that is aggreagted to "species" level, and then explore the hiearchy.
 
 ```{r, eval=TRUE}
-
-bangladesh <- msd16s[, which(pData(msd16s)$Country == "Bangladesh")]
-
 feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
-species_level_agg <-  cumNorm(aggregateByTaxonomy(bangladesh, feature_order = feature_order, lvl="species"), p = 0.75)
-aggregated_feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species")
+aggregated_feature_order <- feature_order[1:7]
+
+msd16s_species <- msd16s
+fData(msd16s) <- fData(msd16s)[feature_order]
+fData(msd16s_species) <- fData(msd16s_species)[aggregated_feature_order]
+  
+bangladesh <- msd16s[, which(pData(msd16s)$Country == "Bangladesh")]
+bangladesh_species <- msd16s_species[, which(pData(msd16s_species)$Country == "Bangladesh")]
+
+aggregated_species <-  cumNorm(aggregateByTaxonomy(bangladesh_species, lvl="species"), p = 0.75)
 
 aggregation_level <- "class"
-aggregated_bangladesh <- aggregateByTaxonomy(bangladesh, lvl=aggregation_level, feature_order = feature_order)
+aggregated_bangladesh <- aggregateByTaxonomy(bangladesh, lvl=aggregation_level)
 
 normed_bangladesh <-  cumNorm(aggregated_bangladesh, p = 0.75)
 bangladesh_sample_data <-  pData(normed_bangladesh)
 mod <-  model.matrix(~1+Dysentery, data = bangladesh_sample_data)
 results_bangladesh <-  fitFeatureModel(normed_bangladesh, mod)
-logFC_bangladesh <- MRcoefs(results_bangladesh, number = dim(normed_bangladesh)[1])
+logFC_bangladesh <- MRcoefs(results_bangladesh, number = nrow(normed_bangladesh))
 
-
-fSelection <- list()
-fSelection$featureNames <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 2),]$adjPvalues < .05),])
-fSelection$featureOrder <- feature_order
-fSelection$featureLevel <- aggregation_level
-fSelection$selectionType <- 2
+feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 2),]$adjPvalues < .05),]) 
+fSelection <- generateSelection(feature_names =feature_names , aggregation_level = aggregation_level, selection_type =2)
 
 control <- metavizr::metavizControl(featureSelection = fSelection)
-
-
 ```
 
 # Adding an Icicle navigation widget to explore metagenomic features
@@ -123,7 +123,7 @@ Once the browser is open we can visualize the metagenomic features from the `mou
 
 ```{r,eval=TRUE}
 #specify the feature hierarchy for the dataset
-icicle_plot <- app$plot(species_level_agg, datasource_name="mmssdd", feature_order = aggregated_feature_order, control=control)
+icicle_plot <- app$plot(aggregated_species, datasource_name="mmssdd", control=control, feature_order = aggregated_feature_order)
 ```
 
 You should now see an icicle widget to explore the hierarchy of the metagenomic features from the `mouseData` object. To navigate the complex, hierarchical structure of the feature space, we developed an icicle/facet zoom visualization. Because of the limitations in the screen size and performance rendering big trees, the icicle plot is an efficient visualization for navigating trees. The icicle visualization helps zoom in and out of trees and traverse subtrees. Every node in the icicle has a state associated with it. There are three possible states for a node 1) expand - use all subtree nodes during analysis 2) collapse - aggregate all nodes under the subtree to the selected node 3) remove - discard all nodes in the subtree for the analysis. The state of a node is also propagated to all its children and can be identified by the opacity of the node. Row level controls are available to the left of the icicle - to set the state of all nodes at a selected depth/taxonomic class of the hierarchy. Icicle is traversible if the ends on the row controls are chevrons. Users can set states on the nodes to define a cut over the feature space. The cut defines how the count data is queried, analyzed and visualized in other plots like heat maps or stacked line plots. In addition to defining the cut, we also have a navigation bar on top of the icicle to limit the range of features when querying for count data. Navigation bar is a flexible component (increase/decrease the length) and controls are available to move the bar left/right and extend over the entire range of the current tree in the icicle. Each of these actions would query the count data and automatically propagate the changes to other visualizations in the workspace. When navigating outside the scope of the navigation bar, chevrons (left/right) appear on the navigation bar to help identify the current position. Brushing/hovering is another important visual element we focused on our implementation of an icicle. Hovering over a node hovers its path in the tree i.e. highlight both its parents and children. When there are other visualizations like heat maps or stacked line plots in the workspace, hovering over a chart element highlights the mapped feature nodes in all the other plots.
@@ -145,18 +145,17 @@ stackedPlot <- app$chart_mgr$revisualize(chart_type ="StackedLinePlot", chart = 
 Finally, we can update the threshold cutoff we had for fold change, pass those modifications the icicle plot, and see the updates propogate to the heat map and stacked plot.  This shows the use case of statistically-guided interactive visualizations.
 
 ```{r, eval=TRUE}
-fSelection2 <- list()
-fSelection2$featureNames <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 1),]$adjPvalues < .05),])
-fSelection2$featureOrder <- feature_order
-fSelection2$featureLevel <- aggregation_level
-fSelection2$selectionType <- 2
+
+feature_names2 <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > .5),]$adjPvalues < .05),])
+fSelection2 <- generateSelection(feature_names =  feature_names2, aggregation_level = aggregation_level, selection_type =2)
+
 app$get_ms_object(icicle_plot)$featureSelection(featureNames=fSelection2$featureNames, featureOrder=fSelection2$featureOrder, featureLevel=fSelection2$featureLevel, selectionType=fSelection2$selectionType)
 ```
 
 
 # Longitudinal Data Analysis
 
-Another feature of metavizr is to visualize data using a line plot.  We detail the steps to perform this analysis and create a line plot using Metaviz such as those used in Paulson et al. when analyzing this time series data with a smoothing-spline [2].
+Another feature of metavizr is to visualize data using a line plot.  We detail the steps to perform this analysis and create a line plot using Metaviz such as those used in Paulson et al. when analyzing this time series data with a smoothing-spline [2] and [3].
 
 First, import the etec16s dataset, select sample data from the first 9 days, and choose the feature annotations of interest.
 ```{r, eval=TRUE}
@@ -169,12 +168,16 @@ featuresOfInterest <- c('Escherichia/Shigella','Faecalibacterium prausnitzii')
 Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
 
 ```{r, eval=TRUE}
+featureData(etec16s)$Kingdom <- "Bacteria"
+feature_order <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "OTU.ID")
+
 timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
                              formula = abundance~id + time*class + AntiGiven,
                              class="AnyDayDiarrhea",
                              id="SubjectID",
                              time="Day",
                              lvl="Species",
+                             feature_order = feature_order,
                              C=0.3,
                              B=1)
 ```
@@ -182,13 +185,20 @@ timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
 For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `toMRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
 
 ```{r, eval=TRUE}
-splinesMRexp <- ts2MRexperiment(timeSeriesFits, featuresOfInterest = featuresOfInterest)
+feature_order2 <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+
+splinesMRexp <- ts2MRexperiment(timeSeriesFits, feature_data = featureData(aggregateByTaxonomy(etec16s, lvl="Species", feature_order = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
+etec16s_species <- aggregateByTaxonomy(etec16s, lvl="Species", feature_order = feature_order)
 ```
 
 Finally, we add the MRexperiment as a measurement for Metaviz to plot.
 
 ```{r, eval=TRUE}
-splineObj <- app$data_mgr$add_measurements(splinesMRexp, datasource_name = "splines", control = metavizControl(norm=FALSE))
+splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(MRcounts(splinesMRexp[i,]))) >= 2})
+splines_to_plot_indices <- which(splines_to_plot == TRUE)
+
+ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base", control=metavizControl(norm = FALSE, aggregateAtDepth = 6), feature_order = feature_order2)
+splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines", control = metavizControl(norm=FALSE, aggregateAtDepth = 6))
 splineMeasurements <- splineObj$get_measurements()
 splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
 ```
@@ -227,7 +237,9 @@ sessionInfo()
 
 References:
 
-[1] Pop, M., Paulson, J.N., Chakraborty, S., Astrovskaya, I., Lindsay, B.R., Li, S., Bravo, H.C., Harro, C., Parkhill, J., Walker, A.W. and Walker, R.I., 2016. Individual-specific changes in the human gut microbiota after challenge with enterotoxigenic Escherichia coli and subsequent ciprofloxacin treatment. BMC genomics, 17(1), p.1.
+[1] Pop, M., Walker, A.W., Paulson, J., Lindsay, B., Antonio, M., Hossain, M.A., Oundo, J., Tamboura, B., Mai, V., Astrovskaya, I. and Bravo, H.C., 2014. Diarrhea in young children from low-income countries leads to large-scale alterations in intestinal microbiota composition. Genome biology, 15(6), p.1.
 
-[2] Paulson J.N., Talukder H., and Bravo H.C, Longitudinal differential abundance analysis of microbial marker-gene surveys using smoothing splines. In Submission. 
+[2] Pop, M., Paulson, J.N., Chakraborty, S., Astrovskaya, I., Lindsay, B.R., Li, S., Bravo, H.C., Harro, C., Parkhill, J., Walker, A.W. and Walker, R.I., 2016. Individual-specific changes in the human gut microbiota after challenge with enterotoxigenic Escherichia coli and subsequent ciprofloxacin treatment. BMC genomics, 17(1), p.1.
+
+[3] Paulson J.N., Talukder H., and Bravo H.C, Longitudinal differential abundance analysis of microbial marker-gene surveys using smoothing splines. In Submission. 
 
