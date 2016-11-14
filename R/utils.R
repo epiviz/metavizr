@@ -11,3 +11,12 @@
 }
 
 SelectionType = list(NONE=0, LEAVES=1, NODE=2)
+
+generateSelection = function(feature_names, aggregation_level, selection_type, feature_order=NULL){
+  fSelection <- list()
+  fSelection$featureNames <- feature_names
+  fSelection$featureOrder <- feature_order
+  fSelection$featureLevel <- aggregation_level
+  fSelection$selectionType <- selection_type
+  return(fSelection)
+}

@@ -66,9 +66,13 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         message("MRExperiment Object validated... PASS")
       }
 
-      if(!is.null(feature_order)) {
+      if(is.null(feature_order)) {
+        .self$.feature_order = colnames(fData(object))
+      }
+      else {
         .self$.feature_order <- feature_order
       }
+
       
       # TODO: Some type checking
       .self$.taxonomy <- buildMetavizTree(object, feature_order)
@@ -202,6 +206,9 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     },
 
     featureSelection=function(featureNames, featureOrder, featureLevel, selectionType){
+      if(is.null(featureOrder)){
+        featureOrder = .self$.feature_order
+      }
       featureDepth <- (which(featureOrder == featureLevel) -1)
       
       nodes <- .self$.taxonomy$nodesAtDepth(depth=featureDepth)
