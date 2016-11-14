@@ -32,7 +32,7 @@ Suggests:
     knitr,
     BiocStyle,
     matrixStats,
-    msd16s,
+    msd16s (>= 0.109.1),
     etec16s
 Collate:
     'metavizControl.R'
