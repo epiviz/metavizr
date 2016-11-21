@@ -120,18 +120,18 @@
   })
 }
 
-#' Start metaviz app and create \code{\link{EpivizApp}} object to manage connection.
+#' Start metaviz app and create \code{\link[metavizr]{MetavizApp}} object to manage connection.
 #' 
 #' @param host (character) host address to launch.
 #' @param register_function (function) function used to register actions and charts on the metaviz app.
 #' @param ... additional parameters passed to \code{\link[epivizr]{startEpiviz}}.
 #' 
-#' @return An object of class \code{\link[epivizr]{EpivizApp}}
+#' @return An object of class \code{\link[metavizr]{MetavizApp}}
 #' 
 #' @import epivizr
 #' @import GenomicRanges
 #' @import GenomeInfoDb
-#' @seealso \code{\link[epivizr]{EpivizApp}}
+#' @seealso \code{\link[metavizr]{MetavizApp}}
 #' @examples
 #' # see package vignette for example usage
 #' app <- startMetaviz(non_interactive=TRUE, open_browser=TRUE)
@@ -151,13 +151,13 @@ startMetaviz <- function(host="http://metaviz.cbcb.umd.edu",
   mApp
 }
 
-#' Start metaviz app in standalone (locally) and create \code{\link[epivizr]{EpivizApp}} object to manage connection.
+#' Start metaviz app in standalone (locally) and create \code{\link[metavizr]{MetavizApp}} object to manage connection.
 #' 
 #' @param branch (character) branch to pull from metaviz github repo to run standalone.
 #' @param register_function (function) function used to register actions and charts on the metaviz app.
 #' @param ... additional parameters passed to \code{\link[epivizrStandalone]{startStandalone}}.
 #' 
-#' @return An object of class \code{\link{EpivizApp}}
+#' @return An object of class \code{\link{MetavizApp}}
 #' 
 #' @import epivizrStandalone
 #' @import GenomeInfoDb
