@@ -596,7 +596,7 @@ EpivizMetagenomicsData$methods(
     }
     
     result <- list()
-    result$data = data
+    result$data = unname(data)
     result$pca_variance_explained = ord$sdev[1:2]
   
     return(result)
@@ -623,7 +623,7 @@ EpivizMetagenomicsData$methods(
     }
     
     result <- list()
-    result$data = data
+    result$data = unname(data)
 
     return(result)
   }
