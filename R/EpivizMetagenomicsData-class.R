@@ -573,26 +573,20 @@ EpivizMetagenomicsData$methods(
   },
   getPCA=function(measurements, seqName = '', start, end) {
     
-    data_columns <- list()
-    for (m in measurements) {
-      data_columns[[m]] = unlist(.self$getValues(m, seqName, start, end)$values$values)
-    }
-    
-    df <- t(as.data.frame(data_columns))
-    rownames(df) <- measurements
-    
+    x <- t(.self$.counts[,measurements])
+    df <- log2(x+1)
     ord <- prcomp(df)
     
     res <- apply(ord$x, 1, function(x) {
-      return (list(PC1 = unname(x["PC1"]), PC2 = unname(x["PC2"])))
+      return (list(PC1 = unlist(x["PC1"]), PC2 = unlist(x["PC2"])))
     })
     
     data <- list()
     for (row in names(res)) {
       temp <- list()
       temp$sample_id = row
-      temp$PC1 = res[[row]]$PC1
-      temp$PC2 = res[[row]]$PC2
+      temp$PC1 = unname(res[[row]]$PC1)
+      temp$PC2 = unname(res[[row]]$PC2)
       annotation = as.list(.self$.sampleAnnotation[row,])
       for (anno in names(annotation)) {
         temp[[anno]] = annotation[[anno]]
