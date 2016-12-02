@@ -61,7 +61,6 @@
     
     measurementsList <- request_data$measurements
     result <- lapply(names(measurementsList), function(m) {
-      datasource <- request_data$datasource
       seqName <- request_data$seqName
       start <- request_data$start
       end <- request_data$end
@@ -107,59 +106,71 @@
   })
   
   app$server$register_action("getPCA", function(request_data) {
-    datasource <- request_data$datasource
-    measurements <- request_data$measurements
-    seqName <- request_data$seqName
-    start <- request_data$start
-    end <- request_data$end
     
-    if(is.null(start)) {
-      start <- 0
-    }
-    else {
-      start <- start - 1
-    }
+    measurementsList <- request_data$measurements
+    result <- lapply(names(measurementsList), function(m) {
+      seqName <- request_data$seqName
+      start <- request_data$start
+      end <- request_data$end
+      measurements <- measurementsList[[m]]
+      
+      if(is.null(start)) {
+        start <- 0
+      }
+      else {
+        start <- start - 1
+      }
+      
+      if(is.null(end)) {
+        end <- 100000
+      }
+      else {
+        end <- end - 1
+      }
+      
+      obj <- app$data_mgr$.find_datasource(m)
+      if (is.null(obj)) {
+        stop("cannot find datasource", m)
+      }
+      obj$getPCA(measurements, seqName, start, end)
+    })
+    names(result) <- names(measurementsList)
+    result
     
-    if(is.null(end)) {
-      end <- 100000
-    }
-    else {
-      end <- end - 1
-    }
-
-    obj <- app$data_mgr$.find_datasource(datasource)
-    if (is.null(obj)) {
-      stop("cannot find datasource", datasource)
-    }
-    obj$getPCA(measurements, seqName, start, end)
   })
   
   app$server$register_action("getAlphaDiversity", function(request_data) {
-    datasource <- request_data$datasource
-    measurements <- request_data$measurements
-    seqName <- request_data$seqName
-    start <- request_data$start
-    end <- request_data$end
     
-    if(is.null(start)) {
-      start <- 0
-    }
-    else {
-      start <- start - 1
-    }
+    measurementsList <- request_data$measurements
+    result <- lapply(names(measurementsList), function(m) {
+      seqName <- request_data$seqName
+      start <- request_data$start
+      end <- request_data$end
+      measurements <- measurementsList[[m]]
+      
+      if(is.null(start)) {
+        start <- 0
+      }
+      else {
+        start <- start - 1
+      }
+      
+      if(is.null(end)) {
+        end <- 100000
+      }
+      else {
+        end <- end - 1
+      }
+      
+      obj <- app$data_mgr$.find_datasource(m)
+      if (is.null(obj)) {
+        stop("cannot find datasource", m)
+      }
+      obj$getAlphaDiversity(measurements, seqName, start, end)
+    })
+    names(result) <- names(measurementsList)
+    result
     
-    if(is.null(end)) {
-      end <- 100000
-    }
-    else {
-      end <- end - 1
-    }
-    
-    obj <- app$data_mgr$.find_datasource(datasource)
-    if (is.null(obj)) {
-      stop("cannot find datasource", datasource)
-    }
-    obj$getAlphaDiversity(measurements, seqName, start, end)
   })
   
   app$server$register_action("search", function(request_data) {
