@@ -606,6 +606,32 @@ EpivizMetagenomicsData$methods(
     result$pca_variance_explained = ord$sdev[1:2]
   
     return(result)
+  },
+  getAlphaDiversity=function(measurements, seqName = '', start, end) {
+    df <- .self$.counts[,measurements]
+    print(df)
+    print(colnames(df))
+
+    alpha_diversity <- diversity(t(df), index = "shannon")
+    print(alpha_diversity)
+
+    data <- list()
+    for (row in 1:length(alpha_diversity)) {
+      temp <- list()
+      temp$sample_id = colnames(df)[row]
+      temp$alphaDiversity = alpha_diversity[row]
+      annotation = as.list(.self$.sampleAnnotation[colnames(df[row]),])
+      for (anno in names(annotation)) {
+        temp[[anno]] = annotation[[anno]]
+      }
+      
+      data[[row]] <- temp
+    }
+    
+    result <- list()
+    result$data = data
+
+    return(result)
   }
 )
 
