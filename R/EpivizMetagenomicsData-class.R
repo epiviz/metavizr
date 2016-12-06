@@ -28,7 +28,8 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .lastLeafInfos = "list",
     .lastSelectionTypes = "list",
     .lastValues = "list",
-    .maxHistory = "numeric"
+    .maxHistory = "numeric",
+    .json_query = "ANY"
   ),
   methods=list(
     # TODO use and check columns
@@ -1392,6 +1393,691 @@ EpivizMetagenomicsData$methods(
       cypher(graph,query) 
     }
     else {
+      write(query, file=file, append = TRUE)
+    }
+  },
+  
+  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, colLabel=NULL) {
+    "Save an MRexperiment object to a Neo4j Graph database."
+    
+    cat("Saving sample data...")
+    .saveSampleDataNEO4JHTTP(batch_url, neo4juser, neo4jpass)
+    cat("Done\n")
+    
+    cat("Saving hierarchy...")
+    .saveHierarchyNEO4JHTTP(batch_url, neo4juser, neo4jpass)
+    cat("Done\n")
+    
+    cat("Saving Data Matrix...")
+    .saveMatrixNEO4JHTTP(batch_url, neo4juser, neo4jpass)
+    cat("Done\n")
+    
+    cat("Saving hierarchy...")
+    .neo4jUpdatePropertiesHTTP(batch_url, neo4juser, neo4jpass)
+    cat("Done\n")
+    
+  },
+  
+  .saveSampleDataNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, file=NULL) {
+    
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query <- "\"query\" : \"CREATE (:Sample {props})\","
+    params_start <- "\"params\" : {"
+    props_start <- "\"props\" : {"
+    props_end <- "}"
+    params_end <- "}"
+    body_end <- "},"
+    #id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+    sampleAnnotationToNeo4j = .sampleAnnotation
+    sampleAnnotationToNeo4j['id'] = rownames(.sampleAnnotation)
+    keys = colnames(sampleAnnotationToNeo4j)
+    id_counter <- 0
+    for (j in 1:nrow(sampleAnnotationToNeo4j)){
+      row <- sampleAnnotationToNeo4j[j,]
+      props <- ""
+      for (i in 1:(length(keys)-1)){
+        if  (typeof(keys[i]) == "numeric")
+          props <- paste(props, "\"", keys[i], "\"", " : ", "\"", gsub("'", "", row[, keys[i]]), "\"",", ", sep="")
+        else
+          props <- paste(props, "\"", keys[i], "\"", " : \"", gsub("'", "",row[, keys[i]]), "\", ",sep="")
+      }
+      i = length(keys)
+      if  (typeof(keys[i]) == "numeric")
+        props = paste(props, "\"", keys[i], "\"", " : ", "\"", gsub("'", "",row[, keys[i]]), "\"", sep="")
+      else
+        props = paste(props, "\"", keys[i], "\"", " : \"", gsub("'", "",row[, keys[i]]), "\"", sep="")
+      
+      if (id_counter < nrow(sampleAnnotationToNeo4j)-1){
+        id <- paste("\"id\": ", as.character(id_counter), "},", sep="")
+        json_query <- paste0(json_query, method, to, body_start, query, params_start, props_start, props, props_end, params_end, body_end, id)
+      }
+      else {
+        id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
+        json_query <- paste0(json_query, method, to, body_start, query, params_start, props_start, props, props_end, params_end, body_end, id)        
+      }
+      id_counter <- id_counter + 1
+    }
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    
+    if(!is.null(batch_url)) {
+      POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+    }
+    else {
+      write(query_final, file=file, append = TRUE)
+    }
+    
+  },
+  
+  .saveHierarchyNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, file=NULL) {
+    h = taxonomyTable()
+    indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
+    
+    # cat("\n  Extracting taxonomy nodes...\n")
+    # pb = txtProgressBar(style=3, width=25)
+    nodeIds = lapply(seq(dim(indexCombs)[1]), function(i) {
+      # setTxtProgressBar(pb, i/dim(indexCombs)[1])
+      calcNodeId(indexCombs[i, 1], indexCombs[i, 2])
+    })
+    uniqueIds = unique(nodeIds)
+    
+    # cat("\n  Generating taxonomy structure...\n")
+    # pb = txtProgressBar(style=3, width=25)
+    names = lapply(seq(length(uniqueIds)), function(i) {
+      # setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      #node(nodeId)$name()
+      pair = .fromMetavizNodeId(nodeId)
+      h[pair$leafIndex+1, pair$depth+1]
+    })
+    
+    # cat("\n  Computing node parents...\n")
+    # pb = txtProgressBar(style=3, width=25)
+    parentIds = lapply(seq(length(uniqueIds)), function(i) {
+      # setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      node(nodeId)$parentId()
+    })
+    
+    # cat("\n  Computing lineages...\n")
+    pathsList = Ptr$new(list())
+    # pb = txtProgressBar(style=3, width=25)
+    paths = lapply(seq(length(uniqueIds)), function(i) {
+      # setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      parentId = parentIds[[i]]
+      if (is.null(parentId) || is.null(pathsList$.[[parentId]])) {
+        pathsList$.[[nodeId]] = nodeId
+        return(nodeId)
+      }
+      path = paste(pathsList$.[[parentId]], nodeId, sep=",")
+      pathsList$.[[nodeId]] = path
+      return(path)
+    })
+    
+    # cat("\n  Computing lineages labels...\n")
+    pathsLabels = Ptr$new(list())
+    # pb = txtProgressBar(style=3, width=25)
+    pathsLabels = lapply(seq(length(uniqueIds)), function(i) {
+      # setTxtProgressBar(pb, i/length(uniqueIds))
+      
+      nodeId = uniqueIds[[i]]
+      pair = .fromMetavizNodeId(nodeId)
+      nodeName = h[pair$leafIndex+1, pair$depth+1]
+      
+      parentId = parentIds[[i]]
+      
+      if (is.null(parentId) || is.null(pathsList$.[[parentId]])) {
+        pathsList$.[[nodeId]] = nodeName
+        return(nodeName)
+      }
+      
+      path = paste(pathsList$.[[parentId]], nodeName, sep=",")
+      pathsList$.[[nodeId]] = path
+      return(path)
+    })
+    
+    # cat("\n  Computing index of first leaf in node subtrees...\n")
+    # pb = txtProgressBar(style=3, width=25)
+    starts = lapply(seq(length(uniqueIds)), function(i) {
+      # setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      node(nodeId)$leafIndex()
+    })
+    
+    # cat("\n  Computing leaf counts in node subtrees...\n")
+    # pb = txtProgressBar(style=3, width=25)
+    ends = lapply(seq(length(uniqueIds)), function(i) {
+      # setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      node(nodeId)$nleaves() + starts[[i]]
+    })
+    
+    # cat("\n  Computing node depths...\n")
+    # pb = txtProgressBar(style=3, width=25)
+    depths = lapply(seq(length(uniqueIds)), function(i) {
+      # setTxtProgressBar(pb, i/length(uniqueIds))
+      nodeId = uniqueIds[[i]]
+      node(nodeId)$depth()
+    })
+    
+    taxonomies = list()
+    taxonomies = lapply(seq(length(uniqueIds)), function(i) {
+      nodeId = uniqueIds[[i]]
+      tempDepth = node(nodeId)$depth()
+      .levels[tempDepth+1]
+    })
+    
+    
+    # cat("\n  Computing node children counts...")
+    nchildren = list()
+    for (parentId in parentIds) {
+      if (is.null(parentId)) { next }
+      if (is.null(nchildren[[parentId]])) {
+        nchildren[[parentId]] = 0
+      }
+      nchildren[[parentId]] = nchildren[[parentId]] + 1
+    }
+    childCount = lapply(uniqueIds, function(nodeId) {
+      if (is.null(nchildren[[nodeId]])) { return(0) }
+      nchildren[[nodeId]]
+    })
+    # cat("Done\n")
+    
+    # cat("\n  Computing nodes order...\n")
+    lastOrder = list()
+    # pb = txtProgressBar(style=3, width=25)
+    orders = list()
+    for (i in seq(length(uniqueIds))) {
+      # setTxtProgressBar(pb, i/length(uniqueIds))
+      parentId = parentIds[[i]]
+      nodeId = uniqueIds[[i]]
+      if (is.null(parentId)) {
+        orders[[i]] = 0
+        next
+      }
+      o = lastOrder[[parentId]]
+      if (is.null(o)) {
+        lastOrder[[parentId]] = 0
+        orders[[i]] = 0
+        next
+      }
+      
+      lastOrder[[parentId]] = o + 1
+      orders[[i]] = o+1
+    }
+    
+    # cat("\n  Outputting to database...")
+    parentIds[[1]] = NA
+    dfToNeo4j = data.frame(depth=unlist(depths), label=unlist(names), 
+                           parentId=unlist(parentIds), lineage=unlist(paths), 
+                           lineageLabel=unlist(pathsLabels), nchildren=unlist(childCount), 
+                           start=unlist(starts), end=unlist(ends), leafIndex=unlist(starts), 
+                           nleaves=unlist(ends)-unlist(starts), order=unlist(orders), taxonomy=unlist(taxonomies))
+    dfToNeo4j$partition = NA
+    rownames(dfToNeo4j) = unlist(uniqueIds)
+    dfToNeo4j['id'] = unlist(uniqueIds)
+    
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query <- "\"query\" : \"CREATE (:Feature {props})\","
+    params_start <- "\"params\" : {"
+    props_start <- "\"props\" : {"
+    props_end <- "}"
+    params_end <- "}"
+    body_end <- "},"
+    #id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+    keys = colnames(dfToNeo4j)
+    
+    cypherCount = 0
+    id_counter <- 0
+    
+    for (j in 1:nrow(dfToNeo4j)){
+      row <- dfToNeo4j[j,]
+      props <- "" 
+      for (i in 1:(length(keys)-1)){
+        if  (typeof(keys[i]) == "numeric")
+          props <- paste(props, "\"", keys[i], "\"", " : ", "\"", gsub("'", "",row[, keys[i]]), "\"", ", ",sep="")
+        else
+          props <- paste(props, "\"", keys[i], "\"", " : \"", gsub("'", "",row[, keys[i]]), "\", ", sep="")
+      }
+      i = length(keys)
+
+      props <- paste(props, "\"", keys[i], "\"", " : \"", gsub("'", "",row[, keys[i]]), "\"", sep="")
+      writeBatchOut <- j%%1000 == 0
+      
+      if (j <= nrow(dfToNeo4j)-1){
+        if (writeBatchOut){
+          id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
+          json_query <- paste0(json_query, method, to, body_start, query, params_start, props_start, props, props_end, params_end, body_end, id)
+        }
+        else {
+          id <- paste("\"id\": ", as.character(id_counter), "},", sep="")
+          json_query <- paste0(json_query, method, to, body_start, query, params_start, props_start, props, props_end, params_end, body_end, id)
+        }
+      }
+      else {
+        id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
+        json_query <- paste0(json_query, method, to, body_start, query, params_start, props_start, props, props_end, params_end, body_end, id)        
+      }
+      id_counter <- id_counter + 1
+      
+      if (writeBatchOut){
+        query_final <- paste0(json_start, json_query, json_end)
+        .self$.json_query <- query_final
+        
+        if(!is.null(batch_url)) {
+          r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+          stop_for_status(r)
+          
+        }
+        id_counter <- 0
+        json_query <- ""
+      }
+    }
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    
+    if(!is.null(batch_url)) {
+      POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+    }
+    else {
+      write(query, file=file, append = TRUE)
+      
+      cypherCount = cypherCount + 1
+      
+      # write commits if data file is too long
+      if(cypherCount == 250) {
+        write(";", file=file, append = TRUE)
+        write("commit", file=file, append = TRUE)
+        write("begin", file=file, append = TRUE)
+        cypherCount = 0
+      }
+    }
+    
+    
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query <- "\"query\" : \"MATCH (fParent:Feature {id : {parent_id}}) MATCH (f:Feature {id : {child_id}}) CREATE (fParent)-[:PARENT_OF]->(f)\","
+    params_start <- "\"params\" : {"
+    parentid_start <- "\"parent_id\" : "
+    parentid_end <- ","
+    childid_start <- "\"child_id\" : "
+    childid_end <- ""
+    params_end <- "}"
+    body_end <- "},"
+    #id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+    cypherCount = 0
+    id_counter <- 0
+    
+    for (j in 1:nrow(dfToNeo4j)){
+      row <- dfToNeo4j[j,]
+      parentid <- paste("\"", row$parentId, "\"", sep="")
+      childid <- paste("\"", row$id, "\"", sep="")
+      writeBatchOut <- j%%1000 == 0
+      if (j <= nrow(dfToNeo4j)-1){
+        if (writeBatchOut){
+          id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
+          json_query <- paste0(json_query, method, to, body_start, query, params_start, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
+        }
+        else {
+          id <- paste("\"id\": ", as.character(id_counter), "},", sep="")
+          json_query <- paste0(json_query, method, to, body_start, query, params_start, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
+        }
+      }
+      else {
+        id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
+        json_query <- paste0(json_query, method, to, body_start, query, params_start, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
+      }
+      id_counter <- id_counter + 1
+    
+      if (writeBatchOut){
+        query_final <- paste0(json_start, json_query, json_end)
+        .self$.json_query <- query_final
+        
+        if(!is.null(batch_url)) {
+          r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+          stop_for_status(r)
+        }
+        id_counter <- 0
+        json_query <- ""        
+      }
+    }
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    else {
+      write(query, file=file, append = TRUE)
+        
+      cypherCount = cypherCount + 1
+      
+      # write commits if data file is too long
+      if(cypherCount == 250) {
+        write(";", file=file, append = TRUE)
+        write("commit", file=file, append = TRUE)
+        write("begin", file=file, append = TRUE)
+        cypherCount = 0
+      }
+    }
+
+    
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = paste("\"query\" : \"MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth: {depth_param}}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)\",", sep = "")
+    params_start <- "\"params\" : {"
+    depth_param_start <- "\"depth_param\" : "
+    depth_param_end <- "" 
+    params_end <- "}"
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    depth_param <- paste("\"", as.character(length(.levels) - 1), "\"", sep="")
+    
+    json_query <- paste0(json_query, method, to, body_start, query, params_start, depth_param_start, depth_param, depth_param_end, params_end, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    else {
+      write(query, file=file, append = TRUE)
+    }
+    
+   
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = paste("\"query\" : \"MATCH (fLeaf:Feature {depth: {depth_param}}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)\",", sep = "")
+    params_start <- "\"params\" : {"
+    depth_param_start <- "\"depth_param\" : "
+    depth_param_end <- "" 
+    params_end <- "}"
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    depth_param <- paste("\"", as.character(length(.levels) - 1), "\"", sep="")
+    
+    json_query <- paste0(json_query, method, to, body_start, query, params_start, depth_param_start, depth_param, depth_param_end, params_end, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    else {
+      write(query, file=file, append = TRUE)
+    }
+
+  },
+  
+  .saveMatrixNEO4JHTTP = function(batch_url, neo4juser, neo4jpass, file=NULL) {
+    valuesToNeo4j = .getValueTable()
+    
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query <- "\"query\" : \"MATCH (f:Feature {id : {node_id}}) MATCH (s:Sample {id: {sample_id}}) CREATE (s)-[:VALUE {val: {value_param}}]->(f)\","
+    params_start <- "\"params\" : {"
+    nodeid_start <- "\"node_id\" : "
+    nodeid_end <- ","
+    sampleid_start <- "\"sample_id\" : "
+    sampleid_end <- ","
+    val_start <- "\"value_param\" : "
+    val_end <- ""
+    params_end <- "}"
+    body_end <- "},"
+    #id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+    cypherCount = 0
+    id_counter <- 0
+    
+    for (j in 1:nrow(valuesToNeo4j)){
+      row <- valuesToNeo4j[j,]
+      nodeid <- paste("\"", row$NodeId, "\"", sep="")
+      sampleid <- paste("\"", row$SampleId, "\"", sep="")
+      val <- paste("\"", as.character(row$val), "\"", sep="")
+      writeBatchOut <- j%%1000 == 0
+      if (j <= nrow(valuesToNeo4j)-1){
+        if (writeBatchOut){
+          id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
+          json_query <- paste0(json_query, method, to, body_start, query, params_start, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, val_start, val, val_end, params_end, body_end, id)
+        }
+        else {
+          id <- paste("\"id\": ", as.character(id_counter), "},", sep="")
+          json_query <- paste0(json_query, method, to, body_start, query, params_start, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, val_start, val, val_end, params_end, body_end, id)
+        }
+      }
+      else {
+        id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
+        json_query <- paste0(json_query, method, to, body_start, query, params_start, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, val_start, val, val_end, params_end, body_end, id)
+      }
+      id_counter <- id_counter + 1
+      
+      if (writeBatchOut){
+        query_final <- paste0(json_start, json_query, json_end)
+        .self$.json_query <- query_final
+        
+        if(!is.null(batch_url)) {
+          r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+          stop_for_status(r)
+        }
+        id_counter <- 0
+        json_query <- ""
+      }
+
+    }
+    
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    else {
+        write(query, file=file, append = TRUE)
+        
+        cypherCount = cypherCount + 1
+        
+        # write commits if data file is too long
+        if(cypherCount == 250) {
+          write(";", file=file, append = TRUE)
+          write("commit", file=file, append = TRUE)
+          write("begin", file=file, append = TRUE)
+          cypherCount = 0
+        }
+    }
+    
+  },
+  
+  .neo4jUpdatePropertiesHTTP = function(batch_url, neo4juser, neo4jpass, file=NULL) {
+    
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = "\"query\" : \"MATCH (f:Feature) SET f.depth = toInt(f.depth) SET f.start = toInt(f.start) SET f.end = toInt(f.end) SET f.leafIndex = toInt(f.leafIndex) SET f.nchildren = toInt(f.nchildren) SET f.nleaves = toInt(f.nleaves) SET f.order = toInt(f.order)\""
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    } else {
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
+    }
+    
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = "\"query\" : \"MATCH ()-[v:VALUE]->() SET v.val = toFloat(v.val)\""
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    } else {
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
+    }
+
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = "\"query\" : \"CREATE INDEX ON :Feature (depth)\""
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+
+    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    } else {
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
+    }
+    
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = "\"query\" : \"CREATE INDEX ON :Feature (start)\""
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    } else {
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
+    }
+    
+
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = "\"query\" : \"CREATE INDEX ON :Feature (end)\""
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    } else {
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
+    }
+    
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = "\"query\" : \"CREATE INDEX ON :Feature (id)\""
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    } else {
+      write(query, file=file, append = TRUE)
+      write(";", file=file, append = TRUE)
+      write("commit", file=file, append = TRUE)
+      write("begin", file=file, append = TRUE)
+    }
+    
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = "\"query\" : \"CREATE INDEX ON :Sample (id)\""
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    
+    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    } else {
       write(query, file=file, append = TRUE)
     }
   }
