@@ -1030,7 +1030,7 @@ EpivizMetagenomicsData$methods(
     write("commit", file=file, append = TRUE)
   },
   
-  toNEO4JDb=function(graph, colLabel=NULL) {
+  toNEO4JDb=function(graph {
     "Save an MRexperiment object to a Neo4j Graph database."
 
     cat("Saving sample data...")
@@ -1397,7 +1397,7 @@ EpivizMetagenomicsData$methods(
     }
   },
   
-  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, colLabel=NULL) {
+  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass) {
     "Save an MRexperiment object to a Neo4j Graph database."
     
     cat("Saving sample data...")
@@ -1418,7 +1418,7 @@ EpivizMetagenomicsData$methods(
     
   },
   
-  .saveSampleDataNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, file=NULL) {
+  .saveSampleDataNEO4JHTTP =function(batch_url, neo4juser, neo4jpass) {
     
     json_start <- "["
     method <- "{\"method\" : \"POST\","
@@ -1469,13 +1469,9 @@ EpivizMetagenomicsData$methods(
     if(!is.null(batch_url)) {
       POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
     }
-    else {
-      write(query_final, file=file, append = TRUE)
-    }
-    
   },
   
-  .saveHierarchyNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, file=NULL) {
+  .saveHierarchyNEO4JHTTP =function(batch_url, neo4juser, neo4jpass) {
     h = taxonomyTable()
     indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
     
@@ -1692,20 +1688,6 @@ EpivizMetagenomicsData$methods(
     if(!is.null(batch_url)) {
       POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
     }
-    else {
-      write(query, file=file, append = TRUE)
-      
-      cypherCount = cypherCount + 1
-      
-      # write commits if data file is too long
-      if(cypherCount == 250) {
-        write(";", file=file, append = TRUE)
-        write("commit", file=file, append = TRUE)
-        write("begin", file=file, append = TRUE)
-        cypherCount = 0
-      }
-    }
-    
     
     json_start <- "["
     method <- "{\"method\" : \"POST\","
@@ -1766,21 +1748,7 @@ EpivizMetagenomicsData$methods(
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
-    else {
-      write(query, file=file, append = TRUE)
-        
-      cypherCount = cypherCount + 1
-      
-      # write commits if data file is too long
-      if(cypherCount == 250) {
-        write(";", file=file, append = TRUE)
-        write("commit", file=file, append = TRUE)
-        write("begin", file=file, append = TRUE)
-        cypherCount = 0
-      }
-    }
 
-    
     json_start <- "["
     method <- "{\"method\" : \"POST\","
     to <- "\"to\" : \"cypher\","
@@ -1803,10 +1771,6 @@ EpivizMetagenomicsData$methods(
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
-    else {
-      write(query, file=file, append = TRUE)
-    }
-    
    
     json_start <- "["
     method <- "{\"method\" : \"POST\","
@@ -1830,13 +1794,9 @@ EpivizMetagenomicsData$methods(
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
-    else {
-      write(query, file=file, append = TRUE)
-    }
-
   },
   
-  .saveMatrixNEO4JHTTP = function(batch_url, neo4juser, neo4jpass, file=NULL) {
+  .saveMatrixNEO4JHTTP = function(batch_url, neo4juser, neo4jpass) {
     valuesToNeo4j = .getValueTable()
     
     json_start <- "["
@@ -1903,23 +1863,10 @@ EpivizMetagenomicsData$methods(
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
-    else {
-        write(query, file=file, append = TRUE)
-        
-        cypherCount = cypherCount + 1
-        
-        # write commits if data file is too long
-        if(cypherCount == 250) {
-          write(";", file=file, append = TRUE)
-          write("commit", file=file, append = TRUE)
-          write("begin", file=file, append = TRUE)
-          cypherCount = 0
-        }
-    }
     
   },
   
-  .neo4jUpdatePropertiesHTTP = function(batch_url, neo4juser, neo4jpass, file=NULL) {
+  .neo4jUpdatePropertiesHTTP = function(batch_url, neo4juser, neo4jpass) {
     
     json_start <- "["
     method <- "{\"method\" : \"POST\","
@@ -1937,11 +1884,6 @@ EpivizMetagenomicsData$methods(
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
-    } else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
     }
     
     json_start <- "["
@@ -1960,11 +1902,6 @@ EpivizMetagenomicsData$methods(
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
-    } else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
     }
 
     json_start <- "["
@@ -1984,11 +1921,6 @@ EpivizMetagenomicsData$methods(
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
-    } else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
     }
     
     json_start <- "["
@@ -2007,11 +1939,6 @@ EpivizMetagenomicsData$methods(
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
-    } else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
     }
     
 
@@ -2031,12 +1958,7 @@ EpivizMetagenomicsData$methods(
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
-    } else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
-    }
+    } 
     
     json_start <- "["
     method <- "{\"method\" : \"POST\","
@@ -2054,12 +1976,7 @@ EpivizMetagenomicsData$methods(
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
-    } else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
-    }
+    } 
     
     json_start <- "["
     method <- "{\"method\" : \"POST\","
@@ -2077,8 +1994,6 @@ EpivizMetagenomicsData$methods(
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
-    } else {
-      write(query, file=file, append = TRUE)
     }
   }
 )
