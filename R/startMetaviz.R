@@ -210,7 +210,7 @@ startMetaviz <- function(host="http://metaviz.cbcb.umd.edu",
                          ...) {
   chr="metavizr"
   start <- 1
-  end <- 1000
+  end <- 100
   app <- startEpiviz(host = host, register_function = register_function, 
                      chr=chr, start=start, end=end, ...)
   mApp <- MetavizApp$new(.url_parms=app$.url_parms, .browser_fun=app$.browser_fun,
@@ -239,7 +239,7 @@ startMetavizStandalone <- function(branch="metaviz-4.1",
                                      .register_all_metaviz_things, ...) {
   chr="metavizr"
   start=1
-  end=1000
+  end=100
   seq <- Seqinfo(seqnames=chr,
                  seqlengths=100000,
                  isCircular=FALSE,
