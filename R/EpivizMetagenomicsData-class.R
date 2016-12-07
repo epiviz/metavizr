@@ -1029,8 +1029,7 @@ EpivizMetagenomicsData$methods(
     write(";", file=file, append = TRUE)
     write("commit", file=file, append = TRUE)
   },
-  
-  toNEO4JDb=function(graph {
+  toNEO4JDb=function(graph) {
     "Save an MRexperiment object to a Neo4j Graph database."
 
     cat("Saving sample data...")
