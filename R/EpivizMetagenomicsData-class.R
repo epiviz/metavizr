@@ -1341,22 +1341,26 @@ EpivizMetagenomicsData$methods(
     }
   },
   
-  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, colLabel=NULL) {
+  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, namespace, colLabel=NULL) {
     "Save an MRexperiment object to a Neo4j Graph database."
     
     cat("Saving sample data...")
     .saveSampleDataNEO4JHTTP(batch_url, neo4juser, neo4jpass)
     cat("Done\n")
     
+    cat("Saving namespace data...")
+    .saveNameSpaceNEO4JHTTP(batch_url, neo4juser, neo4jpass, namespace)
+    cat("Done\n")
+    
     cat("Saving hierarchy...")
-    .saveHierarchyNEO4JHTTP(batch_url, neo4juser, neo4jpass)
+    .saveHierarchyNEO4JHTTP(batch_url, neo4juser, neo4jpass, namespace)
     cat("Done\n")
     
     cat("Saving Data Matrix...")
-    .saveMatrixNEO4JHTTP(batch_url, neo4juser, neo4jpass)
+    .saveMatrixNEO4JHTTP(batch_url, neo4juser, neo4jpass, namespace)
     cat("Done\n")
     
-    cat("Saving hierarchy...")
+    cat("Saving properties...")
     .neo4jUpdatePropertiesHTTP(batch_url, neo4juser, neo4jpass)
     cat("Done\n")
     
@@ -1419,7 +1423,35 @@ EpivizMetagenomicsData$methods(
     
   },
   
-  .saveHierarchyNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, file=NULL) {
+  .saveNameSpaceNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, namespace, file=NULL) {
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = paste("\"query\" : \"CREATE (:Namespace {label: {label_param}})\",", sep = "")
+    params_start <- "\"params\" : {"
+    label_param_start <- "\"label_param\" : "
+    label_param_end <- "" 
+    params_end <- "}"
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    label_param <- paste("\"", as.character(namespace), "\"", sep="")
+    
+    json_query <- paste0(json_query, method, to, body_start, query, params_start, label_param_start, label_param, label_param_end, params_end, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    else {
+      write(query, file=file, append = TRUE)
+    }
+  },
+  
+  .saveHierarchyNEO4JHTTP =function(batch_url, neo4juser, neo4jpass,  namespace, file=NULL) {
     h = taxonomyTable()
     indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
     
@@ -1581,6 +1613,8 @@ EpivizMetagenomicsData$methods(
     #id <- "\"id\" : 0}"
     json_end <- "]"
     json_query <- ""
+    namespace_param_key <- "namespace"
+    namespace_param_value <- as.character(namespace)
     
     keys = colnames(dfToNeo4j)
     
@@ -1590,17 +1624,17 @@ EpivizMetagenomicsData$methods(
     for (j in 1:nrow(dfToNeo4j)){
       row <- dfToNeo4j[j,]
       props <- "" 
-      for (i in 1:(length(keys)-1)){
+      for (i in 1:(length(keys))){
         if  (typeof(keys[i]) == "numeric")
           props <- paste(props, "\"", keys[i], "\"", " : ", "\"", gsub("'", "",row[, keys[i]]), "\"", ", ",sep="")
         else
           props <- paste(props, "\"", keys[i], "\"", " : \"", gsub("'", "",row[, keys[i]]), "\", ", sep="")
       }
       i = length(keys)
-
-      props <- paste(props, "\"", keys[i], "\"", " : \"", gsub("'", "",row[, keys[i]]), "\"", sep="")
-      writeBatchOut <- j%%1000 == 0
       
+      props <- paste(props, "\"", namespace_param_key, "\"", " : \"", namespace_param_value, "\"", sep="")
+      
+      writeBatchOut <- j%%1000 == 0
       if (j <= nrow(dfToNeo4j)-1){
         if (writeBatchOut){
           id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
@@ -1650,13 +1684,49 @@ EpivizMetagenomicsData$methods(
       }
     }
     
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    query = paste("\"query\" : \"MATCH (ns:Namespace {label:{namespace_param}}) MATCH (fNode:Feature {id: {root_id}, namespace: {namespace_param}}) CREATE (ns)-[:NAMESPACE_OF]->(fNode)\",", sep = "")
+    params_start <- "\"params\" : {"
+    
+    namespace_param_start <- "\"namespace_param\" : "
+    namespace_param_end <- ","
+    
+    root_id_param_start <- "\"root_id\" : "
+    root_id_param_end <- "" 
+    
+    params_end <- "}"
+    body_end <- "},"
+    id <- "\"id\" : 0}"
+    json_end <- "]"
+    json_query <- ""
+    root_id_param <- paste("\"", "0-0", "\"", sep="")
+    
+    namespace_param <- paste("\"", as.character(namespace), "\"", sep="")
+    
+    json_query <- paste0(json_query, method, to, body_start, query, params_start, namespace_param_start, namespace_param, namespace_param_end, root_id_param_start, root_id_param, root_id_param_end, params_end, body_end, id)
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    else {
+      write(query, file=file, append = TRUE)
+    }
     
     json_start <- "["
     method <- "{\"method\" : \"POST\","
     to <- "\"to\" : \"cypher\","
     body_start <- "\"body\" : {"
-    query <- "\"query\" : \"MATCH (fParent:Feature {id : {parent_id}}) MATCH (f:Feature {id : {child_id}}) CREATE (fParent)-[:PARENT_OF]->(f)\","
+    query <- "\"query\" : \"MATCH (fParent:Feature {id : {parent_id}, namespace: {namespace_param}}) MATCH (f:Feature {id : {child_id}, namespace: {namespace_param}}) CREATE (fParent)-[:PARENT_OF]->(f)\","
     params_start <- "\"params\" : {"
+    
+    namespace_param_start <- "\"namespace_param\" : "
+    namespace_param_end <- ","
+    
     parentid_start <- "\"parent_id\" : "
     parentid_end <- ","
     childid_start <- "\"child_id\" : "
@@ -1666,6 +1736,7 @@ EpivizMetagenomicsData$methods(
     #id <- "\"id\" : 0}"
     json_end <- "]"
     json_query <- ""
+    namespace_param <- paste("\"", as.character(namespace), "\"", sep="")
     
     cypherCount = 0
     id_counter <- 0
@@ -1678,16 +1749,16 @@ EpivizMetagenomicsData$methods(
       if (j <= nrow(dfToNeo4j)-1){
         if (writeBatchOut){
           id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-          json_query <- paste0(json_query, method, to, body_start, query, params_start, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
+          json_query <- paste0(json_query, method, to, body_start, query, params_start, namespace_param_start, namespace_param, namespace_param_end, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
         }
         else {
           id <- paste("\"id\": ", as.character(id_counter), "},", sep="")
-          json_query <- paste0(json_query, method, to, body_start, query, params_start, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
+          json_query <- paste0(json_query, method, to, body_start, query, params_start, namespace_param_start, namespace_param, namespace_param_end, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
         }
       }
       else {
         id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-        json_query <- paste0(json_query, method, to, body_start, query, params_start, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
+        json_query <- paste0(json_query, method, to, body_start, query, params_start, namespace_param_start, namespace_param, namespace_param_end, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
       }
       id_counter <- id_counter + 1
     
@@ -1729,8 +1800,12 @@ EpivizMetagenomicsData$methods(
     method <- "{\"method\" : \"POST\","
     to <- "\"to\" : \"cypher\","
     body_start <- "\"body\" : {"
-    query = paste("\"query\" : \"MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth: {depth_param}}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)\",", sep = "")
+    query = paste("\"query\" : \"MATCH (fNode:Feature {namespace: {namespace_param}})-[:PARENT_OF*]->(fLeaf:Feature {depth: {depth_param}, namespace: {namespace_param} }) CREATE (fNode)-[:LEAF_OF]->(fLeaf)\",", sep = "")
     params_start <- "\"params\" : {"
+
+    namespace_param_start <- "\"namespace_param\" : "
+    namespace_param_end <- ","
+
     depth_param_start <- "\"depth_param\" : "
     depth_param_end <- "" 
     params_end <- "}"
@@ -1739,8 +1814,10 @@ EpivizMetagenomicsData$methods(
     json_end <- "]"
     json_query <- ""
     depth_param <- paste("\"", as.character(length(.levels) - 1), "\"", sep="")
+    namespace_param <- paste("\"", as.character(namespace), "\"", sep="")
     
-    json_query <- paste0(json_query, method, to, body_start, query, params_start, depth_param_start, depth_param, depth_param_end, params_end, body_end, id)
+        
+    json_query <- paste0(json_query, method, to, body_start, query, params_start, namespace_param_start, namespace_param, namespace_param_end, depth_param_start, depth_param, depth_param_end, params_end, body_end, id)
     query_final <- paste0(json_start, json_query, json_end)
     .self$.json_query <- query_final
     if(!is.null(batch_url)) {
@@ -1750,14 +1827,16 @@ EpivizMetagenomicsData$methods(
     else {
       write(query, file=file, append = TRUE)
     }
-    
    
     json_start <- "["
     method <- "{\"method\" : \"POST\","
     to <- "\"to\" : \"cypher\","
     body_start <- "\"body\" : {"
-    query = paste("\"query\" : \"MATCH (fLeaf:Feature {depth: {depth_param}}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)\",", sep = "")
+    query = paste("\"query\" : \"MATCH (fLeaf:Feature {depth: {depth_param}, namespace: {namespace_param}}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)\",", sep = "")
     params_start <- "\"params\" : {"
+    namespace_param_start <- "\"namespace_param\" : "
+    namespace_param_end <- ","
+    
     depth_param_start <- "\"depth_param\" : "
     depth_param_end <- "" 
     params_end <- "}"
@@ -1766,8 +1845,9 @@ EpivizMetagenomicsData$methods(
     json_end <- "]"
     json_query <- ""
     depth_param <- paste("\"", as.character(length(.levels) - 1), "\"", sep="")
+    namespace_param <- paste("\"", as.character(namespace), "\"", sep="")
     
-    json_query <- paste0(json_query, method, to, body_start, query, params_start, depth_param_start, depth_param, depth_param_end, params_end, body_end, id)
+    json_query <- paste0(json_query, method, to, body_start, query, params_start, namespace_param_start, namespace_param, namespace_param_end, depth_param_start, depth_param, depth_param_end, params_end, body_end, id)
     query_final <- paste0(json_start, json_query, json_end)
     .self$.json_query <- query_final
     if(!is.null(batch_url)) {
@@ -1780,15 +1860,18 @@ EpivizMetagenomicsData$methods(
 
   },
   
-  .saveMatrixNEO4JHTTP = function(batch_url, neo4juser, neo4jpass, file=NULL) {
+  .saveMatrixNEO4JHTTP = function(batch_url, neo4juser, neo4jpass,  namespace, file=NULL) {
     valuesToNeo4j = .getValueTable()
     
     json_start <- "["
     method <- "{\"method\" : \"POST\","
     to <- "\"to\" : \"cypher\","
     body_start <- "\"body\" : {"
-    query <- "\"query\" : \"MATCH (f:Feature {id : {node_id}}) MATCH (s:Sample {id: {sample_id}}) CREATE (s)-[:VALUE {val: {value_param}}]->(f)\","
+    query <- "\"query\" : \"MATCH (f:Feature {id : {node_id}, namespace: {namespace_param}}) MATCH (s:Sample {id: {sample_id}}) CREATE (s)-[:VALUE {val: {value_param}}]->(f)\","
     params_start <- "\"params\" : {"
+
+    namespace_param_start <- "\"namespace_param\" : "
+    namespace_param_end <- ","
     nodeid_start <- "\"node_id\" : "
     nodeid_end <- ","
     sampleid_start <- "\"sample_id\" : "
@@ -1800,6 +1883,8 @@ EpivizMetagenomicsData$methods(
     #id <- "\"id\" : 0}"
     json_end <- "]"
     json_query <- ""
+    labelid <- paste("\"", as.character(namespace), "\"", sep="")
+    namespace_param <- paste("\"", as.character(namespace), "\"", sep="")
     
     cypherCount = 0
     id_counter <- 0
@@ -1813,16 +1898,16 @@ EpivizMetagenomicsData$methods(
       if (j <= nrow(valuesToNeo4j)-1){
         if (writeBatchOut){
           id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-          json_query <- paste0(json_query, method, to, body_start, query, params_start, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, val_start, val, val_end, params_end, body_end, id)
+          json_query <- paste0(json_query, method, to, body_start, query, params_start, namespace_param_start, namespace_param, namespace_param_end, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, val_start, val, val_end, params_end, body_end, id)
         }
         else {
           id <- paste("\"id\": ", as.character(id_counter), "},", sep="")
-          json_query <- paste0(json_query, method, to, body_start, query, params_start, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, val_start, val, val_end, params_end, body_end, id)
+          json_query <- paste0(json_query, method, to, body_start, query, params_start, namespace_param_start, namespace_param, namespace_param_end, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, val_start, val, val_end, params_end, body_end, id)
         }
       }
       else {
         id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-        json_query <- paste0(json_query, method, to, body_start, query, params_start, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, val_start, val, val_end, params_end, body_end, id)
+        json_query <- paste0(json_query, method, to, body_start, query, params_start, namespace_param_start, namespace_param, namespace_param_end, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, val_start, val, val_end, params_end, body_end, id)
       }
       id_counter <- id_counter + 1
       
