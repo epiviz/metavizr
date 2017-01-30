@@ -2,7 +2,7 @@
 % Please edit documentation in R/startMetaviz.R
 \name{startMetavizStandalone}
 \alias{startMetavizStandalone}
-\title{Start metaviz app in standalone (locally) and create \code{\link[epivizr]{EpivizApp}} object to manage connection.}
+\title{Start metaviz app in standalone (locally) and create \code{\link[metavizr]{MetavizApp}} object to manage connection.}
 \usage{
 startMetavizStandalone(branch = "metaviz-4.1",
   register_function = .register_all_metaviz_things, ...)
@@ -15,10 +15,10 @@ startMetavizStandalone(branch = "metaviz-4.1",
 \item{...}{additional parameters passed to \code{\link[epivizrStandalone]{startStandalone}}.}
 }
 \value{
-An object of class \code{\link{EpivizApp}}
+An object of class \code{\link{MetavizApp}}
 }
 \description{
-Start metaviz app in standalone (locally) and create \code{\link[epivizr]{EpivizApp}} object to manage connection.
+Start metaviz app in standalone (locally) and create \code{\link[metavizr]{MetavizApp}} object to manage connection.
 }
 \examples{
 # see package vignette for example usage

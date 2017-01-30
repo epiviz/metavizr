@@ -2,7 +2,7 @@
 % Please edit documentation in R/startMetaviz.R
 \name{startMetaviz}
 \alias{startMetaviz}
-\title{Start metaviz app and create \code{\link{EpivizApp}} object to manage connection.}
+\title{Start metaviz app and create \code{\link[metavizr]{MetavizApp}} object to manage connection.}
 \usage{
 startMetaviz(host = "http://metaviz.cbcb.umd.edu",
   register_function = .register_all_metaviz_things, ...)
@@ -15,10 +15,10 @@ startMetaviz(host = "http://metaviz.cbcb.umd.edu",
 \item{...}{additional parameters passed to \code{\link[epivizr]{startEpiviz}}.}
 }
 \value{
-An object of class \code{\link[epivizr]{EpivizApp}}
+An object of class \code{\link[metavizr]{MetavizApp}}
 }
 \description{
-Start metaviz app and create \code{\link{EpivizApp}} object to manage connection.
+Start metaviz app and create \code{\link[metavizr]{MetavizApp}} object to manage connection.
 }
 \examples{
 # see package vignette for example usage
@@ -27,6 +27,6 @@ app$stop_app()
 
 }
 \seealso{
-\code{\link[epivizr]{EpivizApp}}
+\code{\link[metavizr]{MetavizApp}}
 }
 
