@@ -18,7 +18,8 @@ setMethod("register", "MRexperiment", function(object, columns=NULL, ...) {
 #' @param ... Additonal arguments passed to object constructors
 #' @return An \code{\link{phyloseq-class}} object 
 #' @import metagenomeSeq
-#' @import phyloseq
+#' @importClassesFrom phyloseq phyloseq
+#' @importFrom phyloseq phyloseq_to_metagenomeSeq
 #' @importMethodsFrom epivizrData register
 #' 
 setMethod("register", "phyloseq", function(object, ...) {

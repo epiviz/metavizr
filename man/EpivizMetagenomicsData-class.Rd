@@ -22,6 +22,8 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 \item{\code{toNEO4JDbHTTP(batch_url, neo4juser, neo4jpass)}}{Save an MRexperiment object to a Neo4j Graph database.}
 
+\item{\code{toNEO4JDbHTTP(batch_url, neo4juser, neo4jpass, datasource, colLabel = NULL)}}{Save an MRexperiment object to a Neo4j Graph database.}
+
 \item{\code{toNEO4jDump(filePath = "~/", fileName = "neo4j_dump.cypher")}}{Save an MRexperiment object to a Neo4j Graph database. set the location of the output file with fileName and filePath.}
 
 \item{\code{update(new_object, send_request = TRUE)}}{Update underlying data object with new object}
