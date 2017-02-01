@@ -4,6 +4,7 @@
 #' \code{\link[metagenomeSeq]{MRexperiment-class}} objects.
 #' @importClassesFrom epivizrData EpivizData
 #' @importFrom methods new
+#' @importFrom vegan diversity
 #' @import RNeo4j
 #' @exportClass EpivizMetagenomicsData
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
@@ -604,18 +605,15 @@ EpivizMetagenomicsData$methods(
   },
   getAlphaDiversity=function(measurements, seqName = '', start, end) {
     df <- .self$.counts[,measurements]
-    print(df)
-    print(colnames(df))
 
     alpha_diversity <- diversity(t(df), index = "shannon")
-    print(alpha_diversity)
 
     data <- list()
     for (row in 1:length(alpha_diversity)) {
       temp <- list()
       temp$sample_id = colnames(df)[row]
-      temp$alphaDiversity = alpha_diversity[row]
-      annotation = as.list(.self$.sampleAnnotation[colnames(df[row]),])
+      temp$alphaDiversity = unname(alpha_diversity[row])
+      annotation = as.list(.self$.sampleAnnotation[temp$sample_id,])
       for (anno in names(annotation)) {
         temp[[anno]] = annotation[[anno]]
       }

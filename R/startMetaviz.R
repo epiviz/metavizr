@@ -139,7 +139,7 @@
     
   })
   
-  app$server$register_action("getAlphaDiversity", function(request_data) {
+  app$server$register_action("getDiversity", function(request_data) {
     
     measurementsList <- request_data$measurements
     result <- lapply(names(measurementsList), function(m) {
