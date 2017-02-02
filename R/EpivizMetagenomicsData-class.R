@@ -1419,18 +1419,75 @@ EpivizMetagenomicsData$methods(
     
   },
   
-  .saveSampleDataNEO4JHTTP =function(batch_url, neo4juser, neo4jpass) {
     
+  .buildBatchJSON = function(query_in, param_list, id_in=0, id_last=TRUE, full_query=TRUE,json_query_in=NULL, params_complete=FALSE){
     json_start <- "["
     method <- "{\"method\" : \"POST\","
     to <- "\"to\" : \"cypher\","
     body_start <- "\"body\" : {"
-    query <- "\"query\" : \"CREATE (:Sample {props})\","
     params_start <- "\"params\" : {"
-    props_start <- "\"props\" : {"
-    props_end <- "}"
     params_end <- "}"
     body_end <- "},"
+    #id <- "\"id\" : 0}"
+    if(id_last){
+     id <- paste("\"id\": ", as.character(id_in), "}", sep="")
+    }
+    else{
+      id <- paste("\"id\": ", as.character(id_in), "},", sep="")
+    }
+    json_end <- "]"
+    json_query <- ""
+    if(is.null(json_query_in)){
+      json_query <- ""
+    }
+    else{
+      json_query <- json_query_in
+    }
+    params = ""
+
+    if(is.null(param_list)){
+      query = paste("\"query\" : \"", query_in, "\"", sep = "")
+      json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
+      query_final <- paste0(json_start, json_query, json_end)
+      print(query_final)
+      .self$.json_query <- query_final
+      return(query_final)
+    }
+    
+    query = paste("\"query\" : \"", query_in, "\",", sep = "")
+    for(k in seq(1, length(param_list))){
+      if(k == length(param_list)){
+        if(params_complete){
+          params <- paste0(params, "\"", names(param_list[k]), "\" : ", unlist(unname(param_list[k])), "")
+          }
+        else{
+          params <- paste0(params, "\"", names(param_list[k]), "\" : {", unlist(unname(param_list[k])), "}")
+        }
+      }
+      else{
+        if(params_complete){
+          params <- paste0(params, "\"", names(param_list[k]), "\" : ", unlist(unname(param_list[k])), ",")
+        }
+        else{
+          params <- paste0(params, "\"", names(param_list[k]), "\" : {\"", unlist(unname(param_list[k])), "\"}", ",")
+        }
+      }
+    }
+    json_query <- paste0(json_query, method, to, body_start, query, params_start, params, params_end, body_end, id)
+    print(json_query)
+    if(!full_query){
+      return(json_query)
+    }
+    query_final <- paste0(json_start, json_query, json_end)
+    print(query_final)
+    .self$.json_query <- query_final
+    return(query_final)
+  },
+  
+  .saveSampleDataNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, file=NULL) {
+    
+    json_start <- "["
+    query <- "CREATE (:Sample {props})"
 
     json_end <- "]"
     json_query <- ""
@@ -1454,13 +1511,12 @@ EpivizMetagenomicsData$methods(
       else
         props = paste(props, "\"", keys[i], "\"", " : \"", gsub("'", "",row[, keys[i]]), "\"", sep="")
       
+      params <- list("props"=props)
       if (id_counter < nrow(sampleAnnotationToNeo4j)-1){
-        id <- paste("\"id\": ", as.character(id_counter), "},", sep="")
-        json_query <- paste0(json_query, method, to, body_start, query, params_start, props_start, props, props_end, params_end, body_end, id)
+         json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = FALSE, full_query = FALSE, json_query_in = json_query)
       }
       else {
-        id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-        json_query <- paste0(json_query, method, to, body_start, query, params_start, props_start, props, props_end, params_end, body_end, id)        
+        json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query)
       }
       id_counter <- id_counter + 1
     }
@@ -1473,24 +1529,10 @@ EpivizMetagenomicsData$methods(
   },
   
   .saveDataSourceNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, datasource, file=NULL) {
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = paste("\"query\" : \"CREATE (:Datasource {label: {label_param}})\",", sep = "")
-    params_start <- "\"params\" : {"
-    label_param_start <- "\"label_param\" : "
-    label_param_end <- "" 
-    params_end <- "}"
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
-    label_param <- paste("\"", as.character(datasource), "\"", sep="")
+    query <- "CREATE (:Datasource {label: {label_param}})"
+    params <- list(label_param=paste("\"", as.character(datasource), "\"", sep=""))
     
-    json_query <- paste0(json_query, method, to, body_start, query, params_start, label_param_start, label_param, label_param_end, params_end, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
+    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
@@ -1650,23 +1692,13 @@ EpivizMetagenomicsData$methods(
     dfToNeo4j['id'] = unlist(uniqueIds)
     
     json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query <- "\"query\" : \"CREATE (:Feature {props})\","
-    params_start <- "\"params\" : {"
-    props_start <- "\"props\" : {"
-    props_end <- "}"
-    params_end <- "}"
-    body_end <- "},"
-
     json_end <- "]"
-    json_query <- ""
     datasource_param_key <- "datasource"
     datasource_param_value <- as.character(datasource)
     
     keys = colnames(dfToNeo4j)
-    
+    query <- "CREATE (:Feature {props})"
+    json_query <- ""
     cypherCount = 0
     id_counter <- 0
     
@@ -1682,21 +1714,19 @@ EpivizMetagenomicsData$methods(
       i = length(keys)
       
       props <- paste(props, "\"", datasource_param_key, "\"", " : \"", datasource_param_value, "\"", sep="")
+      params <- list("props"=props)
       
-      writeBatchOut <- j%%1000 == 0
+      writeBatchOut <- j%%50 == 0
       if (j <= nrow(dfToNeo4j)-1){
         if (writeBatchOut){
-          id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-          json_query <- paste0(json_query, method, to, body_start, query, params_start, props_start, props, props_end, params_end, body_end, id)
+            json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query)
         }
         else {
-          id <- paste("\"id\": ", as.character(id_counter), "},", sep="")
-          json_query <- paste0(json_query, method, to, body_start, query, params_start, props_start, props, props_end, params_end, body_end, id)
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = FALSE, full_query = FALSE, json_query_in = json_query)
         }
       }
       else {
-        id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-        json_query <- paste0(json_query, method, to, body_start, query, params_start, props_start, props, props_end, params_end, body_end, id)        
+        json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query)
       }
       id_counter <- id_counter + 1
       
@@ -1732,32 +1762,11 @@ EpivizMetagenomicsData$methods(
         cypherCount = 0
       }
     }
+
+    query <- "MATCH (ds:Datasource {label:{datasource_param}}) MATCH (fNode:Feature {id: {root_id}, datasource: {datasource_param}}) CREATE (ds)-[:DATASOURCE_OF]->(fNode)"
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), root_id=paste("\"", "0-0", "\"", sep=""))
+    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
     
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = paste("\"query\" : \"MATCH (ds:Datasource {label:{datasource_param}}) MATCH (fNode:Feature {id: {root_id}, datasource: {datasource_param}}) CREATE (ds)-[:DATASOURCE_OF]->(fNode)\",", sep = "")
-    params_start <- "\"params\" : {"
-    
-    datasource_param_start <- "\"datasource_param\" : "
-    datasource_param_end <- ","
-    
-    root_id_param_start <- "\"root_id\" : "
-    root_id_param_end <- "" 
-    
-    params_end <- "}"
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
-    root_id_param <- paste("\"", "0-0", "\"", sep="")
-    
-    datasource_param <- paste("\"", as.character(datasource), "\"", sep="")
-    
-    json_query <- paste0(json_query, method, to, body_start, query, params_start, datasource_param_start, datasource_param, datasource_param_end, root_id_param_start, root_id_param, root_id_param_end, params_end, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
@@ -1767,27 +1776,11 @@ EpivizMetagenomicsData$methods(
     }
     
     json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query <- "\"query\" : \"MATCH (fParent:Feature {id : {parent_id}, datasource: {datasource_param}}) MATCH (f:Feature {id : {child_id}, datasource: {datasource_param}}) CREATE (fParent)-[:PARENT_OF]->(f)\","
-    params_start <- "\"params\" : {"
-    
-    datasource_param_start <- "\"datasource_param\" : "
-    datasource_param_end <- ","
-    
-    parentid_start <- "\"parent_id\" : "
-    parentid_end <- ","
-    
-    childid_start <- "\"child_id\" : "
-    childid_end <- ""
-    params_end <- "}"
-    body_end <- "},"
+    query <- "MATCH (fParent:Feature {id : {parent_id}, datasource: {datasource_param}}) MATCH (f:Feature {id : {child_id}, datasource: {datasource_param}}) CREATE (fParent)-[:PARENT_OF]->(f)"
 
     json_end <- "]"
     json_query <- ""
-    datasource_param <- paste("\"", as.character(datasource), "\"", sep="")
-    
+
     cypherCount = 0
     id_counter <- 0
     
@@ -1795,20 +1788,20 @@ EpivizMetagenomicsData$methods(
       row <- dfToNeo4j[j,]
       parentid <- paste("\"", row$parentId, "\"", sep="")
       childid <- paste("\"", row$id, "\"", sep="")
-      writeBatchOut <- j%%1000 == 0
+      writeBatchOut <- j%%50 == 0
       if (j <= nrow(dfToNeo4j)-1){
         if (writeBatchOut){
-          id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-          json_query <- paste0(json_query, method, to, body_start, query, params_start, datasource_param_start, datasource_param, datasource_param_end, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
+          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid)
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
         }
         else {
-          id <- paste("\"id\": ", as.character(id_counter), "},", sep="")
-          json_query <- paste0(json_query, method, to, body_start, query, params_start, datasource_param_start, datasource_param, datasource_param_end, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
+          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid)
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = FALSE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
         }
       }
       else {
-        id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-        json_query <- paste0(json_query, method, to, body_start, query, params_start, datasource_param_start, datasource_param, datasource_param_end, parentid_start, parentid, parentid_end, childid_start, childid, childid_end, params_end, body_end, id)
+        params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid)
+        json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
       }
       id_counter <- id_counter + 1
     
@@ -1832,30 +1825,10 @@ EpivizMetagenomicsData$methods(
       stop_for_status(r)
     }
 
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = paste("\"query\" : \"MATCH (fNode:Feature {datasource: {datasource_param}})-[:PARENT_OF*]->(fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param} }) CREATE (fNode)-[:LEAF_OF]->(fLeaf)\",", sep = "")
-    params_start <- "\"params\" : {"
-
-    datasource_param_start <- "\"datasource_param\" : "
-    datasource_param_end <- ","
-
-    depth_param_start <- "\"depth_param\" : "
-    depth_param_end <- "" 
-    params_end <- "}"
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
-    depth_param <- paste("\"", as.character(length(.levels) - 1), "\"", sep="")
-    datasource_param <- paste("\"", as.character(datasource), "\"", sep="")
+    query <- "MATCH (fNode:Feature {datasource: {datasource_param}})-[:PARENT_OF*]->(fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param} }) CREATE (fNode)-[:LEAF_OF]->(fLeaf)"
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.levels) - 1), "\"", sep=""))
+    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
     
-        
-    json_query <- paste0(json_query, method, to, body_start, query, params_start, datasource_param_start, datasource_param, datasource_param_end, depth_param_start, depth_param, depth_param_end, params_end, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
@@ -1863,29 +1836,11 @@ EpivizMetagenomicsData$methods(
     else {
       write(query, file=file, append = TRUE)
     }
-   
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = paste("\"query\" : \"MATCH (fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param}}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)\",", sep = "")
-    params_start <- "\"params\" : {"
-    datasource_param_start <- "\"datasource_param\" : "
-    datasource_param_end <- ","
+
+    query <- "MATCH (fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param}}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)"
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.levels) - 1), "\"", sep=""))
+    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
     
-    depth_param_start <- "\"depth_param\" : "
-    depth_param_end <- "" 
-    params_end <- "}"
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
-    depth_param <- paste("\"", as.character(length(.levels) - 1), "\"", sep="")
-    datasource_param <- paste("\"", as.character(datasource), "\"", sep="")
-    
-    json_query <- paste0(json_query, method, to, body_start, query, params_start, datasource_param_start, datasource_param, datasource_param_end, depth_param_start, depth_param, depth_param_end, params_end, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
@@ -1896,29 +1851,10 @@ EpivizMetagenomicsData$methods(
     valuesToNeo4j = .getValueTable()
     
     json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query <- "\"query\" : \"MATCH (f:Feature {id : {node_id}, datasource: {datasource_param}}) MATCH (s:Sample {id: {sample_id}}) CREATE (s)-[:COUNT {val: {count_param}}]->(f)\","
-    params_start <- "\"params\" : {"
+    query <- "MATCH (f:Feature {id : {node_id}, datasource: {datasource_param}}) MATCH (s:Sample {id: {sample_id}}) CREATE (s)-[:COUNT {val: {count_param}}]->(f)"
 
-    datasource_param_start <- "\"datasource_param\" : "
-    datasource_param_end <- ","
-    
-    nodeid_start <- "\"node_id\" : "
-    nodeid_end <- ","
-    
-    sampleid_start <- "\"sample_id\" : "
-    sampleid_end <- ","
-    
-    count_start <- "\"count_param\" : "
-    count_end <- ""
-    params_end <- "}"
-    body_end <- "},"
     json_end <- "]"
     json_query <- ""
-    
-    datasource_param <- paste("\"", as.character(datasource), "\"", sep="")
     
     cypherCount = 0
     id_counter <- 0
@@ -1931,17 +1867,17 @@ EpivizMetagenomicsData$methods(
       writeBatchOut <- j%%1000 == 0
       if (j <= nrow(valuesToNeo4j)-1){
         if (writeBatchOut){
-          id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-          json_query <- paste0(json_query, method, to, body_start, query, params_start, datasource_param_start, datasource_param, datasource_param_end, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, count_start, count, count_end, params_end, body_end, id)
+          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), node_id=nodeid, sample_id=sampleid, count_param=count)
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
         }
         else {
-          id <- paste("\"id\": ", as.character(id_counter), "},", sep="")
-          json_query <- paste0(json_query, method, to, body_start, query, params_start, datasource_param_start, datasource_param, datasource_param_end, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, count_start, count, count_end, params_end, body_end, id)
+          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), node_id=nodeid, sample_id=sampleid, count_param=count)
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = FALSE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
         }
       }
       else {
-        id <- paste("\"id\": ", as.character(id_counter), "}", sep="")
-        json_query <- paste0(json_query, method, to, body_start, query, params_start, datasource_param_start, datasource_param, datasource_param_end, nodeid_start, nodeid, nodeid_end, sampleid_start, sampleid, sampleid_end, count_start, count, count_end, params_end, body_end, id)
+        params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), node_id=nodeid, sample_id=sampleid, count_param=count)
+        json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
       }
       id_counter <- id_counter + 1
       
@@ -1971,129 +1907,57 @@ EpivizMetagenomicsData$methods(
   
   .neo4jUpdatePropertiesHTTP = function(batch_url, neo4juser, neo4jpass) {
     
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = "\"query\" : \"MATCH (f:Feature) SET f.depth = toInt(f.depth) SET f.start = toInt(f.start) SET f.end = toInt(f.end) SET f.leafIndex = toInt(f.leafIndex) SET f.nchildren = toInt(f.nchildren) SET f.nleaves = toInt(f.nleaves) SET f.order = toInt(f.order)\""
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
+    query <- "MATCH (f:Feature) SET f.depth = toInt(f.depth) SET f.start = toInt(f.start) SET f.end = toInt(f.end) SET f.leafIndex = toInt(f.leafIndex) SET f.nchildren = toInt(f.nchildren) SET f.nleaves = toInt(f.nleaves) SET f.order = toInt(f.order)"
+    query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
     
-    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
-    if(!is.null(batch_url)) {
-      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
-      stop_for_status(r)
-    }
-    
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = "\"query\" : \"MATCH ()-[c:COUNT]->() SET c.val = toFloat(c.val)\""
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
-    
-    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
 
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = "\"query\" : \"CREATE INDEX ON :Feature (depth)\""
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
+    query <- "MATCH ()-[c:COUNT]->() SET c.val = toFloat(c.val)"
+    query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
     
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
 
-    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
+    query <- "CREATE INDEX ON :Feature (depth)"
+    query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
+    
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
     
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = "\"query\" : \"CREATE INDEX ON :Feature (start)\""
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
+    query <- "CREATE INDEX ON :Feature (start)"
+    query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
     
-    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
-    
 
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = "\"query\" : \"CREATE INDEX ON :Feature (end)\""
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
+    query <- "CREATE INDEX ON :Feature (end)"
+    query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
     
-    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     } 
     
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = "\"query\" : \"CREATE INDEX ON :Feature (id)\""
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
+    query <- "CREATE INDEX ON :Feature (id)"
+    query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
     
-    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     } 
     
-    json_start <- "["
-    method <- "{\"method\" : \"POST\","
-    to <- "\"to\" : \"cypher\","
-    body_start <- "\"body\" : {"
-    query = "\"query\" : \"CREATE INDEX ON :Sample (id)\""
-    body_end <- "},"
-    id <- "\"id\" : 0}"
-    json_end <- "]"
-    json_query <- ""
+    query <- "CREATE INDEX ON :Sample (id)"
+    query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
     
-    json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
-    query_final <- paste0(json_start, json_query, json_end)
-    .self$.json_query <- query_final
     if(!is.null(batch_url)) {
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
