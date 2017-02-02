@@ -6,6 +6,7 @@
 #' @importFrom methods new
 #' @importFrom vegan diversity
 #' @import RNeo4j
+#' @import httr
 #' @exportClass EpivizMetagenomicsData
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   contains = "EpivizData",
