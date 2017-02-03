@@ -6,7 +6,7 @@ Authors@R: c( person("Hector", "Corrada Bravo", email="hcorrada@gmail.com", role
   person("Justin", "Wagner", email="jwagner@cs.umd.edu", role=c("aut")),
   person("Jayaram", "Kancherla", email="jayaram.kancherla@gmail.com", role=c("aut")),
   person("Joseph", "Paulson", email="nosson@gmail.com", role=c("aut")))
-License: MIT + file LICENSE
+License: Artistic-2.0
 Title: R Interface to the metaviz web app for interactive metagenomics data analysis and visualization
 Description: This package provides Websocket communication to the
     metaviz web app (http://metaviz.cbcb.umd.edu) for interactive
