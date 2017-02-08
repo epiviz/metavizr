@@ -1450,7 +1450,6 @@ EpivizMetagenomicsData$methods(
       query = paste("\"query\" : \"", query_in, "\"", sep = "")
       json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
       query_final <- paste0(json_start, json_query, json_end)
-      print(query_final)
       .self$.json_query <- query_final
       return(query_final)
     }
@@ -1475,12 +1474,10 @@ EpivizMetagenomicsData$methods(
       }
     }
     json_query <- paste0(json_query, method, to, body_start, query, params_start, params, params_end, body_end, id)
-    print(json_query)
     if(!full_query){
       return(json_query)
     }
     query_final <- paste0(json_start, json_query, json_end)
-    print(query_final)
     .self$.json_query <- query_final
     return(query_final)
   },
