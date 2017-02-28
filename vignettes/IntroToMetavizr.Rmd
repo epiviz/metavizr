@@ -28,7 +28,7 @@ require(msd16s)
 The connection to `Metaviz` is managed through a session manager object of class `EpivizApp`. We can create this object and open `Metaviz` using the `startMetaviz` function.
 
 ```{r, eval=FALSE, echo=TRUE}
-app <- startMetaviz()
+app7 <- startMetaviz(port=9000)
 
 ```
 
@@ -162,7 +162,6 @@ First, import the etec16s dataset, select sample data from the first 9 days, and
 library(etec16s)
 data(etec16s)
 etec16s <- etec16s[,-which(pData(etec16s)$Day>9)]
-featuresOfInterest <- c('Escherichia/Shigella','Faecalibacterium prausnitzii')
 ```
 
 Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
@@ -182,22 +181,21 @@ timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
                              B=1)
 ```
 
-For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `toMRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
+For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `ts2MRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
 
 ```{r, eval=TRUE}
-feature_order2 <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+feature_data <- featureData(aggregateByTaxonomy(etec16s, lvl="Species", feature_order = feature_order[1:7])[names(timeSeriesFits)[-which(names(timeSeriesFits) == 'call')],])
 
-splinesMRexp <- ts2MRexperiment(timeSeriesFits, feature_data = featureData(aggregateByTaxonomy(etec16s, lvl="Species", feature_order = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
-etec16s_species <- aggregateByTaxonomy(etec16s, lvl="Species", feature_order = feature_order)
+splinesMRexp <- ts2MRexperiment(timeSeriesFits, feature_data = feature_data, sampleNames = timeSeriesFits[[1]]$fit$timePoints)
 ```
 
 Finally, we add the MRexperiment as a measurement for Metaviz to plot.
 
 ```{r, eval=TRUE}
-splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(MRcounts(splinesMRexp[i,]))) >= 2})
+splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(MRcounts(splinesMRexp[i,]))) >= 2.5})
 splines_to_plot_indices <- which(splines_to_plot == TRUE)
 
-ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base", control=metavizControl(norm = FALSE, aggregateAtDepth = 6), feature_order = feature_order2)
+ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base", control=metavizControl(norm = FALSE, aggregateAtDepth = 6), feature_order = feature_order[1:7])
 splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines", control = metavizControl(norm=FALSE, aggregateAtDepth = 6))
 splineMeasurements <- splineObj$get_measurements()
 splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
