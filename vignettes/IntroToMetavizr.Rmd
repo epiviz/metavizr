@@ -178,7 +178,7 @@ timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
                              lvl="Species",
                              feature_order = feature_order,
                              C=0.3,
-                             B=1)
+                             B=1, seed=1234)
 ```
 
 For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `ts2MRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
