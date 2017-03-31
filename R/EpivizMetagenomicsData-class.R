@@ -224,10 +224,8 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       nodeSelections <- list()
       
       for(i in 1:length(nodes)) {
-        # if(selection_vals[i] == 0) {
           selections[[selection_keys[i]]] <- selection_vals[i] 
-        # }
-          
+
         if(selection_vals[i] == 0) {
           nodeSelections[[selection_keys[i]]] <- selection_vals[i] 
         }
@@ -269,8 +267,6 @@ EpivizMetagenomicsData$methods(
     length(.self$.levels)
   },
   clearSelection=function(){
-    #if(!is.null(selectedLevels)) {
-      # remove current selectionTypes
       nodeList <- list()
       for (node in names(.self$.taxonomy$.selectionTypes$.)) {
         nodeList[[node]] <- 1
@@ -283,7 +279,6 @@ EpivizMetagenomicsData$methods(
       if (!is.null(.self$.mgr)) {
         .self$.mgr$.clear_datasourceGroup_cache(.self)
       }
-    #}
   },
   taxonomyTable=function() { .self$.taxonomy$taxonomyTable() },
   calcNodeId=function(rowIndex, colIndex) { .self$.taxonomy$calcNodeId(rowIndex, colIndex) },
@@ -318,6 +313,10 @@ EpivizMetagenomicsData$methods(
 # Epiviz Websockets Protocol
 EpivizMetagenomicsData$methods(
   get_default_chart_type = function() { "epiviz.ui.charts.tree.Icicle" },
+  
+  #' Get all annotation info for all samples
+  #' 
+  #' @return List of sample annotation from datasource
   get_measurements=function() {
     out <- lapply(colnames(.self$.counts), function(sample) {
       epivizrData:::EpivizMeasurement(id=sample,
@@ -333,6 +332,11 @@ EpivizMetagenomicsData$methods(
     })
     out
   },
+  
+  #' Retrieve feature hierarchy information for subtree with specified root
+  #' 
+  #' @param nodeId(character) Feature identifier with level info
+  #' @return List containing hierarchy of subtree
   getHierarchy=function(nodeId) {
     
     # clear last request ranges and values
@@ -356,6 +360,12 @@ EpivizMetagenomicsData$methods(
   
     return(resp)
   },
+  
+  #' Update internal state for hierarchy
+  #' 
+  #' @param selection (list) Node-id and selectionType pairs
+  #' @param order (character) Ordering of features
+  #' @param selectedLevels (list) Current aggregation level
   propagateHierarchyChanges=function(selection, order, selectedLevels) {
     
     # clear last requests and values
@@ -407,6 +417,14 @@ EpivizMetagenomicsData$methods(
     
     getHierarchy(.self$.lastRootId)
   },
+  
+  #' Return the sample annotation and features within the specified range and level
+  #' 
+  #' @param seqName (character) 
+  #' @param start (integer) Start of feature range to query
+  #' @param end (integer) End of feature range to query
+  #' @param metadata (character) 
+  #' @return List of annotations for a given sample and features
   getRows=function(seqName, start, end, metadata) {
     leafInfos <- .self$.getSelectedLeaves(start, end)
     leafAncestors <- lapply(leafInfos, function(info) { 
@@ -469,6 +487,14 @@ EpivizMetagenomicsData$methods(
       values = ret
     ))
   },
+  
+  #' Return the counts for a sample within the specified range
+  #' 
+  #' @param measurement (character) Samples to get counts for
+  #' @param seqName (character) 
+  #' @param start (integer) Start of feature range to query
+  #' @param end (integer) End of feature range to query
+  #' @return List of counts for sample as selected level of hierarchy
   getValues=function(measurement, seqName, start, end) {
     leafInfos <- .self$.getSelectedLeaves(start, end)
     globalStartIndex <- NULL
@@ -483,6 +509,17 @@ EpivizMetagenomicsData$methods(
     )
     return(ret)
   },
+  
+  #' Return the counts aggregated to selected nodes for the given samples
+  #' 
+  #' @param measurements (character) Samples to get counts for
+  #' @param seqName (character) 
+  #' @param start (integer) Start of feature range to query
+  #' @param end (integer) End of feature range to query
+  #' @param order (character) Ordering of nodes
+  #' @param nodeSelection (list) Node-id and selectionType pairs
+  #' @param selectedLevels (list) Current aggregation level
+  #' @return List of samples with aggregate counts per feature
   getCombined=function(measurements, 
                        seqName, start, end, 
                        order, nodeSelection, selectedLevels) {
@@ -544,6 +581,13 @@ EpivizMetagenomicsData$methods(
     
     return(result)
   },
+  
+  #' Find feature using text-based search
+  #' 
+  #' @param query (character) String of feature for which to search
+  #' @param max_results (integer) Maximum results to return
+  #' @return List of features that contain the substring query
+  #' @export
   searchTaxonomy=function(query, max_results) {
     
     results = list()
@@ -568,6 +612,15 @@ EpivizMetagenomicsData$methods(
     results <- unname(results, force=TRUE)
     return(results)
   },
+  
+  #' Compute PCA over all features for given samples
+  #' 
+  #' @param measurements (character) Samples to compute PCA over
+  #' @param seqName (character) 
+  #' @param start (integer) Start of feature range to query 
+  #' @param end (integer) End of feature range to query 
+  #' @return List of PC1, PC2, and percent variance explained for each measurements
+  #' @export
   getPCA=function(measurements, seqName = '', start, end) {
     
     x <- t(.self$.counts[,measurements])
@@ -598,6 +651,16 @@ EpivizMetagenomicsData$methods(
   
     return(result)
   },
+  
+  #' Compute alpha diversity for the given samples
+  #' 
+  #' @param measurements (character) Samples to compute alpha diversity
+  #' @param seqName (character) 
+  #' @param start (integer) Start of feature range to query 
+  #' @param end (integer) End of feature range to query 
+  #' @return List of alpha diversity for given measurements
+  #' @export
+  #' 
   getAlphaDiversity=function(measurements, seqName = '', start, end) {
     df <- .self$.counts[,measurements]
 

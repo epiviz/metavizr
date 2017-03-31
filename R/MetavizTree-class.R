@@ -1,9 +1,8 @@
-#' Taxonomy tree structure wrapper
-#'
-#' Used to manage tree-cut queries from the
+#' Taxonomy tree structure wrapper that is used to manage tree-cut queries from the
 #' Metaviz app UI. 
-#' 
-#' 
+#'
+#'
+#' @export
 MetavizTree <- setRefClass("MetavizTree",
   fields=list(
     .taxonomyTablePtr="Ptr",
