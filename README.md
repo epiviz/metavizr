@@ -22,7 +22,7 @@ browseVignettes("metavizr")
 
 ## Tutorials
 
-You can get a quick tour of metaviz here: [https://epiviz.github.io/tutorials/metaviz/overview/]https://epiviz.github.io/tutorials/metaviz/overview/
+You can get a quick tour of metaviz here: [https://epiviz.github.io/tutorials/metaviz/overview/](https://epiviz.github.io/tutorials/metaviz/overview/)
 
 ## Non-blocking
 
