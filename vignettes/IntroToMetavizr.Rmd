@@ -32,7 +32,7 @@ app <- startMetaviz()
 
 ```
 
-*NOTE:* The following commands are not visible when building the vignette.  These commands are for registering each chart type so that the vignette will work when starting a new Metaviz session using localhost.  These commands are not needed if using `startMetaviz` with default which starts a Metaviz session using http://metaviz.cbcb.umd.edu.
+*NOTE:* The following commands are not visible when building the vignette.  These commands are for registering each chart type so that the vignette will build when starting a new Metaviz session using localhost.  These commands are not needed if using `startMetaviz` with default which starts a Metaviz session using http://metaviz.cbcb.umd.edu.
 
 ```{r, eval=TRUE, echo=FALSE}
 
