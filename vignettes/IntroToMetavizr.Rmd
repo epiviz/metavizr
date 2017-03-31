@@ -117,7 +117,7 @@ feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logF
 fSelection <- generateSelection(feature_names =feature_names , aggregation_level = aggregation_level, selection_type =2)
 ```
 
-A metavizControl allows users to specify settings for charts and data analysis such as normalization and log transform.  We create a metavizControl with the featureSelection as the nodes that be found to be differentially abundant and those will be visible when creating Metaviz plots.
+A metavizControl allows users to specify settings for operating over the MRexperiment object including data analysis such as normalization and log transform.  We create a metavizControl with the featureSelection as the nodes that be found to be differentially abundant and those will be visible when creating Metaviz plots.
 
 ```{r, eval=TRUE}
 control <- metavizr::metavizControl(featureSelection = fSelection)
