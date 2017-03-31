@@ -34,7 +34,6 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .json_query = "ANY"
   ),
   methods=list(
-    # TODO use and check columns
     initialize=function(object, 
                         columns=NULL,
                         control=metavizControl(), 
@@ -76,8 +75,6 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         .self$.feature_order <- feature_order
       }
 
-      
-      # TODO: Some type checking
       .self$.taxonomy <- buildMetavizTree(object, feature_order)
       .self$.levels <- .self$.taxonomy$levels()
       .self$.maxDepth <- maxDepth
@@ -87,7 +84,6 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       taxonomy_table <- .self$.taxonomy$taxonomyTable()
       .self$.counts <- MRcounts(object[rownames(taxonomy_table),], norm=norm, log=log)
 
-      # TODO: Make this consistent with the aggregateFun
       if (is.null(minValue)) {
         minValue <- log2(min(.self$.counts) + 1)
       }
@@ -244,11 +240,9 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     },
 
     update=function(newObject, ...) {
-      # TODO
       callSuper(newObject, ...)
     },
     plot=function(...) {
-      # TODO
     }
   )
 )
@@ -436,7 +430,7 @@ EpivizMetagenomicsData$methods(
         colLabel = sapply(leafInfos, function(info) { info$node$name() }),
         ancestors = sapply(leafAncestors, function(ancestors) { 
           paste(lapply(rev(ancestors), function(node) { node$name() }), collapse=",") 
-        }), # TODO: Use tree .ancestryByDepth
+        }),
         lineage = sapply(leafAncestors, function(ancestors) { 
           paste(lapply(rev(ancestors), function(node) { node$id() }), collapse=",") 
         })
@@ -630,773 +624,22 @@ EpivizMetagenomicsData$methods(
 )
 
  EpivizMetagenomicsData$methods(
-   # TODO: do we need these MySQL functions still?
-   toMySQLDb=function(con, colLabel=NULL) {
-     "Save an MRexperiment object to a MySQL database."
-
-     # TODO: Formal log
-     cat("Saving column data...")
-     .saveColData(con, colLabel)
-     cat("Done\n")
-
-     cat("Saving row data...")
-     .saveRowData(con)
-     cat("Done\n")
-
-     cat("Saving hierarchy...")
-     .saveHierarchy(con)
-     cat("Done\n")
-
-     cat("Saving counts...")
-     .saveValues(con)
-     cat("Done\n")
-
-     cat("Saving levels...")
-     .saveLevels(con)
-     cat("Done\n")
-
-     res <- dbSendQuery(con, "RENAME TABLE `meta_values` to `values`;")
-     dbCommit(conn = con)
-
-     cat("Saving Data Matrix...")
-     .saveMatrix(con)
-     cat("Done\n")
-
-     dbDisconnect(con)
-     #odbcClose(con)
-
-   },
-  .getFieldTypes = function(data) {
-    colNames = colnames(data)
-    colTypes = sapply(colNames, function(x) dbDataType(RMySQL::MySQL(), data[[x]]))
-    colTypes = gsub("text", "VARCHAR(255)", colTypes)
-    colTypes = gsub("double", "BIGINT", colTypes)
-    
-    tableTypes = list()
-    
-    for(i in seq(length(colTypes))) {
-      tableTypes[[colNames[i]]] = colTypes[i]
-    }
-    
-    tableTypes[["row_names"]] = "VARCHAR(255)"
-    
-    tableTypes
-  },
-  .saveMatrix = function(con) {
-    
-    locationCols = c('index', 'partition', 'start', 'end')
-    
-    sql_cols = paste0("SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = '", dbGetInfo(con)$dbname , "' AND `TABLE_NAME`='row_data';")
-    
-    resultSet = dbSendQuery(con, sql_cols)
-    data = fetch(resultSet, n=-1)
-    
-    metadata_cols = setdiff(data$COLUMN_NAME, locationCols)
-    metadata_cols = sapply(metadata_cols, function(x) paste0("row_data.",x))
-    
-    fields = c("row_data.index as row", "row_data.start", "row_data.end", "row_data.partition",
-               "hierarchy.lineagelabel", "hierarchy.lineage", "hierarchy.depth",
-               "`values`.val",
-               "col_data.index as col", "col_data.id as measurement")
-    
-    fields = paste(c(fields, metadata_cols), collapse=", ")
-    
-    sql_data_matrix = paste0(
-      "CREATE TABLE data_matrix ",
-      "SELECT ",
-      fields,
-      " FROM (row_data JOIN hierarchy ON row_data.id = hierarchy.id) ",
-      " JOIN col_data ",
-      " JOIN `values` ON (row_data.index = `values`.row AND col_data.index = `values`.col) ",
-      " ORDER BY row_data.index ASC; "
-    )
-    
-    dbCommit(conn = con)
-    
-    dbSendQuery(con, sql_data_matrix)
-    dbSendQuery(con, "ALTER TABLE `data_matrix` ENGINE=MyISAM;")
-    dbSendQuery(con, "ALTER TABLE `data_matrix` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
-    dbSendQuery(con, "ALTER TABLE `data_matrix` ADD INDEX `row_idx` (`row` ASC);")
-    dbSendQuery(con, "ALTER TABLE `data_matrix` ADD INDEX `measurement_idx` (`measurement` ASC);")
-    
-    dbCommit(conn = con)
-  },
-  .saveColData=function(con, labelCol=NULL) {
-    #odbcSetAutoCommit(con, autoCommit = FALSE)
-    
-    cols = .sampleAnnotation
-    if (!is.null(labelCol)) {
-      cols$label = cols[[labelCol]]
-    }
-    cols$index = seq(dim(cols)[1]) - 1
-
-    tableFieldTypes = .getFieldTypes(cols)
-    
-    dbSendQuery(con, "DROP TABLE IF EXISTS col_data")
-    dbWriteTable(con, 
-                 value = cols, 
-                 name = "col_data", 
-                 append = TRUE, 
-                 row.names = TRUE, 
-                 field.types = tableFieldTypes)
-    dbCommit(conn = con)
-    dbSendQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `row_names` `id` VARCHAR(255) NOT NULL;")
-    #dbSendQuery(con, "ALTER TABLE `col_data` CHANGE COLUMN `index` `index` BIGINT NULL DEFAULT NULL;")
-    dbSendQuery(con, "ALTER TABLE `col_data` ADD COLUMN `label` INT NOT NULL DEFAULT 1;")
-    dbSendQuery(con, "UPDATE `col_data` SET `label` = `index`;")
-    dbSendQuery(con, "ALTER TABLE `col_data` ADD INDEX `label_idx` USING HASH (`label` ASC);")
-    dbSendQuery(con, "ALTER TABLE `col_data` ADD INDEX `index_idx` (`index` ASC) ;")
-    dbCommit(conn = con)
-  },
-  .getValueTable=function() {
-    
-    #get counts
-    counts = .counts
-    countsIndices = expand.grid(seq(dim(counts)[1]), seq(dim(counts)[2]))
-    
-    df = data.frame(row=countsIndices[,1], col=countsIndices[,2], val=as.vector(counts))
-    df = df[df$val != 0,]
-    
-    #get rows
-    h = taxonomyTable()
-    indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
-    
-    leafIds = lapply(seq(dim(h)[1]), function(i) {
-      calcNodeId(i, dim(h)[2])
-    })
-    
-    df$NodeId = leafIds[df$row]
-    df$SampleId = rownames(.sampleAnnotation)[df$col]
-    
-    df
-  },
-  .saveRowData=function(con) {
-    cat("\n  Computing taxonomy leafs...\n")
-    h = taxonomyTable()
-    pb = txtProgressBar(style=3, width=25)
-    leafIds = lapply(seq(dim(h)[1]), function(i) {
-      setTxtProgressBar(pb, i/dim(h)[1])
-      #removed e$ in case
-      calcNodeId(i, dim(h)[2])
-    })
-
-    cat("\n  Outputting to database...")
-    leafIndices = seq(dim(h)[1]) - 1
-
-    leafNames = h[,length(colnames(h))]
-
-
-    df = data.frame(label=unlist(leafNames), index=leafIndices, start=leafIndices, end=(leafIndices+1))
-    df$partition = NA
-    rownames(df) = unlist(leafIds)
-    
-    dbSendQuery(con, "DROP TABLE IF EXISTS row_data")
-    
-    tableFieldTypes = .getFieldTypes(df)
-    
-    dbWriteTable(con, value = df, name = "row_data", append = TRUE, 
-                 row.names = TRUE, 
-                 field.types = tableFieldTypes)     
-    dbCommit(conn = con)
-    dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `row_names` `id` VARCHAR(255) NOT NULL;")
-
-    dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `index_idx` USING BTREE (`index` ASC);")
-    dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
-    
-    #dbSendQuery(con, "ALTER TABLE `row_data` CHANGE COLUMN `label` `label` VARCHAR(255) NOT NULL;")
-    dbSendQuery(con, "ALTER TABLE `row_data` ADD INDEX `label_idx` USING HASH (`label`(10)) USING HASH;")
-    dbCommit(conn = con)
-  },
-
-  .saveHierarchy=function(con) {
-    h = taxonomyTable()
-    indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
-
-    cat("\n  Extracting taxonomy nodes...\n")
-    pb = txtProgressBar(style=3, width=25)
-    nodeIds = lapply(seq(dim(indexCombs)[1]), function(i) {
-      setTxtProgressBar(pb, i/dim(indexCombs)[1])
-      calcNodeId(indexCombs[i, 1], indexCombs[i, 2])
-    })
-    uniqueIds = unique(nodeIds)
-
-    cat("\n  Generating taxonomy structure...\n")
-    pb = txtProgressBar(style=3, width=25)
-    names = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      #node(nodeId)$name()
-      pair = .fromMetavizNodeId(nodeId)
-      h[pair$leafIndex+1, pair$depth+1]
-    })
-
-    cat("\n  Computing node parents...\n")
-    pb = txtProgressBar(style=3, width=25)
-    parentIds = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      node(nodeId)$parentId()
-    })
-
-    cat("\n  Computing lineages...\n")
-    pathsList = Ptr$new(list())
-    pb = txtProgressBar(style=3, width=25)
-    paths = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      parentId = parentIds[[i]]
-      if (is.null(parentId) || is.null(pathsList$.[[parentId]])) {
-        pathsList$.[[nodeId]] = nodeId
-        return(nodeId)
-      }
-      path = paste(pathsList$.[[parentId]], nodeId, sep=",")
-      pathsList$.[[nodeId]] = path
-      return(path)
-    })
-
-    cat("\n  Computing lineages labels...\n")
-    pathsLabels = Ptr$new(list())
-    pb = txtProgressBar(style=3, width=25)
-    pathsLabels = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
-
-      nodeId = uniqueIds[[i]]
-      pair = .fromMetavizNodeId(nodeId)
-      nodeName = h[pair$leafIndex+1, pair$depth+1]
-
-      parentId = parentIds[[i]]
-
-      if (is.null(parentId) || is.null(pathsList$.[[parentId]])) {
-        pathsList$.[[nodeId]] = nodeName
-        return(nodeName)
-      }
-
-      path = paste(pathsList$.[[parentId]], nodeName, sep=",")
-      pathsList$.[[nodeId]] = path
-      return(path)
-    })
-
-    cat("\n  Computing index of first leaf in node subtrees...\n")
-    pb = txtProgressBar(style=3, width=25)
-    starts = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      node(nodeId)$leafIndex()
-    })
-
-    cat("\n  Computing leaf counts in node subtrees...\n")
-    pb = txtProgressBar(style=3, width=25)
-    ends = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      node(nodeId)$nleaves() + starts[[i]]
-    })
-
-    cat("\n  Computing node depths...\n")
-    pb = txtProgressBar(style=3, width=25)
-    depths = lapply(seq(length(uniqueIds)), function(i) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      node(nodeId)$depth()
-    })
-
-    cat("\n  Computing node children counts...")
-    nchildren = list()
-    for (parentId in parentIds) {
-      if (is.null(parentId)) { next }
-      if (is.null(nchildren[[parentId]])) {
-        nchildren[[parentId]] = 0
-      }
-      nchildren[[parentId]] = nchildren[[parentId]] + 1
-    }
-    childCount = lapply(uniqueIds, function(nodeId) {
-      if (is.null(nchildren[[nodeId]])) { return(0) }
-      nchildren[[nodeId]]
-    })
-    cat("Done\n")
-
-    cat("\n  Computing nodes order...\n")
-    lastOrder = list()
-    pb = txtProgressBar(style=3, width=25)
-    orders = list()
-    for (i in seq(length(uniqueIds))) {
-      setTxtProgressBar(pb, i/length(uniqueIds))
-      parentId = parentIds[[i]]
-      nodeId = uniqueIds[[i]]
-      if (is.null(parentId)) {
-        orders[[i]] = 0
-        next
-      }
-      o = lastOrder[[parentId]]
-      if (is.null(o)) {
-        lastOrder[[parentId]] = 0
-        orders[[i]] = 0
-        next
-      }
-
-      lastOrder[[parentId]] = o + 1
-      orders[[i]] = o+1
-    }
-
-    cat("\n  Outputting to database...")
-    parentIds[[1]] = NA
-    df = data.frame(depth=unlist(depths), label=unlist(names), parentId=unlist(parentIds), lineage=unlist(paths), lineageLabel=unlist(pathsLabels), nchildren=unlist(childCount), start=unlist(starts), end=unlist(ends), leafIndex=unlist(starts), nleaves=unlist(ends)-unlist(starts), order=unlist(orders))
-    df$partition = NA
-
-    rownames(df) = unlist(uniqueIds)
-
-    dbSendQuery(con, "DROP TABLE IF EXISTS hierarchy")
-    
-    tableFieldTypes = .getFieldTypes(df)
-    
-    dbWriteTable(con, value = df, name = "hierarchy", append = TRUE, row.names = TRUE, 
-                 field.types = tableFieldTypes) 
-    dbCommit(conn = con)
-    dbSendQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `row_names` `id` VARCHAR(255) NOT NULL;")
-    # dbSendQuery(con, "UPDATE `hierarchy` SET `id` = `row_names`;")
-    dbSendQuery(con, "ALTER TABLE `hierarchy` ENGINE = MyISAM;")
-    #dbSendQuery(con, "ALTER TABLE `hierarchy` CHANGE COLUMN `partition` `partition` VARCHAR(255) NULL DEFAULT NULL;")
-    #Will do this later
-    dbSendQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `name_idx` USING HASH (`label` ASC);")
-    dbSendQuery(con, "ALTER TABLE `hierarchy` ADD INDEX `location_idx` (`partition` ASC, `start` ASC, `end` ASC);")
-    dbSendQuery(con, "ALTER TABLE `hierarchy` ADD FULLTEXT INDEX `lineage_idx` (`lineage` ASC);")
-    
-    dbCommit(conn = con)
-    },
-
-  .saveValues=function(con) {
-    counts = .counts
-    countsIndices = expand.grid(seq(dim(counts)[1]), seq(dim(counts)[2]))
-
-    df = data.frame(row=countsIndices[,1], col=countsIndices[,2], val=as.vector(counts))
-    df = df[df$val != 0,]
-
-    #requires user to change name of table to `values` after running this function
-    dbSendQuery(con, "DROP TABLE IF EXISTS meta_values")
-    dbSendQuery(con, "DROP TABLE IF EXISTS `values`")
-    
-    dbCommit(conn = con)
-    
-    tableFieldTypes = .getFieldTypes(df)
-    
-    dbWriteTable(con, value = df, name = "meta_values", append = TRUE, row.names = TRUE, 
-                 field.types = tableFieldTypes ) 
-    dbCommit(conn = con)
-    
-    dbSendQuery(con, "ALTER TABLE `meta_values` CHANGE COLUMN `row_names` `id` BIGINT NOT NULL  ;")
-    dbSendQuery(con, "ALTER TABLE `meta_values` ADD INDEX `rowcol_idx` USING BTREE (`row` ASC, `col` ASC) ;")
-    
-    dbCommit(conn = con)
-
-  },
-
-  .saveLevels=function(con) {
-    df = data.frame(depth=seq(length(.levels)) - 1, label=.levels)
-    
-    dbSendQuery(con, "DROP TABLE IF EXISTS levels")
-    
-    tableFieldTypes = .getFieldTypes(df)
-    
-    dbWriteTable(con, value = df, name = "levels", append = TRUE , row.names = TRUE, 
-                 field.types = tableFieldTypes) 
-    dbCommit(conn = con)
-    
-    #Do these need to be run?
-    dbSendQuery(con, "ALTER TABLE `levels` ENGINE = MEMORY ;")
-    dbSendQuery(con, "ALTER TABLE `levels` DROP COLUMN `row_names` ;")
-  },
-  
-  toNEO4jDump = function(filePath = "~/", fileName="neo4j_dump.cypher") {
-    "Save an MRexperiment object to a Neo4j Graph database. set the location of the output file with fileName and filePath."
-    
-    file = paste0(filePath, '/' ,fileName)
-    
-    write("begin", file=file, append = TRUE)
-    .saveSampleDataNEO4J(graph=NULL, file=file)
-    write(";", file=file, append = TRUE)
-    write("commit", file=file, append = TRUE)
-    write("begin", file=file, append = TRUE)
-    .saveHierarchyNEO4J(graph=NULL, file=file)
-    write(";", file=file, append = TRUE)
-    write("commit", file=file, append = TRUE)
-    write("begin", file=file, append = TRUE)
-    .saveMatrixNEO4J(graph=NULL, file=file)
-    write(";", file=file, append = TRUE)
-    write("commit", file=file, append = TRUE)
-    write("begin", file=file, append = TRUE)
-    .neo4jUpdateProperties(graph=NULL, file=file)
-    write(";", file=file, append = TRUE)
-    write("commit", file=file, append = TRUE)
-  },
-  toNEO4JDb=function(graph) {
-    "Save an MRexperiment object to a Neo4j Graph database."
-
-    cat("Saving sample data...")
-    .saveSampleDataNEO4J(graph)
-    cat("Done\n")
-    
-    cat("Saving hierarchy...")
-    .saveHierarchyNEO4J(graph)
-    cat("Done\n")
-    
-    cat("Saving Data Matrix...")
-    .saveMatrixNEO4J(graph)
-    cat("Done\n")
-    
-    cat("Saving hierarchy...")
-    .neo4jUpdateProperties(graph)
-    cat("Done\n")
-    
-  },
-  
-  .saveSampleDataNEO4J=function(graph, file=NULL) {
-    sampleAnnotationToNeo4j = .sampleAnnotation
-    sampleAnnotationToNeo4j['id'] = rownames(.sampleAnnotation)
-    keys = colnames(sampleAnnotationToNeo4j)
-    for (j in 1:nrow(sampleAnnotationToNeo4j)){
-      row <- sampleAnnotationToNeo4j[j,]
-      query = "CREATE (:Sample { "
-      for (i in 1:(length(keys)-1)){
-        if  (typeof(keys[i]) == "numeric")
-          query = paste(query, keys[i], " : ", gsub("'", "", row[, keys[i]]), ", ", sep="")
-        else
-          query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "', ",sep="")
-      }
-      i = length(keys)
-      if  (typeof(keys[i]) == "numeric")
-        query = paste(query, keys[i], " : ", gsub("'", "",row[, keys[i]]), "})", sep="")
-      else
-        query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "'})", sep="")
-      
-      if(!is.null(graph)) {
-        cypher(graph,query) 
-      }
-      else {
-        write(query, file=file, append = TRUE)
-      }
-    }
-  },
-  
-  .saveHierarchyNEO4J=function(graph, file=NULL) {
-    h = taxonomyTable()
-    indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
-    
-    # cat("\n  Extracting taxonomy nodes...\n")
-    # pb = txtProgressBar(style=3, width=25)
-    nodeIds = lapply(seq(dim(indexCombs)[1]), function(i) {
-      # setTxtProgressBar(pb, i/dim(indexCombs)[1])
-      calcNodeId(indexCombs[i, 1], indexCombs[i, 2])
-    })
-    uniqueIds = unique(nodeIds)
-    
-    # cat("\n  Generating taxonomy structure...\n")
-    # pb = txtProgressBar(style=3, width=25)
-    names = lapply(seq(length(uniqueIds)), function(i) {
-      # setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      #node(nodeId)$name()
-      pair = .fromMetavizNodeId(nodeId)
-      h[pair$leafIndex+1, pair$depth+1]
-    })
-    
-    # cat("\n  Computing node parents...\n")
-    # pb = txtProgressBar(style=3, width=25)
-    parentIds = lapply(seq(length(uniqueIds)), function(i) {
-      # setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      node(nodeId)$parentId()
-    })
-    
-    # cat("\n  Computing lineages...\n")
-    pathsList = Ptr$new(list())
-    # pb = txtProgressBar(style=3, width=25)
-    paths = lapply(seq(length(uniqueIds)), function(i) {
-      # setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      parentId = parentIds[[i]]
-      if (is.null(parentId) || is.null(pathsList$.[[parentId]])) {
-        pathsList$.[[nodeId]] = nodeId
-        return(nodeId)
-      }
-      path = paste(pathsList$.[[parentId]], nodeId, sep=",")
-      pathsList$.[[nodeId]] = path
-      return(path)
-    })
-    
-    # cat("\n  Computing lineages labels...\n")
-    pathsLabels = Ptr$new(list())
-    # pb = txtProgressBar(style=3, width=25)
-    pathsLabels = lapply(seq(length(uniqueIds)), function(i) {
-      # setTxtProgressBar(pb, i/length(uniqueIds))
-      
-      nodeId = uniqueIds[[i]]
-      pair = .fromMetavizNodeId(nodeId)
-      nodeName = h[pair$leafIndex+1, pair$depth+1]
-      
-      parentId = parentIds[[i]]
-      
-      if (is.null(parentId) || is.null(pathsList$.[[parentId]])) {
-        pathsList$.[[nodeId]] = nodeName
-        return(nodeName)
-      }
-      
-      path = paste(pathsList$.[[parentId]], nodeName, sep=",")
-      pathsList$.[[nodeId]] = path
-      return(path)
-    })
-    
-    # cat("\n  Computing index of first leaf in node subtrees...\n")
-    # pb = txtProgressBar(style=3, width=25)
-    starts = lapply(seq(length(uniqueIds)), function(i) {
-      # setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      node(nodeId)$leafIndex()
-    })
-    
-    # cat("\n  Computing leaf counts in node subtrees...\n")
-    # pb = txtProgressBar(style=3, width=25)
-    ends = lapply(seq(length(uniqueIds)), function(i) {
-      # setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      node(nodeId)$nleaves() + starts[[i]]
-    })
-    
-    # cat("\n  Computing node depths...\n")
-    # pb = txtProgressBar(style=3, width=25)
-    depths = lapply(seq(length(uniqueIds)), function(i) {
-      # setTxtProgressBar(pb, i/length(uniqueIds))
-      nodeId = uniqueIds[[i]]
-      node(nodeId)$depth()
-    })
-    
-    taxonomies = list()
-    taxonomies = lapply(seq(length(uniqueIds)), function(i) {
-      nodeId = uniqueIds[[i]]
-      tempDepth = node(nodeId)$depth()
-      .levels[tempDepth+1]
-    })
-    
-    
-    # cat("\n  Computing node children counts...")
-    nchildren = list()
-    for (parentId in parentIds) {
-      if (is.null(parentId)) { next }
-      if (is.null(nchildren[[parentId]])) {
-        nchildren[[parentId]] = 0
-      }
-      nchildren[[parentId]] = nchildren[[parentId]] + 1
-    }
-    childCount = lapply(uniqueIds, function(nodeId) {
-      if (is.null(nchildren[[nodeId]])) { return(0) }
-      nchildren[[nodeId]]
-    })
-    # cat("Done\n")
-    
-    # cat("\n  Computing nodes order...\n")
-    lastOrder = list()
-    # pb = txtProgressBar(style=3, width=25)
-    orders = list()
-    for (i in seq(length(uniqueIds))) {
-      # setTxtProgressBar(pb, i/length(uniqueIds))
-      parentId = parentIds[[i]]
-      nodeId = uniqueIds[[i]]
-      if (is.null(parentId)) {
-        orders[[i]] = 0
-        next
-      }
-      o = lastOrder[[parentId]]
-      if (is.null(o)) {
-        lastOrder[[parentId]] = 0
-        orders[[i]] = 0
-        next
-      }
-      
-      lastOrder[[parentId]] = o + 1
-      orders[[i]] = o+1
-    }
-    
-    # cat("\n  Outputting to database...")
-    parentIds[[1]] = NA
-    dfToNeo4j = data.frame(depth=unlist(depths), label=unlist(names), 
-                           parentId=unlist(parentIds), lineage=unlist(paths), 
-                           lineageLabel=unlist(pathsLabels), nchildren=unlist(childCount), 
-                           start=unlist(starts), end=unlist(ends), leafIndex=unlist(starts), 
-                           nleaves=unlist(ends)-unlist(starts), order=unlist(orders), taxonomy=unlist(taxonomies))
-    dfToNeo4j$partition = NA
-    rownames(dfToNeo4j) = unlist(uniqueIds)
-    dfToNeo4j['id'] = unlist(uniqueIds)
-    
-    
-    keys = colnames(dfToNeo4j)
-    
-    cypherCount = 0
-    for (j in 1:nrow(dfToNeo4j)){
-      row <- dfToNeo4j[j,]
-      query = "CREATE (:Feature { "
-      for (i in 1:(length(keys)-1)){
-        if  (typeof(keys[i]) == "numeric")
-          query = paste(query, keys[i], " : ", gsub("'", "",row[, keys[i]]), ", ",sep="")
-        else
-          query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "', ", sep="")
-      }
-      i = length(keys)
-      query = paste(query, keys[i], " : '", gsub("'", "",row[, keys[i]]), "'})", sep="")
-      if(!is.null(graph)) {
-        cypher(graph,query) 
-      }
-      else {
-        write(query, file=file, append = TRUE)
-        
-        cypherCount = cypherCount + 1
-        
-        # write commits if data file is too long
-        if(cypherCount == 250) {
-          write(";", file=file, append = TRUE)
-          write("commit", file=file, append = TRUE)
-          write("begin", file=file, append = TRUE)
-          cypherCount = 0
-        }
-      }
-    }
-    
-    
-    cypherCount = 0
-    for (j in 1:nrow(dfToNeo4j)){
-      row <- dfToNeo4j[j,]
-      query = paste("MATCH (fParent:Feature {id :'", row$parentId, "'}) MATCH (f:Feature {id:'", row$id, "'}) CREATE (fParent)-[:PARENT_OF]->(f)", sep="")
-      
-      if(!is.null(graph)) {
-        cypher(graph,query) 
-      }
-      else {
-        write(query, file=file, append = TRUE)
-        
-        cypherCount = cypherCount + 1
-        
-        # write commits if data file is too long
-        if(cypherCount == 250) {
-          write(";", file=file, append = TRUE)
-          write("commit", file=file, append = TRUE)
-          write("begin", file=file, append = TRUE)
-          cypherCount = 0
-        }
-      }
-    }
-    
-    query = paste0("MATCH (fNode:Feature)-[:PARENT_OF*]->(fLeaf:Feature {depth:'", length(.levels) - 1 , "'}) CREATE (fNode)-[:LEAF_OF]->(fLeaf)")
-    if(!is.null(graph)) {
-      cypher(graph,query) 
-    }
-    else {
-      write(query, file=file, append = TRUE)
-    }
-    
-    
-    query = paste0("MATCH (fLeaf:Feature {depth:'", length(.levels) - 1,"'}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)")
-    if(!is.null(graph)) {
-      cypher(graph,query) 
-    }
-    else {
-      write(query, file=file, append = TRUE)
-    }
-  },
-  
-  .saveMatrixNEO4J = function(graph, file=NULL) {
-    valuesToNeo4j = .getValueTable()
-    
-    cypherCount = 0
-
-    for (j in 1:nrow(valuesToNeo4j)){
-      row <- valuesToNeo4j[j,]
-      # query = paste(query, paste("MATCH (f:Feature {id :'", row$NodeId, "'}) MATCH (s:Sample {id:'", row$SampleId, "'}) CREATE (s)-[:VALUE {val: ", row$val, "}]->(f)", sep=""), sep= " ")
-      query = paste("MATCH (f:Feature {id :'", row$NodeId, "'}) MATCH (s:Sample {id:'", row$SampleId, "'}) CREATE (s)-[:VALUE {val: ", row$val, "}]->(f)", sep="")
-
-      if(!is.null(graph)) {
-        cypher(graph,query) 
-      }
-      else {
-        write(query, file=file, append = TRUE)
-        
-        cypherCount = cypherCount + 1
-        
-        # write commits if data file is too long
-        if(cypherCount == 250) {
-          write(";", file=file, append = TRUE)
-          write("commit", file=file, append = TRUE)
-          write("begin", file=file, append = TRUE)
-          cypherCount = 0
-        }
-      }
-    }
-  },
-  
-  .neo4jUpdateProperties = function(graph, file=NULL) {
-    query = "MATCH (f:Feature) SET f.depth = toInt(f.depth) SET f.start = toInt(f.start) SET f.end = toInt(f.end) SET f.leafIndex = toInt(f.leafIndex) SET f.nchildren = toInt(f.nchildren) SET f.nleaves = toInt(f.nleaves) SET f.order = toInt(f.order)"
-    if(!is.null(graph)) {
-      cypher(graph,query) 
-    }
-    else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
-    }
-    
-    query = "CREATE INDEX ON :Feature (depth)"
-    if(!is.null(graph)) {
-      cypher(graph,query) 
-    }
-    else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
-    }
-    
-    query = "CREATE INDEX ON :Feature (start)"
-    if(!is.null(graph)) {
-      cypher(graph,query) 
-    }
-    else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
-    }
-    
-    query = "CREATE INDEX ON :Feature (end)"
-    if(!is.null(graph)) {
-      cypher(graph,query) 
-    }
-    else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
-    }
-    
-    query = "CREATE INDEX ON :Feature (id)"
-    if(!is.null(graph)) {
-      cypher(graph,query) 
-    }
-    else {
-      write(query, file=file, append = TRUE)
-      write(";", file=file, append = TRUE)
-      write("commit", file=file, append = TRUE)
-      write("begin", file=file, append = TRUE)
-    }
-    
-    query = "CREATE INDEX ON :Sample (id)"
-    if(!is.null(graph)) {
-      cypher(graph,query) 
-    }
-    else {
-      write(query, file=file, append = TRUE)
-    }
-  },
-  
-  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, datasource, colLabel=NULL) {
-    "Save an MRexperiment object to a Neo4j Graph database."
+   #' Write an \code{\link{EpivizMetagenomicsData}} object to a Neo4j graph database
+   #' 
+   #' @param batch_url (character) Neo4j database url and port for processing batch http requests
+   #' @param neo4juser (character) Neo4j database user name
+   #' @param neo4jpass (character) Neo4j database password
+   #' @param datasource (character) Name of Neo4j datasource node for this \code{\link{EpivizMetagenomicsData}} object 
+   #' 
+   #' @examples
+   #' library(metagenomeSeq)
+   #' data("mouseData")
+   #' mobj <- metavizr:::EpivizMetagenomicsData$new(object=mouseData)
+   #' mobj$toNEO4JDbHTTP(batch_url = "http://localhost:7474/db/data/batch", neo4juser = "neo4juser", neo4jpass = "neo4jpass", datasource = "mouse_data")
+   #' 
+   #' @export
+   #' 
+  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, datasource) {
     
     cat("Saving sample data...")
     .saveSampleDataNEO4JHTTP(batch_url, neo4juser, neo4jpass)
@@ -1417,10 +660,8 @@ EpivizMetagenomicsData$methods(
     cat("Saving properties...")
     .neo4jUpdatePropertiesHTTP(batch_url, neo4juser, neo4jpass)
     cat("Done\n")
-    
   },
   
-    
   .buildBatchJSON = function(query_in, param_list, id_in=0, id_last=TRUE, full_query=TRUE,json_query_in=NULL, params_complete=FALSE){
     json_start <- "["
     method <- "{\"method\" : \"POST\","
@@ -1429,7 +670,7 @@ EpivizMetagenomicsData$methods(
     params_start <- "\"params\" : {"
     params_end <- "}"
     body_end <- "},"
-    #id <- "\"id\" : 0}"
+
     if(id_last){
      id <- paste("\"id\": ", as.character(id_in), "}", sep="")
     }
@@ -1538,6 +779,29 @@ EpivizMetagenomicsData$methods(
     else {
       write(query, file=file, append = TRUE)
     }
+  },
+  
+  .getValueTable=function() {
+    
+    #get counts
+    counts = .counts
+    countsIndices = expand.grid(seq(dim(counts)[1]), seq(dim(counts)[2]))
+    
+    df = data.frame(row=countsIndices[,1], col=countsIndices[,2], val=as.vector(counts))
+    df = df[df$val != 0,]
+    
+    #get rows
+    h = taxonomyTable()
+    indexCombs = expand.grid(seq(dim(h)[1]), seq(dim(h)[2]))
+    
+    leafIds = lapply(seq(dim(h)[1]), function(i) {
+      calcNodeId(i, dim(h)[2])
+    })
+    
+    df$NodeId = leafIds[df$row]
+    df$SampleId = rownames(.sampleAnnotation)[df$col]
+    
+    df
   },
   
   .saveHierarchyNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, datasource, file=NULL) {
