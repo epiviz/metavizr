@@ -197,7 +197,8 @@ splinesMRexp <- ts2MRexperiment(timeSeriesFits, feature_data = featureData(aggre
 etec16s_species <- aggregateByTaxonomy(etec16s, lvl="Species", feature_order = feature_order)
 ```
 
-Finally, we add the MRexperiment as a measurement for Metaviz to plot.
+Finally, we add the MRexperiment as a measurement using the `add_measurements` method and then visualize those measurements as a LinePlot.
+
 
 ```{r, eval=TRUE}
 splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(MRcounts(splinesMRexp[i,]))) >= 2})
