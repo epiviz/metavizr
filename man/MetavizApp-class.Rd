@@ -2,8 +2,8 @@
 % Please edit documentation in R/MetavizApp-class.R
 \docType{class}
 \name{MetavizApp-class}
-\alias{MetavizApp}
 \alias{MetavizApp-class}
+\alias{MetavizApp}
 \title{Class managing connection to metaviz application.}
 \description{
 Class managing connection to metaviz application.

@@ -2,8 +2,8 @@
 % Please edit documentation in R/EpivizMetagenomicsData-class.R
 \docType{class}
 \name{EpivizMetagenomicsData-class}
-\alias{EpivizMetagenomicsData}
 \alias{EpivizMetagenomicsData-class}
+\alias{EpivizMetagenomicsData}
 \title{Data container for MRexperiment objects}
 \description{
 Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
@@ -12,17 +12,85 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \section{Methods}{
 
 \describe{
+\item{\code{getAlphaDiversity(measurements, seqName = "", start, end)}}{   Compute alpha diversity using vegan for the given samples
+   
+  @param measurements (character) Samples to compute alpha diversity
+  @param seqName (character) 
+  @param start (integer) Start of feature range to query 
+  @param end (integer) End of feature range to query 
+  @return List of alpha diversity values for given measurements}
+
+\item{\code{getCombined(measurements, seqName, start, end, order, nodeSelection,
+  selectedLevels)}}{  Return the counts aggregated to selected nodes for the given samples
+   
+  @param measurements (character) Samples to get counts for
+  @param seqName (character) 
+  @param start (integer) Start of feature range to query
+  @param end (integer) End of feature range to query
+  @param order (character) Ordering of nodes
+  @param nodeSelection (list) Node-id and selectionType pairs
+  @param selectedLevels (list) Current aggregation level
+  @return List of samples with aggregate counts per feature}
+
 \item{\code{get_default_chart_type()}}{Get name of default chart type for this data type}
+
+\item{\code{getHierarchy(nodeId)}}{  Retrieve feature hierarchy information for subtree with specified root
+   
+  @param nodeId(character) Feature identifier with level info
+  @return List containing hierarchy of subtree}
 
 \item{\code{get_measurements()}}{Get description of measurements served by this object}
 
-\item{\code{toMySQLDb(con, colLabel = NULL)}}{Save an MRexperiment object to a MySQL database.}
+\item{\code{getPCA(measurements, seqName = "", start, end)}}{  Compute PCA over all features for given samples
+   
+  @param measurements (character) Samples to compute PCA over
+  @param seqName (character) 
+  @param start (integer) Start of feature range to query 
+  @param end (integer) End of feature range to query 
+  @return List of PC1, PC2, and percent variance explained for each measurements}
 
-\item{\code{toNEO4JDb(graph)}}{Save an MRexperiment object to a Neo4j Graph database.}
+\item{\code{getRows(seqName, start, end, metadata)}}{      Return the sample annotation and features within the specified range and level
 
-\item{\code{toNEO4JDbHTTP(batch_url, neo4juser, neo4jpass, datasource, colLabel = NULL)}}{Save an MRexperiment object to a Neo4j Graph database.}
+      @param seqName (character) 
+      @param start (integer) Start of feature range to query
+      @param end (integer) End of feature range to query
+      @param metadata (character) 
+      @return List of annotations for a given sample and features
+    }
 
-\item{\code{toNEO4jDump(filePath = "~/", fileName = "neo4j_dump.cypher")}}{Save an MRexperiment object to a Neo4j Graph database. set the location of the output file with fileName and filePath.}
+\item{\code{getValues(measurement, seqName, start, end)}}{  Return the counts for a sample within the specified range
+   
+  @param measurement (character) Samples to get counts for
+  @param seqName (character) 
+  @param start (integer) Start of feature range to query
+  @param end (integer) End of feature range to query
+  @return List of counts for sample as selected level of hierarchy}
+
+\item{\code{propagateHierarchyChanges(selection, order, selectedLevels)}}{    Update internal state for hierarchy
+
+    @param selection (list) Node-id and selectionType pairs
+    @param order (character) Ordering of features
+    @param selectedLevels (list) Current aggregation level
+  }
+
+\item{\code{searchTaxonomy(query, max_results)}}{  Find feature using text-based search
+   
+  @param query (character) String of feature for which to search
+  @param max_results (integer) Maximum results to return
+  @return List of features that contain the substring query}
+
+\item{\code{toNEO4JDbHTTP(batch_url, neo4juser, neo4jpass, datasource)}}{  Write an `EpivizMetagenomicsData` object to a Neo4j graph database
+ 
+ @param batch_url (character) Neo4j database url and port for processing batch http requests
+ @param neo4juser (character) Neo4j database user name
+ @param neo4jpass (character) Neo4j database password
+ @param datasource (character) Name of Neo4j datasource node for this `EpivizMetagenomicsData` object 
+ 
+ @examples
+ library(metagenomeSeq)
+ data("mouseData")
+ mobj <- metavizr:::EpivizMetagenomicsData$new(object=mouseData)
+ mobj$toNEO4JDbHTTP(batch_url = "http://localhost:7474/db/data/batch", neo4juser = "neo4juser", neo4jpass = "neo4jpass", datasource = "mouse_data")}
 
 \item{\code{update(new_object, send_request = TRUE)}}{Update underlying data object with new object}
 }}

@@ -26,4 +26,3 @@ app <- startMetaviz(non_interactive=TRUE, open_browser=TRUE)
 app$stop_app()
 
 }
-

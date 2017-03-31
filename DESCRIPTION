@@ -46,4 +46,4 @@ Collate:
     'validateMRExperiment.R'
     'MetavizApp-class.R'
 biocViews: Visualization, Infrastructure, GUI, Metagenomics
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

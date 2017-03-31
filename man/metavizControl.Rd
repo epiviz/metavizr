@@ -39,10 +39,9 @@ metavizControl(aggregateAtDepth = 3, aggregateFun = function(x) colSums(x),
 List of setting parameters.
 }
 \description{
-Default settings for the various plotting functions in metavizr.
+Default settings for operating over MRexperiment object.
 }
 \examples{
 settings = metavizControl()
 
 }
-

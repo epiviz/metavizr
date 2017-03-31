@@ -29,4 +29,3 @@ app$stop_app()
 \seealso{
 \code{\link[metavizr]{MetavizApp}}
 }
-

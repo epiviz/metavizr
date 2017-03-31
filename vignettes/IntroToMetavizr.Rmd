@@ -113,7 +113,7 @@ mod <-  model.matrix(~1+Dysentery, data = bangladesh_sample_data)
 results_bangladesh <-  fitFeatureModel(normed_bangladesh, mod)
 logFC_bangladesh <- MRcoefs(results_bangladesh, number = nrow(normed_bangladesh))
 
-feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 2),]$adjPvalues < .05),]) 
+feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 1),]$adjPvalues < .1),]) 
 fSelection <- generateSelection(feature_names =feature_names , aggregation_level = aggregation_level, selection_type =2)
 ```
 

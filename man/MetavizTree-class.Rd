@@ -2,11 +2,12 @@
 % Please edit documentation in R/MetavizTree-class.R
 \docType{class}
 \name{MetavizTree-class}
-\alias{MetavizTree}
 \alias{MetavizTree-class}
-\title{Taxonomy tree structure wrapper}
+\alias{MetavizTree}
+\title{Taxonomy tree structure wrapper that is used to manage tree-cut queries from the
+Metaviz app UI.}
 \description{
-Used to manage tree-cut queries from the
+Taxonomy tree structure wrapper that is used to manage tree-cut queries from the
 Metaviz app UI.
 }
 

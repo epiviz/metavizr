@@ -5,7 +5,6 @@
 #' @importClassesFrom epivizrData EpivizData
 #' @importFrom methods new
 #' @importFrom vegan diversity
-#' @import RNeo4j
 #' @import httr
 #' @exportClass EpivizMetagenomicsData
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
@@ -314,10 +313,11 @@ EpivizMetagenomicsData$methods(
 EpivizMetagenomicsData$methods(
   get_default_chart_type = function() { "epiviz.ui.charts.tree.Icicle" },
   
-  #' Get all annotation info for all samples
-  #' 
-  #' @return List of sample annotation from datasource
   get_measurements=function() {
+    ' Get all annotation info for all samples
+     
+      @return List of sample annotation from datasource
+    '
     out <- lapply(colnames(.self$.counts), function(sample) {
       epivizrData:::EpivizMeasurement(id=sample,
            name=sample,
@@ -333,12 +333,14 @@ EpivizMetagenomicsData$methods(
     out
   },
   
-  #' Retrieve feature hierarchy information for subtree with specified root
-  #' 
-  #' @param nodeId(character) Feature identifier with level info
-  #' @return List containing hierarchy of subtree
+
   getHierarchy=function(nodeId) {
-    
+    '
+      Retrieve feature hierarchy information for subtree with specified root
+       
+      @param nodeId(character) Feature identifier with level info
+      @return List containing hierarchy of subtree
+    '
     # clear last request ranges and values
     .self$.lastRequestRanges <- list()
     .self$.lastLeafInfos <- list()
@@ -361,12 +363,15 @@ EpivizMetagenomicsData$methods(
     return(resp)
   },
   
-  #' Update internal state for hierarchy
-  #' 
-  #' @param selection (list) Node-id and selectionType pairs
-  #' @param order (character) Ordering of features
-  #' @param selectedLevels (list) Current aggregation level
+
   propagateHierarchyChanges=function(selection, order, selectedLevels) {
+    '
+      Update internal state for hierarchy
+  
+      @param selection (list) Node-id and selectionType pairs
+      @param order (character) Ordering of features
+      @param selectedLevels (list) Current aggregation level
+    '
     
     # clear last requests and values
     .self$.lastRequestRanges <- list()
@@ -418,14 +423,16 @@ EpivizMetagenomicsData$methods(
     getHierarchy(.self$.lastRootId)
   },
   
-  #' Return the sample annotation and features within the specified range and level
-  #' 
-  #' @param seqName (character) 
-  #' @param start (integer) Start of feature range to query
-  #' @param end (integer) End of feature range to query
-  #' @param metadata (character) 
-  #' @return List of annotations for a given sample and features
   getRows=function(seqName, start, end, metadata) {
+    '
+      Return the sample annotation and features within the specified range and level
+
+      @param seqName (character) 
+      @param start (integer) Start of feature range to query
+      @param end (integer) End of feature range to query
+      @param metadata (character) 
+      @return List of annotations for a given sample and features
+    '
     leafInfos <- .self$.getSelectedLeaves(start, end)
     leafAncestors <- lapply(leafInfos, function(info) { 
       .self$.taxonomy$ancestors(info$node) 
@@ -488,14 +495,17 @@ EpivizMetagenomicsData$methods(
     ))
   },
   
-  #' Return the counts for a sample within the specified range
-  #' 
-  #' @param measurement (character) Samples to get counts for
-  #' @param seqName (character) 
-  #' @param start (integer) Start of feature range to query
-  #' @param end (integer) End of feature range to query
-  #' @return List of counts for sample as selected level of hierarchy
+
   getValues=function(measurement, seqName, start, end) {
+    '
+      Return the counts for a sample within the specified range
+       
+      @param measurement (character) Samples to get counts for
+      @param seqName (character) 
+      @param start (integer) Start of feature range to query
+      @param end (integer) End of feature range to query
+      @return List of counts for sample as selected level of hierarchy
+    '
     leafInfos <- .self$.getSelectedLeaves(start, end)
     globalStartIndex <- NULL
     
@@ -510,20 +520,22 @@ EpivizMetagenomicsData$methods(
     return(ret)
   },
   
-  #' Return the counts aggregated to selected nodes for the given samples
-  #' 
-  #' @param measurements (character) Samples to get counts for
-  #' @param seqName (character) 
-  #' @param start (integer) Start of feature range to query
-  #' @param end (integer) End of feature range to query
-  #' @param order (character) Ordering of nodes
-  #' @param nodeSelection (list) Node-id and selectionType pairs
-  #' @param selectedLevels (list) Current aggregation level
-  #' @return List of samples with aggregate counts per feature
   getCombined=function(measurements, 
                        seqName, start, end, 
                        order, nodeSelection, selectedLevels) {
     
+    '
+      Return the counts aggregated to selected nodes for the given samples
+       
+      @param measurements (character) Samples to get counts for
+      @param seqName (character) 
+      @param start (integer) Start of feature range to query
+      @param end (integer) End of feature range to query
+      @param order (character) Ordering of nodes
+      @param nodeSelection (list) Node-id and selectionType pairs
+      @param selectedLevels (list) Current aggregation level
+      @return List of samples with aggregate counts per feature
+    '
     # clear last request ranges and values
     .self$.lastRequestRanges <- list()
     .self$.lastLeafInfos <- list()
@@ -582,13 +594,15 @@ EpivizMetagenomicsData$methods(
     return(result)
   },
   
-  #' Find feature using text-based search
-  #' 
-  #' @param query (character) String of feature for which to search
-  #' @param max_results (integer) Maximum results to return
-  #' @return List of features that contain the substring query
-  #' @export
+
   searchTaxonomy=function(query, max_results) {
+    '
+      Find feature using text-based search
+       
+      @param query (character) String of feature for which to search
+      @param max_results (integer) Maximum results to return
+      @return List of features that contain the substring query
+    '
     
     results = list()
     nCount <- 1
@@ -613,16 +627,17 @@ EpivizMetagenomicsData$methods(
     return(results)
   },
   
-  #' Compute PCA over all features for given samples
-  #' 
-  #' @param measurements (character) Samples to compute PCA over
-  #' @param seqName (character) 
-  #' @param start (integer) Start of feature range to query 
-  #' @param end (integer) End of feature range to query 
-  #' @return List of PC1, PC2, and percent variance explained for each measurements
-  #' @export
+
   getPCA=function(measurements, seqName = '', start, end) {
-    
+    '
+      Compute PCA over all features for given samples
+       
+      @param measurements (character) Samples to compute PCA over
+      @param seqName (character) 
+      @param start (integer) Start of feature range to query 
+      @param end (integer) End of feature range to query 
+      @return List of PC1, PC2, and percent variance explained for each measurements
+    '
     x <- t(.self$.counts[,measurements])
     df <- log2(x+1)
     ord <- prcomp(df)
@@ -652,16 +667,17 @@ EpivizMetagenomicsData$methods(
     return(result)
   },
   
-  #' Compute alpha diversity for the given samples
-  #' 
-  #' @param measurements (character) Samples to compute alpha diversity
-  #' @param seqName (character) 
-  #' @param start (integer) Start of feature range to query 
-  #' @param end (integer) End of feature range to query 
-  #' @return List of alpha diversity for given measurements
-  #' @export
-  #' 
+
   getAlphaDiversity=function(measurements, seqName = '', start, end) {
+    '
+       Compute alpha diversity using vegan for the given samples
+       
+      @param measurements (character) Samples to compute alpha diversity
+      @param seqName (character) 
+      @param start (integer) Start of feature range to query 
+      @param end (integer) End of feature range to query 
+      @return List of alpha diversity values for given measurements
+    '
     df <- .self$.counts[,measurements]
 
     alpha_diversity <- diversity(t(df), index = "shannon")
@@ -687,22 +703,22 @@ EpivizMetagenomicsData$methods(
 )
 
  EpivizMetagenomicsData$methods(
-   #' Write an \code{\link{EpivizMetagenomicsData}} object to a Neo4j graph database
-   #' 
-   #' @param batch_url (character) Neo4j database url and port for processing batch http requests
-   #' @param neo4juser (character) Neo4j database user name
-   #' @param neo4jpass (character) Neo4j database password
-   #' @param datasource (character) Name of Neo4j datasource node for this \code{\link{EpivizMetagenomicsData}} object 
-   #' 
-   #' @examples
-   #' library(metagenomeSeq)
-   #' data("mouseData")
-   #' mobj <- metavizr:::EpivizMetagenomicsData$new(object=mouseData)
-   #' mobj$toNEO4JDbHTTP(batch_url = "http://localhost:7474/db/data/batch", neo4juser = "neo4juser", neo4jpass = "neo4jpass", datasource = "mouse_data")
-   #' 
-   #' @export
-   #' 
-  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, datasource) {
+    toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, datasource) {
+      
+      ' 
+        Write an `EpivizMetagenomicsData` object to a Neo4j graph database
+       
+       @param batch_url (character) Neo4j database url and port for processing batch http requests
+       @param neo4juser (character) Neo4j database user name
+       @param neo4jpass (character) Neo4j database password
+       @param datasource (character) Name of Neo4j datasource node for this `EpivizMetagenomicsData` object 
+       
+       @examples
+       library(metagenomeSeq)
+       data("mouseData")
+       mobj <- metavizr:::EpivizMetagenomicsData$new(object=mouseData)
+       mobj$toNEO4JDbHTTP(batch_url = "http://localhost:7474/db/data/batch", neo4juser = "neo4juser", neo4jpass = "neo4jpass", datasource = "mouse_data")
+      '
     
     cat("Saving sample data...")
     .saveSampleDataNEO4JHTTP(batch_url, neo4juser, neo4jpass)

@@ -20,4 +20,3 @@ An \code{\link{phyloseq-class}} object
 \description{
 Generic method to register data to the epiviz data server
 }
-
