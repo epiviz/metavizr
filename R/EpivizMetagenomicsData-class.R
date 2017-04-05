@@ -5,7 +5,6 @@
 #' @importClassesFrom epivizrData EpivizData
 #' @importFrom methods new
 #' @importFrom vegan diversity
-#' @import httr
 #' @import data.table
 #' @exportClass EpivizMetagenomicsData
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
@@ -557,7 +556,7 @@ EpivizMetagenomicsData$methods(
     if("leaf" %in% colnames(df)){
       df <- df[,-which(colnames(df)=="leaf")]
     }
-    alpha_diversity <- diversity(t(df), index = "shannon")
+    alpha_diversity <- vegan::diversity(t(df), index = "shannon")
 
     data <- list()
     for (row in 1:length(alpha_diversity)) {
