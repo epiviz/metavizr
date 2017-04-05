@@ -24,7 +24,6 @@ Depends:
     phyloseq,
     Biobase
 Imports:
-    methods,
     epivizr,
     epivizrData,
     epivizrStandalone,
