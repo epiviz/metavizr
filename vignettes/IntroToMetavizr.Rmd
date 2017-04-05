@@ -206,7 +206,7 @@ splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(M
 splines_to_plot_indices <- which(splines_to_plot == TRUE)
 
 ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base", control=metavizControl(norm = FALSE, aggregateAtDepth = 6), feature_order = feature_order2)
-splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines", control = metavizControl(norm=FALSE, aggregateAtDepth = 6))
+splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines", control = metavizControl(norm=FALSE, aggregateAtDepth = 6), feature_order = feature_order2)
 splineMeasurements <- splineObj$get_measurements()
 splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
 ```
