@@ -111,11 +111,16 @@ mod <-  model.matrix(~1+Dysentery, data = bangladesh_sample_data)
 results_bangladesh <-  fitFeatureModel(normed_bangladesh, mod)
 logFC_bangladesh <- MRcoefs(results_bangladesh, number = nrow(normed_bangladesh))
 
-feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 1),]$adjPvalues < .1),])
-fSelection <- rep(2, length(feature_names))
-names(fSelection) <- feature_names
+features <- rownames(logFC_bangladesh)
+featuresToKeep_names <- features[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 1),]$adjPvalues < .1)]
+featuresToKeep <- rep(2, length(featuresToKeep_names))
+names(featuresToKeep) <- featuresToKeep_names
 
-control <- metavizr::metavizControl(featureSelection = fSelection)
+featuresToRemove_names <- features[!(features %in% featuresToKeep_names)]
+featuresToRemove <- rep(0, length(featuresToRemove_names))
+names(featuresToRemove) <- featuresToRemove_names
+
+control <- metavizr::metavizControl(featureSelection = c(featuresToKeep, featuresToRemove))
 ```
 
 # Adding an Icicle navigation widget to explore metagenomic features
