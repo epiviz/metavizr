@@ -20,17 +20,15 @@ Depends:
     R (>= 3.3),
     metagenomeSeq,
     methods,
-    data.table
+    data.table,
+    phyloseq
 Imports:
     methods,
     Biobase,
     epivizr,
     epivizrData,
     epivizrStandalone,
-    GenomicRanges,
-    GenomeInfoDb,
-    metagenomeSeq,
-    RNeo4j
+    metagenomeSeq
 Suggests:
     knitr,
     BiocStyle,
