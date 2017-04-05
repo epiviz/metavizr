@@ -14,6 +14,7 @@
 #' @param rankFun Ranking function - single vector function.
 #' @param norm Normalize MRexperiment object.
 #' @param log Log tranformation of MRexperiment object.
+#' @param featureSelection List of features to set as nodeSelections
 #' @return List of setting parameters.
 #' @examples
 #' settings = metavizControl()

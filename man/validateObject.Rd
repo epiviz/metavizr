@@ -7,7 +7,7 @@
 validateObject(object)
 }
 \arguments{
-\item{an}{object of class \code{\link[metagenomeSeq]{MRexperiment-class}}}
+\item{object}{an object of class \code{\link[metagenomeSeq]{MRexperiment-class}}}
 }
 \value{
 TRUE or FALSE

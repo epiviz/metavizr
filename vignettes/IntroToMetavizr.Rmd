@@ -100,26 +100,10 @@ fData(msd16s_species) <- fData(msd16s_species)[aggregated_feature_order]
 bangladesh <- msd16s[, which(pData(msd16s)$Country == "Bangladesh")]
 bangladesh_species <- msd16s_species[, which(pData(msd16s_species)$Country == "Bangladesh")]
 
-aggregation_level <- "species"
-aggregated_species <-  cumNorm(aggregateByTaxonomy(bangladesh_species, lvl=aggregation_level), p = 0.75)
-varLabels(featureData(aggregated_species)) <- aggregation_level
-temp <- unique(fData(bangladesh_species)[,aggregated_feature_order])
-temp[is.na(temp)] <- "no_match"
-temp <- temp[order(temp[,aggregation_level]),]
-row.names(temp) <- temp[,aggregation_level]
-featureNames(featureData(aggregated_species)) <- as.character(temp[,aggregation_level])
-fData(aggregated_species) <- temp[order(row.names(MRcounts(aggregated_species))),]
+aggregated_species <-  cumNorm(aggregateByTaxonomy(bangladesh_species, lvl="species"), p = 0.75)
 
 aggregation_level <- "class"
 aggregated_bangladesh <- aggregateByTaxonomy(bangladesh, lvl=aggregation_level)
-varLabels(featureData(aggregated_bangladesh)) <- aggregation_level
-temp <- unique(fData(bangladesh)[,feature_order[1:which(feature_order == aggregation_level)]])
-temp[is.na(temp)] <- "no_match"
-temp <- temp[order(temp[,aggregation_level]),]
-row.names(temp) <- temp[,aggregation_level]
-featureNames(featureData(aggregated_bangladesh)) <- as.character(temp[,aggregation_level])
-fData(aggregated_bangladesh) <- temp[order(row.names(MRcounts(aggregated_bangladesh))),]
-
 
 normed_bangladesh <-  cumNorm(aggregated_bangladesh, p = 0.75)
 bangladesh_sample_data <-  pData(normed_bangladesh)
@@ -127,7 +111,7 @@ mod <-  model.matrix(~1+Dysentery, data = bangladesh_sample_data)
 results_bangladesh <-  fitFeatureModel(normed_bangladesh, mod)
 logFC_bangladesh <- MRcoefs(results_bangladesh, number = nrow(normed_bangladesh))
 
-feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 1),]$adjPvalues < .1),]) 
+feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 1),]$adjPvalues < .1),])
 fSelection <- rep(2, length(feature_names))
 names(fSelection) <- feature_names
 
@@ -187,13 +171,13 @@ Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
 ```{r, eval=TRUE}
 featureData(etec16s)$Kingdom <- "Bacteria"
 feature_order <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "OTU.ID")
-feature_order2 <- feature_order[1:7]
 timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
                              formula = abundance~id + time*class + AntiGiven,
                              class="AnyDayDiarrhea",
                              id="SubjectID",
                              time="Day",
                              lvl="Species",
+                             feature_order=feature_order,
                              C=0.3,
                              B=1)
 ```
@@ -201,18 +185,9 @@ timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
 For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `toMRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
 
 ```{r, eval=TRUE}
-aggregation_level = "Species"
-fData(etec16s) <- fData(etec16s)[,feature_order]
-aggregated_etec16s <- aggregateByTaxonomy(etec16s, lvl = aggregation_level)
-varLabels(featureData(aggregated_etec16s)) <- aggregation_level
-temp <- unique(fData(etec16s)[,feature_order2])
-temp[is.na(temp)] <- "no_match"
-temp <- temp[order(temp[,aggregation_level]),]
-temp <- temp[!duplicated(temp[,aggregation_level]),]
-row.names(temp) <- temp[,aggregation_level]
-featureNames(featureData(aggregated_etec16s)) <- as.character(temp[,aggregation_level])
-fData(aggregated_etec16s) <- temp[order(row.names(MRcounts(aggregated_etec16s))),]
-splinesMRexp <- timeSeriesToMRexperiment(timeSeriesFits, feature_data = featureData(aggregated_etec16s), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
+feature_order2 <- feature_order[1:7]
+
+splinesMRexp <- ts2MRexperiment(timeSeriesFits, feature_data = featureData(aggregateByTaxonomy(etec16s, lvl="Species", feature_order = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
 ```
 
 Finally, we add the MRexperiment as a measurement for Metaviz to plot.
@@ -250,7 +225,7 @@ app$chart_mgr$set_chart_settings(splineChart, settings=settings, colors = colors
 To close the connection with metaviz and the R session, we use the stop_app function.
 
 ```{r,eval=TRUE}
-  app$stop_app()
+app$stop_app()
 ```
 
 ### SessionInfo
