@@ -32,8 +32,6 @@ app <- startMetaviz()
 
 ```
 
-*NOTE:* The following commands are not visible when building the vignette.  These commands are for registering each chart type so that the vignette will build when starting a new Metaviz session using localhost.  These commands are not needed if using `startMetaviz` with default which starts a Metaviz session using http://metaviz.cbcb.umd.edu.
-
 ```{r, eval=TRUE, echo=FALSE}
 
 app <- startMetaviz(host="http://localhost", http_port=8989, debug=TRUE, open_browser=FALSE, non_interactive=TRUE, try_ports=TRUE)
@@ -89,37 +87,24 @@ app$server$service()
 ----
 
 For vignette purposes, we will subset the 992 `msd16s` samples to those 301 from Bangladesh.  Also, we will aggregate the count matrix to the species level.  We have found that 
-matrix sizes with 100 samples and 4000 features perform well for interactive visualization with an R session using WebSockets.  For larger abundance matrices, we recommend using the graph database backend available at [https://github.com/epiviz/metaviz-data-provider](https://github.com/epiviz/metaviz-data-provider).  Once having subset the data, we set the aggregation level to "class", normalize, find features differentially abundant at the "class" level, propagate those selections to an MRexperiment that is aggreagted to "species" level, and then explore the hiearchy.
+matrix sizes with YYY elements perform well for interactive visualization with an R session using WebSockets.  For larger abundance matrices, we recommend using the graph database backend available at [NEED TO ADD LINK].  Once having subset the data, we normalize count data using the `metagenomeSeq::cumNorm` function, choose genera that have more than 5 OTUs in the dataset and select the 10 genera with largest standard deviation of log-transformed normalized counts across samples. Set aggregation level to "class", will find features DA at this level and then change an push those changes to an MRexperiment that is aggreagted to "species" level, and then explore the hiearchy.
 
 ```{r, eval=TRUE}
 feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
-aggregated_feature_order <- feature_order[1:7]
 
 msd16s_species <- msd16s
-fData(msd16s) <- fData(msd16s)[feature_order]
-fData(msd16s_species) <- fData(msd16s_species)[aggregated_feature_order]
   
 bangladesh <- msd16s[, which(pData(msd16s)$Country == "Bangladesh")]
-bangladesh_species <- msd16s_species[, which(pData(msd16s_species)$Country == "Bangladesh")]
-
-aggregated_species <-  cumNorm(aggregateByTaxonomy(bangladesh_species, lvl="species"), p = 0.75)
-
 aggregation_level <- "class"
-aggregated_bangladesh <- aggregateByTaxonomy(bangladesh, lvl=aggregation_level)
-
-normed_bangladesh <-  cumNorm(aggregated_bangladesh, p = 0.75)
+normed_bangladesh <-  cumNorm(bangladesh, p = 0.75)
 bangladesh_sample_data <-  pData(normed_bangladesh)
 mod <-  model.matrix(~1+Dysentery, data = bangladesh_sample_data)
-results_bangladesh <-  fitFeatureModel(normed_bangladesh, mod)
+results_bangladesh <-  suppressWarnings(fitFeatureModel(normed_bangladesh, mod))
 logFC_bangladesh <- MRcoefs(results_bangladesh, number = nrow(normed_bangladesh))
 
-feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 1),]$adjPvalues < .1),]) 
-fSelection <- generateSelection(feature_names =feature_names , aggregation_level = aggregation_level, selection_type =2)
-```
+feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 2),]$adjPvalues < .1),]) 
+fSelection <- generateSelection(feature_names = feature_names , aggregation_level = aggregation_level, selection_type =2)
 
-A metavizControl allows users to specify settings for operating over the MRexperiment object including data analysis such as normalization and log transform.  We create a metavizControl with the featureSelection as the nodes that be found to be differentially abundant and those will be visible when creating Metaviz plots.
-
-```{r, eval=TRUE}
 control <- metavizr::metavizControl(featureSelection = fSelection)
 ```
 
@@ -129,7 +114,7 @@ Once the browser is open we can visualize the metagenomic features from the `mou
 
 ```{r,eval=TRUE}
 #specify the feature hierarchy for the dataset
-icicle_plot <- app$plot(aggregated_species, datasource_name="mmssdd", control=control, feature_order = aggregated_feature_order)
+icicle_plot <- app$plot(bangladesh, datasource_name="mmssdd", control=control, feature_order = feature_order)
 ```
 
 You should now see an icicle widget to explore the hierarchy of the metagenomic features from the `mouseData` object. To navigate the complex, hierarchical structure of the feature space, we developed an icicle/facet zoom visualization. Because of the limitations in the screen size and performance rendering big trees, the icicle plot is an efficient visualization for navigating trees. The icicle visualization helps zoom in and out of trees and traverse subtrees. Every node in the icicle has a state associated with it. There are three possible states for a node 1) expand - use all subtree nodes during analysis 2) collapse - aggregate all nodes under the subtree to the selected node 3) remove - discard all nodes in the subtree for the analysis. The state of a node is also propagated to all its children and can be identified by the opacity of the node. Row level controls are available to the left of the icicle - to set the state of all nodes at a selected depth/taxonomic class of the hierarchy. Icicle is traversible if the ends on the row controls are chevrons. Users can set states on the nodes to define a cut over the feature space. The cut defines how the count data is queried, analyzed and visualized in other plots like heat maps or stacked line plots. In addition to defining the cut, we also have a navigation bar on top of the icicle to limit the range of features when querying for count data. Navigation bar is a flexible component (increase/decrease the length) and controls are available to move the bar left/right and extend over the entire range of the current tree in the icicle. Each of these actions would query the count data and automatically propagate the changes to other visualizations in the workspace. When navigating outside the scope of the navigation bar, chevrons (left/right) appear on the navigation bar to help identify the current position. Brushing/hovering is another important visual element we focused on our implementation of an icicle. Hovering over a node hovers its path in the tree i.e. highlight both its parents and children. When there are other visualizations like heat maps or stacked line plots in the workspace, hovering over a chart element highlights the mapped feature nodes in all the other plots.
@@ -183,7 +168,6 @@ timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
                              id="SubjectID",
                              time="Day",
                              lvl="Species",
-                             feature_order = feature_order,
                              C=0.3,
                              B=1)
 ```
@@ -193,12 +177,10 @@ For plotting the data using Metaviz, we set the fit values as y-coordinates and 
 ```{r, eval=TRUE}
 feature_order2 <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
 
-splinesMRexp <- ts2MRexperiment(timeSeriesFits, feature_data = featureData(aggregateByTaxonomy(etec16s, lvl="Species", feature_order = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
-etec16s_species <- aggregateByTaxonomy(etec16s, lvl="Species", feature_order = feature_order)
+splinesMRexp <- ts2MRexperiment(timeSeriesFits, feature_data = featureData(etec16s)[,feature_order2], sampleNames = timeSeriesFits[[2]]$fit$timePoints)
 ```
 
-Finally, we add the MRexperiment as a measurement using the `add_measurements` method and then visualize those measurements as a LinePlot.
-
+Finally, we add the MRexperiment as a measurement for Metaviz to plot.
 
 ```{r, eval=TRUE}
 splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(MRcounts(splinesMRexp[i,]))) >= 2})
