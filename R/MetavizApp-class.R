@@ -42,7 +42,7 @@ MetavizApp$methods(
     'Navigate on metaviz app successively to given nodes.
     
     \\describe{
-    \\item{nodes}{An object of class \\code{\\link{MetavizNode}} indicating
+    \\item{nodes}{An object of class indicating
     set of nodes to navigate in epiviz app.}
     \\item{n}{(integer) The number of regions in \\code{nodes} to navigate to.}
     \\item{.callback}{(function) function to call after navigating to each region. Used for testing purposes.}

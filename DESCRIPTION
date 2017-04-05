@@ -21,10 +21,10 @@ Depends:
     metagenomeSeq,
     methods,
     data.table,
-    phyloseq
+    phyloseq,
+    Biobase
 Imports:
     methods,
-    Biobase,
     epivizr,
     epivizrData,
     epivizrStandalone,

@@ -1,6 +1,6 @@
 #' validate \code{\link[metagenomeSeq]{MRexperiment-class}} object
 #' 
-#' @param an object of class \code{\link[metagenomeSeq]{MRexperiment-class}}
+#' @param object an object of class \code{\link[metagenomeSeq]{MRexperiment-class}}
 #' 
 #' @return TRUE or FALSE
 #' @export

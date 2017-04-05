@@ -34,6 +34,8 @@ metavizControl(aggregateAtDepth = 3, aggregateFun = function(x) colSums(x),
 \item{norm}{Normalize MRexperiment object.}
 
 \item{log}{Log tranformation of MRexperiment object.}
+
+\item{featureSelection}{List of features to set as nodeSelections}
 }
 \value{
 List of setting parameters.
