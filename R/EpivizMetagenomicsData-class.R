@@ -75,6 +75,16 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .self$.levelSelected <- 3
       .self$.lastRootId <- "1-1"
       
+      featureSelection = control$featureSelection
+      
+      if(!is.null(featureSelection)){
+        temp_selections = list()
+        for(i in seq(1,length(featureSelection))){
+          temp_selections[[as.character(.self$.graph$.nodes_table[node_label==names(featureSelection)[i],child])]] <- unname(featureSelection)[i]
+        }
+        .self$.nodeSelections = temp_selections
+      }
+      
       callSuper(object=object, ...)
     },
 
@@ -148,7 +158,7 @@ EpivizMetagenomicsData$methods(
     toRet['order'] = row['order']
     toRet['id'] = row['id']
     if(toRet['id'] %in% names(.self$.nodeSelections)){
-      toRet['selectionType'] = .self$.nodeSelections[[toRet['id']]]
+      toRet['selectionType'] = .self$.nodeSelections[[as.character(toRet['id'])]]
     } else{
       toRet['selectionType'] = 1
     }
@@ -187,7 +197,7 @@ EpivizMetagenomicsData$methods(
     return(root)
   },
   
-  getHierarchy=function(nodeId) {
+  getHierarchy=function(nodeId = NULL) {
     # getHierarchy can be called with NULL from App
     if(is.null(nodeId) || nodeId == ""){
       nodeId <- .self$.lastRootId
@@ -331,7 +341,15 @@ EpivizMetagenomicsData$methods(
     return(ret_data_frame)
   },
   
-  propagateHierarchyChanges=function(selection, order, selectedLevels) {
+  propagateHierarchyChanges=function(selection = NULL, order = NULL, selectedLevels = NULL, request_with_labels = FALSE) {
+    
+    if(request_with_labels && !is.null(selection)){
+      temp_selections = list()
+      for(i in seq(1,length(selection))){
+        temp_selections[[.self$.graph$.nodes_table[node_label==names(selection)[i],child]]] <- selection[i]
+      }
+      selection <- temp_selections
+    }
     
     # update node selections types to metaviztree
     if(!is.null(selection)) {

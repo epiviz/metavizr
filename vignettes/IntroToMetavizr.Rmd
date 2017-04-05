@@ -28,7 +28,7 @@ require(msd16s)
 The connection to `Metaviz` is managed through a session manager object of class `EpivizApp`. We can create this object and open `Metaviz` using the `startMetaviz` function.
 
 ```{r, eval=FALSE, echo=TRUE}
-app <- startMetaviz()
+app <- startMetaviz(verbose=TRUE)
 
 ```
 
@@ -91,19 +91,45 @@ matrix sizes with YYY elements perform well for interactive visualization with a
 
 ```{r, eval=TRUE}
 feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
+aggregated_feature_order <- feature_order[1:7]
 
 msd16s_species <- msd16s
+fData(msd16s) <- fData(msd16s)[feature_order]
+fData(msd16s_species) <- fData(msd16s_species)[aggregated_feature_order]
   
 bangladesh <- msd16s[, which(pData(msd16s)$Country == "Bangladesh")]
+bangladesh_species <- msd16s_species[, which(pData(msd16s_species)$Country == "Bangladesh")]
+
+aggregation_level <- "species"
+aggregated_species <-  cumNorm(aggregateByTaxonomy(bangladesh_species, lvl=aggregation_level), p = 0.75)
+varLabels(featureData(aggregated_species)) <- aggregation_level
+temp <- unique(fData(bangladesh_species)[,aggregated_feature_order])
+temp[is.na(temp)] <- "no_match"
+temp <- temp[order(temp[,aggregation_level]),]
+row.names(temp) <- temp[,aggregation_level]
+featureNames(featureData(aggregated_species)) <- as.character(temp[,aggregation_level])
+fData(aggregated_species) <- temp[order(row.names(MRcounts(aggregated_species))),]
+
 aggregation_level <- "class"
-normed_bangladesh <-  cumNorm(bangladesh, p = 0.75)
+aggregated_bangladesh <- aggregateByTaxonomy(bangladesh, lvl=aggregation_level)
+varLabels(featureData(aggregated_bangladesh)) <- aggregation_level
+temp <- unique(fData(bangladesh)[,feature_order[1:which(feature_order == aggregation_level)]])
+temp[is.na(temp)] <- "no_match"
+temp <- temp[order(temp[,aggregation_level]),]
+row.names(temp) <- temp[,aggregation_level]
+featureNames(featureData(aggregated_bangladesh)) <- as.character(temp[,aggregation_level])
+fData(aggregated_bangladesh) <- temp[order(row.names(MRcounts(aggregated_bangladesh))),]
+
+
+normed_bangladesh <-  cumNorm(aggregated_bangladesh, p = 0.75)
 bangladesh_sample_data <-  pData(normed_bangladesh)
 mod <-  model.matrix(~1+Dysentery, data = bangladesh_sample_data)
-results_bangladesh <-  suppressWarnings(fitFeatureModel(normed_bangladesh, mod))
+results_bangladesh <-  fitFeatureModel(normed_bangladesh, mod)
 logFC_bangladesh <- MRcoefs(results_bangladesh, number = nrow(normed_bangladesh))
 
-feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 2),]$adjPvalues < .1),]) 
-fSelection <- generateSelection(feature_names = feature_names , aggregation_level = aggregation_level, selection_type =2)
+feature_names <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 1),]$adjPvalues < .1),]) 
+fSelection <- rep(2, length(feature_names))
+names(fSelection) <- feature_names
 
 control <- metavizr::metavizControl(featureSelection = fSelection)
 ```
@@ -114,7 +140,7 @@ Once the browser is open we can visualize the metagenomic features from the `mou
 
 ```{r,eval=TRUE}
 #specify the feature hierarchy for the dataset
-icicle_plot <- app$plot(bangladesh, datasource_name="mmssdd", control=control, feature_order = feature_order)
+icicle_plot <- app$plot(aggregated_species, datasource_name="mmssdd", control = control, feature_order = aggregated_feature_order)
 ```
 
 You should now see an icicle widget to explore the hierarchy of the metagenomic features from the `mouseData` object. To navigate the complex, hierarchical structure of the feature space, we developed an icicle/facet zoom visualization. Because of the limitations in the screen size and performance rendering big trees, the icicle plot is an efficient visualization for navigating trees. The icicle visualization helps zoom in and out of trees and traverse subtrees. Every node in the icicle has a state associated with it. There are three possible states for a node 1) expand - use all subtree nodes during analysis 2) collapse - aggregate all nodes under the subtree to the selected node 3) remove - discard all nodes in the subtree for the analysis. The state of a node is also propagated to all its children and can be identified by the opacity of the node. Row level controls are available to the left of the icicle - to set the state of all nodes at a selected depth/taxonomic class of the hierarchy. Icicle is traversible if the ends on the row controls are chevrons. Users can set states on the nodes to define a cut over the feature space. The cut defines how the count data is queried, analyzed and visualized in other plots like heat maps or stacked line plots. In addition to defining the cut, we also have a navigation bar on top of the icicle to limit the range of features when querying for count data. Navigation bar is a flexible component (increase/decrease the length) and controls are available to move the bar left/right and extend over the entire range of the current tree in the icicle. Each of these actions would query the count data and automatically propagate the changes to other visualizations in the workspace. When navigating outside the scope of the navigation bar, chevrons (left/right) appear on the navigation bar to help identify the current position. Brushing/hovering is another important visual element we focused on our implementation of an icicle. Hovering over a node hovers its path in the tree i.e. highlight both its parents and children. When there are other visualizations like heat maps or stacked line plots in the workspace, hovering over a chart element highlights the mapped feature nodes in all the other plots.
@@ -138,9 +164,10 @@ Finally, we can update the threshold cutoff we had for fold change, pass those m
 ```{r, eval=TRUE}
 
 feature_names2 <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > .5),]$adjPvalues < .05),])
-fSelection2 <- generateSelection(feature_names =  feature_names2, aggregation_level = aggregation_level, selection_type =2)
+fSelection2 <- rep(2, length(feature_names2))
+names(fSelection2) <- feature_names2
 
-app$get_ms_object(icicle_plot)$featureSelection(featureNames=fSelection2$featureNames, featureOrder=fSelection2$featureOrder, featureLevel=fSelection2$featureLevel, selectionType=fSelection2$selectionType)
+app$get_ms_object(icicle_plot)$propagateHierarchyChanges(fSelection2, selectedLevels = which(feature_order==aggregation_level), request_with_labels = TRUE)
 ```
 
 
@@ -153,7 +180,6 @@ First, import the etec16s dataset, select sample data from the first 9 days, and
 library(etec16s)
 data(etec16s)
 etec16s <- etec16s[,-which(pData(etec16s)$Day>9)]
-featuresOfInterest <- c('Escherichia/Shigella','Faecalibacterium prausnitzii')
 ```
 
 Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
@@ -161,7 +187,7 @@ Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
 ```{r, eval=TRUE}
 featureData(etec16s)$Kingdom <- "Bacteria"
 feature_order <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "OTU.ID")
-
+feature_order2 <- feature_order[1:7]
 timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
                              formula = abundance~id + time*class + AntiGiven,
                              class="AnyDayDiarrhea",
@@ -175,9 +201,18 @@ timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
 For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `toMRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
 
 ```{r, eval=TRUE}
-feature_order2 <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
-
-splinesMRexp <- ts2MRexperiment(timeSeriesFits, feature_data = featureData(etec16s)[,feature_order2], sampleNames = timeSeriesFits[[2]]$fit$timePoints)
+aggregation_level = "Species"
+fData(etec16s) <- fData(etec16s)[,feature_order]
+aggregated_etec16s <- aggregateByTaxonomy(etec16s, lvl = aggregation_level)
+varLabels(featureData(aggregated_etec16s)) <- aggregation_level
+temp <- unique(fData(etec16s)[,feature_order2])
+temp[is.na(temp)] <- "no_match"
+temp <- temp[order(temp[,aggregation_level]),]
+temp <- temp[!duplicated(temp[,aggregation_level]),]
+row.names(temp) <- temp[,aggregation_level]
+featureNames(featureData(aggregated_etec16s)) <- as.character(temp[,aggregation_level])
+fData(aggregated_etec16s) <- temp[order(row.names(MRcounts(aggregated_etec16s))),]
+splinesMRexp <- timeSeriesToMRexperiment(timeSeriesFits, feature_data = featureData(aggregated_etec16s), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
 ```
 
 Finally, we add the MRexperiment as a measurement for Metaviz to plot.
@@ -187,7 +222,7 @@ splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(M
 splines_to_plot_indices <- which(splines_to_plot == TRUE)
 
 ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base", control=metavizControl(norm = FALSE, aggregateAtDepth = 6), feature_order = feature_order2)
-splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines", control = metavizControl(norm=FALSE, aggregateAtDepth = 6))
+splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines", control = metavizControl(norm=FALSE, aggregateAtDepth = 6), feature_order = feature_order2)
 splineMeasurements <- splineObj$get_measurements()
 splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
 ```
