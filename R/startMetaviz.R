@@ -70,7 +70,7 @@
       measurements <- measurementsList[[m]]
       
       if(is.null(start)) {
-        start <- 0
+        start <- 1
       }
       else {
         start <- start - 1
@@ -95,13 +95,13 @@
   
   app$server$register_action("getSeqInfos", function(request_data) {
     return(list(
-      "metavizr" = c(0, 100000)
+      "metavizr" = c(1, 100000)
     ))
   })
   
   app$server$register_action("partitions", function(request_data) {
     return(list(
-      "metavizr" = c(0, 100000)
+      "metavizr" = c(1, 100000)
     ))
   })
   
@@ -115,7 +115,7 @@
       measurements <- measurementsList[[m]]
       
       if(is.null(start)) {
-        start <- 0
+        start <- 1
       }
       else {
         start <- start - 1
@@ -149,7 +149,7 @@
       measurements <- measurementsList[[m]]
       
       if(is.null(start)) {
-        start <- 0
+        start <- 1
       }
       else {
         start <- start - 1

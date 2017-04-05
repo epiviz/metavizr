@@ -18,15 +18,19 @@ Description: This package provides Websocket communication to the
 VignetteBuilder: knitr
 Depends:
     R (>= 3.3),
+    metagenomeSeq,
     methods,
-    metagenomeSeq
+    data.table
 Imports:
+    methods,
     Biobase,
     epivizr,
     epivizrData,
     epivizrStandalone,
     GenomicRanges,
-    GenomeInfoDb
+    GenomeInfoDb,
+    metagenomeSeq,
+    RNeo4j
 Suggests:
     knitr,
     BiocStyle,
@@ -38,12 +42,10 @@ Collate:
     'metavizControl.R'
     'startMetaviz.R'
     'utils.R'
-    'Ptr-class.R'
-    'MetavizNode-class.R'
-    'MetavizTree-class.R'
     'EpivizMetagenomicsData-class.R'
     'register-methods.R'
     'validateMRExperiment.R'
     'MetavizApp-class.R'
+    'MetavizGraph-class.R'
 biocViews: Visualization, Infrastructure, GUI, Metagenomics
 RoxygenNote: 6.0.1

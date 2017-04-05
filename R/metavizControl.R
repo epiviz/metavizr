@@ -1,6 +1,6 @@
 #' metavizr settings
 #'
-#' Default settings for operating over MRexperiment object.
+#' Default settings for the various plotting functions in metavizr.
 #'
 #' @param aggregateAtDepth Level of the tree to aggregate counts at by default.
 #' @param aggregateFun Function to aggregate counts by at the aggregateAtDepth level.
