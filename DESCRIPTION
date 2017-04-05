@@ -26,8 +26,9 @@ Depends:
 Imports:
     epivizr,
     epivizrData,
+    epivizrServer,
     epivizrStandalone,
-    metagenomeSeq
+    vegan
 Suggests:
     knitr,
     BiocStyle,
