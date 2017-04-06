@@ -71,7 +71,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .self$.minValue <- min(.self$.leaf_sample_count_table[, !c("leaf"), with=FALSE])
       .self$.maxValue <- max(.self$.leaf_sample_count_table[, !c("leaf"), with=FALSE])
       .self$.nodeSelections <- list()
-      .self$.levelSelected <- 3
+      .self$.levelSelected <- aggregateAtDepth
       .self$.lastRootId <- "1-1"
       
       featureSelection = control$featureSelection
@@ -488,9 +488,7 @@ EpivizMetagenomicsData$methods(
   getCombined=function(measurements = NULL, 
                           seqName, start = 1, end = 1000, 
                           order = NULL, nodeSelection, selectedLevels) {
-    
-    # update selectedLevels on taxonomy tree
-    
+
     # update node selections types to metaviztree
     if(!is.null(nodeSelection)) {
       for(n in names(nodeSelection)){
