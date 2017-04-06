@@ -123,7 +123,7 @@ featuresToRemove <- rep(0, length(featuresToRemove_names))
 names(featuresToRemove) <- featuresToRemove_names
 ```
 
-A metavizControl allows users to specify settings for operating over the MRexperiment object including data analysis such as normalization and log transform.  We create a metavizControl with the featureSelection as the nodes that be found to be differentially abundant and those will be visible when creating Metaviz plots.
+A metavizControl allows users to specify settings for operating over the MRexperiment object including data analysis such as normalization and log transform.  We create a metavizControl with the featureSelection as the nodes that be found to be differentially abundant and those will be visible when creating Metaviz plots.  The rest of the settings in the metavizControl will use the default parameters.
 
 ```{r,eval=TRUE}
 control <- metavizr::metavizControl(featureSelection = c(featuresToKeep, featuresToRemove))
@@ -131,7 +131,7 @@ control <- metavizr::metavizControl(featureSelection = c(featuresToKeep, feature
 
 # Adding an Icicle navigation widget to explore metagenomic features
 
-Once the browser is open we can visualize the metagenomic features from the `mouseData` object. We use the `plot` method to do so. 
+Once the browser is open we can visualize the metagenomic features from the `mouseData` object. We use the `plot` method to do so. The `plot` function can take as input any of the classes registered with epivirData.
 
 ```{r,eval=TRUE}
 #specify the feature hierarchy for the dataset

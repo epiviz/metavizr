@@ -3,10 +3,15 @@
 #' Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 #' \code{\link[metagenomeSeq]{MRexperiment-class}} objects.
 #' @importClassesFrom epivizrData EpivizData
-#' @importFrom methods new
 #' @importFrom vegan diversity
 #' @import data.table
+#' @import methods
 #' @exportClass EpivizMetagenomicsData
+#' @examples
+#' 
+#' data(mouseData)
+#' obj <- EpivizMetagenomicsData$new(mouseData, feature_order = colnames(fData(mouseData)))
+#' 
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   contains = "EpivizData",
   fields = list(
@@ -91,7 +96,6 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     },
 
     # Create leaf_sample_count data.table
-    
     .create_leaf_sample_count_table=function(obj_in, norm = TRUE){
       normed_counts <- as.data.frame(MRcounts(cumNorm(obj_in), norm = norm))
       normed_counts[["leaf"]] <- rownames(normed_counts)
@@ -125,10 +129,14 @@ EpivizMetagenomicsData$methods(
 EpivizMetagenomicsData$methods(
   get_default_chart_type = function() { "epiviz.ui.charts.tree.Icicle" },
   get_measurements=function() {
-    ' Get all annotation info for all samples
-     
-      @return List of sample annotation from datasource
-    '
+    "Get all annotation info for all samples
+    
+    \\describe{
+      \\item{chart_id_or_object}{An object of class \\code{EpivizChart} or an id for
+        a chart loaded to the epiviz app.}
+    }
+    \\value{out}{List of sample annotations from datasource}
+    "
     samplesToRet <- colnames(.self$.leaf_sample_count_table)
     samplesToRet <- samplesToRet[-(length(samplesToRet))]
     out <- lapply(samplesToRet, function(sample) {
@@ -147,12 +155,13 @@ EpivizMetagenomicsData$methods(
   },
   
   row_to_dict=function(row){
-    '
-      Helper function to format each node entry for getHierarchy response
-       
-      @param row Information for current node
-      @return List Formatted named list
-    '
+    "Helper function to format each node entry for getHierarchy response
+    
+    \\describe{
+      \\item{row}{Information for current node.}
+      }
+    \\value{toRet}{Formatted named list.}
+    "
     
     toRet = list()
     toRet['end'] = row['end']
@@ -180,13 +189,14 @@ EpivizMetagenomicsData$methods(
   },
   
   df_to_tree=function(root, df){
-    '
-      Helper function to recursively build nested response for getHierarchy
-       
-      @param root Root of subtree
-      @param df data.frame containing children to process 
-      @return List Nested tree structure
-    '
+    "Helper function to recursively build nested response for getHierarchy
+    
+    \\describe{
+      \\item{root}{Root of subtree}
+      \\item{df}{data.frame containing children to process}
+    }
+    \\value{root}{Nested tree structure}
+    "
     
     children = df[which(df['parentId'] == as.character(unlist(root['id']))),]
     
@@ -216,13 +226,14 @@ EpivizMetagenomicsData$methods(
   },
   
   getHierarchy=function(nodeId = NULL) {
-    '
-      Retrieve feature hierarchy information for subtree with specified root
-       
-      @param nodeId(character) Feature identifier with level info
-      @return List containing hierarchy of subtree
-    '
+    "Retrieve feature hierarchy information for subtree with specified root
     
+    \\describe{
+      \\item{nodeId}{Feature identifier with level info}
+    }
+    \\value{ret_data_frame}{List containing hierarchy of subtree}
+    "
+
     # getHierarchy can be called with NULL from App
     if(is.null(nodeId) || nodeId == ""){
       nodeId <- .self$.lastRootId
@@ -367,14 +378,16 @@ EpivizMetagenomicsData$methods(
   },
   
   propagateHierarchyChanges=function(selection = NULL, order = NULL, selectedLevels = NULL, request_with_labels = FALSE) {
-    '
-      Update internal state for hierarchy
-  
-      @param selection (list) Node-id and selectionType pairs
-      @param order (character) Ordering of features
-      @param selectedLevels (list) Current aggregation level
-      @param request_with_labels (Boolean) For handling requests using fData entries from MRexperiment  
-    '    
+    "Update internal state for hierarchy
+    
+    \\describe{
+      \\item{selection}{Node-id and selectionType pairs}
+      \\item{order}{Ordering of features}
+      \\item{selectedLevels}{Current aggregation level}
+      \\item{request_with_labels}{For handling requests using fData entries from MRexperiment}
+    }
+    "
+    
     if(request_with_labels && !is.null(selection)){
       temp_selections = list()
       for(i in seq(1,length(selection))){
@@ -397,15 +410,18 @@ EpivizMetagenomicsData$methods(
   },
   
   getRows=function(measurements = NULL, start = 1, end = 1000, selectedLevels = 3, selections = NULL) {
-    '
-      Return the sample annotation and features within the specified range and level
-      @param measurements (character) 
-      @param start (integer) Start of feature range to query
-      @param end (integer) End of feature range to query
-      @param selections (list) Node-id and selectionType pairs
-      @param selectedLevels (integer) Current aggregation level
-      @return List of annotations for a given sample and features
-    '
+    "Return the sample annotation and features within the specified range and level
+    
+    \\describe{
+      \\item{measurements}{Samples to retrieve for}
+      \\item{start}{Start of feature range to query}
+      \\item{end}{End of feature range to query}
+      \\item{selections}{Node-id and selectionType pairs}
+      \\item{selectedLevels}{Current aggregation level}
+
+    }
+    \\value{data_rows}{List of annotations for a given sample and features}
+    "
     
     nodes_at_level <- .self$.graph$.nodes_table[level==selectedLevels, ]
     nodes_at_level_ids <- nodes_at_level[,child]
@@ -478,16 +494,19 @@ EpivizMetagenomicsData$methods(
   },
   
   getValues=function(measurements = NULL, start = 1, end = 1000, selectedLevels = 3, selections = NULL) {
-    '
-      Return the counts for a sample within the specified range
-       
-      @param measurement (character) Samples to get counts for
-      @param start (integer) Start of feature range to query
-      @param end (integer) End of feature range to query
-      @param selections (list) Node-id and selectionType pairs
-      @param selectedLevels (integer) Current aggregation level
-      @return List of counts for sample as selected level of hierarchy
-    '
+    "Return the counts for a sample within the specified range
+    
+    \\describe{
+    \\item{measurements}{Samples to get counts for}
+    \\item{start}{Start of feature range to query}
+    \\item{end}{End of feature range to query}
+    \\item{selections}{Node-id and selectionType pairs}
+    \\item{selectedLevels}{Current aggregation level}
+    
+    }
+    \\value{data_columns}{List of counts for sample as selected level of hierarchy}
+    "
+
     nodes_at_level <- .self$.graph$.nodes_table[level==selectedLevels,]
     nodes_at_level_ids <- nodes_at_level[,child]
     
@@ -539,18 +558,20 @@ EpivizMetagenomicsData$methods(
   getCombined=function(measurements = NULL, 
                           seqName, start = 1, end = 1000, 
                           order = NULL, nodeSelection = NULL, selectedLevels = 3) {
-    '
-      Return the counts aggregated to selected nodes for the given samples
-       
-      @param measurements (character) Samples to get counts for
-      @param seqName (character) 
-      @param start (integer) Start of feature range to query
-      @param end (integer) End of feature range to query
-      @param order (character) Ordering of nodes
-      @param nodeSelection (list) Node-id and selectionType pairs
-      @param selectedLevels (list) Current aggregation level
-      @return List of samples with aggregate counts per feature
-    '
+    "Return the counts aggregated to selected nodes for the given samples
+    
+    \\describe{
+    \\item{measurements}{Samples to get counts for}
+    \\item{seqName}{name of datasource}
+    \\item{start}{Start of feature range to query}
+    \\item{end}{End of feature range to query}
+    \\item{order}{Ordering of nodes}
+    \\item{nodeSelection}{Node-id and selectionType pairs}
+    \\item{selectedLevels}{Current aggregation level}
+    
+    }
+    \\value{result}{List of samples with aggregate counts per feature}
+    "
     
     # update node selections types to metaviztree
     if(!is.null(nodeSelection)) {
@@ -575,27 +596,30 @@ EpivizMetagenomicsData$methods(
   },
   
   searchTaxonomy=function(query, max_results) {
-    '
-      Find feature using text-based search
-       
-      @param query (character) String of feature for which to search
-      @param max_results (integer) Maximum results to return
-      @return List of features that contain the substring query
-    '
+    " Find feature using text-based search
+    
+    \\describe{
+    \\item{query}{String of feature for which to search}
+    \\item{max_results}{Maximum results to return}
+    
+    }
+    \\value{result}{List of features that contain the substring query}
+    "
     
     results = list()
     return(results)
   },
   
   getPCA=function(measurements = NULL, start = 1, end = 1000) {
-    '
-      Compute PCA over all features for given samples
-       
-      @param measurements (character) Samples to compute PCA over
-      @param start (integer) Start of feature range to query 
-      @param end (integer) End of feature range to query 
-      @return List of PC1, PC2, and percent variance explained for each measurements
-    '
+    " Compute PCA over all features for given samples
+    
+    \\describe{
+    \\item{measurements}{Samples to compute PCA over}
+    \\item{start}{Start of feature range to query }
+    \\item{end}{End of feature range to query}
+    }
+    \\value{result}{List of PC1, PC2, and percent variance explained for each measurements}
+    "
     
     if(is.null(measurements)){
       samples <- colnames(.self$.leaf_sample_count_table)
@@ -635,14 +659,15 @@ EpivizMetagenomicsData$methods(
   },
   
   getAlphaDiversity=function(measurements = NULL, start = 1, end = 1000) {
-    '
-       Compute alpha diversity using vegan for the given samples
-       
-      @param measurements (character) Samples to compute alpha diversity
-      @param start (integer) Start of feature range to query 
-      @param end (integer) End of feature range to query 
-      @return List of alpha diversity values for given measurements
-    '
+    " Compute alpha diversity using vegan for the given samples
+    
+    \\describe{
+    \\item{measurements}{Samples to compute alpha diversity}
+    \\item{start}{Start of feature range to query }
+    \\item{end}{End of feature range to query}
+    }
+    \\value{result}{List of alpha diversity values for given measurements}
+    "
     
     if(is.null(measurements)){
       samples <- colnames(.self$.leaf_sample_count_table)

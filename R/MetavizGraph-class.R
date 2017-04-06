@@ -1,7 +1,7 @@
 #' Graph implementation to query hierarchical feature data
 #'
 #' Used to manage aggregation and range queries from the Metaviz app UI. 
-#' 
+#'  
 MetavizGraph <- setRefClass("MetavizGraph",
                            fields=list(
                              .feature_order = "ANY",
@@ -27,6 +27,13 @@ MetavizGraph <- setRefClass("MetavizGraph",
                              },
                              
                              .create_nodes_table=function(feature_order){
+                               "Create a data.table with information for each node in the feature hierarchy
+    
+                                \\describe{
+                                  \\item{feature_order}{The order of hierarchy as colnames of fData for the MRexperiment object}
+                                    }
+                                \\value{ret_table}{data.table containing information for each node}
+                               "
                                
                                lineage_DF <- as.data.frame(.self$.node_ids_DT)
                                lineage_table <- .self$.node_ids_DT
@@ -70,9 +77,15 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                return(ret_table)
                              },
                              
-                             # Create leaf_of data.table
-                             
                              .create_leaf_of_table=function(feature_order){
+                               "Create a data.table with leaf, ancestor relationship for each leaf
+    
+                                \\describe{
+                                  \\item{feature_order}{The order of hierarchy as colnames of fData for the MRexperiment object}
+                                    }
+                                \\value{ret_table}{data.table leaf of relationship for each node}
+                               "                               
+                               
                                leaf_ofs <- list()
                                ancestors <- list()
                                leaf_index <- length(feature_order)
@@ -86,6 +99,14 @@ MetavizGraph <- setRefClass("MetavizGraph",
                              },
                              
                              .create_hierarchy_tree=function(obj_in, feature_order){
+                               "Create a data.frame with the hierarchy ordered by each level of the hierarchy
+    
+                                \\describe{
+                                  \\item{obj_in}{An MRexperiment object containing featureData}
+                                  \\item{feature_order}{The order of hierarchy as colnames of fData for the MRexperiment object}
+                                    }
+                                \\value{ordered_fData}{data.frame with sorted hierarchy of features}
+                               "  
                                fd = fData(obj_in) 
                                for( i in seq(ncol(fd))){
                                  fd[,i] = as.character(fd[,i]) 
@@ -100,7 +121,6 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                  replacing_na_obj_fData[,i][na_indices] <- paste("Not_Annotated", feature_order[i], sep="_")
                                }
                                
-                               #obj_fData <- fData(obj_in)[,feature_order]
                                obj_fData <- as.data.table(replacing_na_obj_fData)
                                cols <- feature_order[1:length(feature_order)-1]
                                order <- rep(1, length(feature_order)-1)
@@ -112,8 +132,14 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                return(as.data.frame(ordered_fData))
                              },
                              
-                             
                              .create_node_ids=function(feature_order){
+                               "Create a data.table with unique ids used for metavizr to specify level and child for any node 
+    
+                                \\describe{
+                                  \\item{feature_order}{The order of hierarchy as colnames of fData for the MRexperiment object}
+                                    }
+                                \\value{table_node_ids}{data.table with node ids in sorted hierarchy}
+                               "  
                                table_node_ids <- .self$.hierarchy_tree
                                leaf_ordering_table <- as.data.table(.self$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
                                setnames(leaf_ordering_table, c("leaf", "otu_index"))
