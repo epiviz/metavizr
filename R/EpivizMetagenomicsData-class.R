@@ -26,7 +26,6 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   ),
   
   methods=list(
-    # TODO use and check columns
     initialize=function(object, 
                         columns=NULL,
                         control=metavizControl(), 
@@ -79,6 +78,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       if(!is.null(featureSelection)){
         temp_selections = list()
         featureSelection <- featureSelection[which(names(featureSelection) != "NA")]
+        featureSelection <- featureSelection[which(names(featureSelection) != "no_match")]
         for(i in seq(1,length(featureSelection))){
             node_id <- as.character(.self$.graph$.nodes_table[node_label==names(featureSelection)[i],child])
             temp_selections[[node_id]] <- unname(featureSelection)[i]
@@ -100,11 +100,9 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     },
     
     update=function(newObject, ...) {
-      # TODO
       callSuper(newObject, ...)
     },
     plot=function(...) {
-      # TODO
     }
   )
 )
