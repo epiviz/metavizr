@@ -12,9 +12,85 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \section{Methods}{
 
 \describe{
+\item{\code{df_to_tree(root, df)}}{  Helper function to recursively build nested response for getHierarchy
+   
+  @param root Root of subtree
+  @param df data.frame containing children to process 
+  @return List Nested tree structure}
+
+\item{\code{getAlphaDiversity(measurements = NULL, start = 1, end = 1000)}}{   Compute alpha diversity using vegan for the given samples
+   
+  @param measurements (character) Samples to compute alpha diversity
+  @param start (integer) Start of feature range to query 
+  @param end (integer) End of feature range to query 
+  @return List of alpha diversity values for given measurements}
+
+\item{\code{getCombined(measurements = NULL, seqName, start = 1, end = 1000,
+  order = NULL, nodeSelection = NULL, selectedLevels = 3)}}{  Return the counts aggregated to selected nodes for the given samples
+   
+  @param measurements (character) Samples to get counts for
+  @param seqName (character) 
+  @param start (integer) Start of feature range to query
+  @param end (integer) End of feature range to query
+  @param order (character) Ordering of nodes
+  @param nodeSelection (list) Node-id and selectionType pairs
+  @param selectedLevels (list) Current aggregation level
+  @return List of samples with aggregate counts per feature}
+
 \item{\code{get_default_chart_type()}}{Get name of default chart type for this data type}
 
+\item{\code{getHierarchy(nodeId = NULL)}}{  Retrieve feature hierarchy information for subtree with specified root
+   
+  @param nodeId(character) Feature identifier with level info
+  @return List containing hierarchy of subtree}
+
 \item{\code{get_measurements()}}{Get description of measurements served by this object}
+
+\item{\code{getPCA(measurements = NULL, start = 1, end = 1000)}}{  Compute PCA over all features for given samples
+   
+  @param measurements (character) Samples to compute PCA over
+  @param start (integer) Start of feature range to query 
+  @param end (integer) End of feature range to query 
+  @return List of PC1, PC2, and percent variance explained for each measurements}
+
+\item{\code{getRows(measurements = NULL, start = 1, end = 1000, selectedLevels = 3,
+  selections = NULL)}}{  Return the sample annotation and features within the specified range and level
+  @param measurements (character) 
+  @param start (integer) Start of feature range to query
+  @param end (integer) End of feature range to query
+  @param selections (list) Node-id and selectionType pairs
+  @param selectedLevels (integer) Current aggregation level
+  @return List of annotations for a given sample and features}
+
+\item{\code{getValues(measurements = NULL, start = 1, end = 1000,
+  selectedLevels = 3, selections = NULL)}}{  Return the counts for a sample within the specified range
+   
+  @param measurement (character) Samples to get counts for
+  @param start (integer) Start of feature range to query
+  @param end (integer) End of feature range to query
+  @param selections (list) Node-id and selectionType pairs
+  @param selectedLevels (integer) Current aggregation level
+  @return List of counts for sample as selected level of hierarchy}
+
+\item{\code{propagateHierarchyChanges(selection = NULL, order = NULL,
+  selectedLevels = NULL, request_with_labels = FALSE)}}{    Update internal state for hierarchy
+
+    @param selection (list) Node-id and selectionType pairs
+    @param order (character) Ordering of features
+    @param selectedLevels (list) Current aggregation level
+    @param request_with_labels (Boolean) For handling requests using fData entries from MRexperiment  
+  }
+
+\item{\code{row_to_dict(row)}}{  Helper function to format each node entry for getHierarchy response
+   
+  @param row Information for current node
+  @return List Formatted named list}
+
+\item{\code{searchTaxonomy(query, max_results)}}{  Find feature using text-based search
+   
+  @param query (character) String of feature for which to search
+  @param max_results (integer) Maximum results to return
+  @return List of features that contain the substring query}
 
 \item{\code{update(new_object, send_request = TRUE)}}{Update underlying data object with new object}
 }}

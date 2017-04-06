@@ -225,6 +225,7 @@ startMetaviz <- function(host="http://metaviz.cbcb.umd.edu",
 #' @return An object of class \code{\link{MetavizApp}}
 #' 
 #' @import epivizrStandalone
+#' @import GenomeInfoDb
 #' @examples
 #' # see package vignette for example usage
 #' app <- startMetaviz(non_interactive=TRUE, open_browser=TRUE)

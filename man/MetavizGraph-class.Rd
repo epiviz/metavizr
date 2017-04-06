@@ -4,9 +4,8 @@
 \name{MetavizGraph-class}
 \alias{MetavizGraph-class}
 \alias{MetavizGraph}
-\title{Taxonomy tree structure wrapper}
+\title{Graph implementation to query hierarchical feature data}
 \description{
-Used to manage tree-cut queries from the
-Metaviz app UI.
+Used to manage aggregation and range queries from the Metaviz app UI.
 }
 
