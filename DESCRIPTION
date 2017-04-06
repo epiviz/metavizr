@@ -1,7 +1,7 @@
 Package: metavizr
 Type: Package
 Version: 0.99.5
-Authors@R: c( person("Hector", "Corrada Bravo", email="hcorrada@gmail.com", role=c("cre","aut", "main")),
+Author: c( person("Hector", "Corrada Bravo", email="hcorrada@gmail.com", role=c("cre","aut", "main")),
   person("Florin", "Chelaru", email="florin.chelaru@gmail.com", role=c("aut")),
   person("Justin", "Wagner", email="jwagner@cs.umd.edu", role=c("aut")),
   person("Jayaram", "Kancherla", email="jayaram.kancherla@gmail.com", role=c("aut")),
@@ -29,14 +29,16 @@ Imports:
     epivizrData,
     epivizrServer,
     epivizrStandalone,
-    vegan
+    vegan,
+    GenomeInfoDb
 Suggests:
     knitr,
     BiocStyle,
     matrixStats,
     msd16s (>= 0.109.1),
     etec16s,
-    testthat
+    testthat,
+    gss
 Collate:
     'metavizControl.R'
     'startMetaviz.R'

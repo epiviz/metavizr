@@ -78,10 +78,12 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       
       if(!is.null(featureSelection)){
         temp_selections = list()
-        featureSelection <- featureSelection[which(names(featureSelection) != "no_match")]
+        featureSelection <- featureSelection[which(names(featureSelection) != "NA")]
         for(i in seq(1,length(featureSelection))){
-            temp_selections[[as.character(.self$.graph$.nodes_table[node_label==names(featureSelection)[i],child])]] <- unname(featureSelection)[i]
+            node_id <- as.character(.self$.graph$.nodes_table[node_label==names(featureSelection)[i],child])
+            temp_selections[[node_id]] <- unname(featureSelection)[i]
         }
+        
         .self$.nodeSelections = temp_selections
       }
       
