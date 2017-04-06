@@ -24,8 +24,8 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                print("creating node_ids_DT")
                                .self$.node_ids_DT <- .create_node_ids(feature_order = feature_order[1:length(feature_order)-1])
                                
-                               print("creating nodes_table")
-                               .self$.nodes_table <- .create_nodes_table(feature_order = feature_order[1:length(feature_order)-1])
+                               print("creating nodes_table_dev")
+                               .self$.nodes_table <- .create_nodes_table(feature_order = feature_order)
                              },
                              
                              .create_nodes_table=function(feature_order){
@@ -78,7 +78,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                leaf_ofs <- list()
                                ancestors <- list()
                                leaf_index <- length(feature_order)
-                               for(i in seq(1, length(feature_order)-1)){
+                               for(i in seq(1, length(feature_order))){
                                  ancestors <- c(ancestors, .self$.hierarchy_tree[,feature_order[i]])
                                  leaf_ofs <- c(leaf_ofs, .self$.hierarchy_tree[,feature_order[leaf_index]])
                                }
@@ -113,6 +113,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                
                                return(as.data.frame(ordered_fData))
                              },
+                             
                              
                              .create_node_ids=function(feature_order){
                                table_node_ids <- .self$.hierarchy_tree
