@@ -1,6 +1,6 @@
 Package: metavizr
 Type: Package
-Version: 0.99.7
+Version: 0.99.8
 Author: c( person("Hector", "Corrada Bravo", email="hcorrada@gmail.com", role=c("cre","aut", "main")),
   person("Florin", "Chelaru", email="florin.chelaru@gmail.com", role=c("aut")),
   person("Justin", "Wagner", email="jwagner@cs.umd.edu", role=c("aut")),
