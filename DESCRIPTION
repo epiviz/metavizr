@@ -19,7 +19,7 @@ Description: This package provides Websocket communication to the
 VignetteBuilder: knitr
 Depends:
     R (>= 3.3),
-    metagenomeSeq (>= 1.17.0),
+    metagenomeSeq (>= 1.17.1),
     methods,
     data.table,
     phyloseq,
