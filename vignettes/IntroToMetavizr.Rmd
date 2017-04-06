@@ -222,7 +222,7 @@ app$chart_mgr$list_chart_types()
 app$chart_mgr$list_chart_type_settings("LinePlot")
 
 # update settings on splineChart 
-settings <- list(yMin = -10, yMax = 10)
+settings <- list(yMin = -10, yMax = 10, colLabel="label")
 colors <- c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf")
 app$chart_mgr$set_chart_settings(splineChart, settings=settings, colors = colors)
 ```
