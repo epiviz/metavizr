@@ -1,11 +1,12 @@
 Package: metavizr
 Type: Package
 Version: 0.99.5
-Authors@R: c( person("Hector", "Corrada Bravo", email="hcorrada@gmail.com", role=c("cre","aut")),
+Authors@R: c( person("Hector", "Corrada Bravo", email="hcorrada@gmail.com", role=c("cre","aut", "main")),
   person("Florin", "Chelaru", email="florin.chelaru@gmail.com", role=c("aut")),
   person("Justin", "Wagner", email="jwagner@cs.umd.edu", role=c("aut")),
   person("Jayaram", "Kancherla", email="jayaram.kancherla@gmail.com", role=c("aut")),
-  person("Joseph", "Paulson", email="nosson@gmail.com", role=c("aut")))
+  person("Joseph", "Paulson", email="jpaulson@jimmy.harvard.edu", role=c("aut")))
+Maintainer: Hector Corrada Bravo <hcorrada@gmail.com>
 License: Artistic-2.0
 Title: R Interface to the metaviz web app for interactive metagenomics data analysis and visualization
 Description: This package provides Websocket communication to the
