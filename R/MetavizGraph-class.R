@@ -1,8 +1,6 @@
-#' Taxonomy tree structure wrapper
+#' Graph implementation to query hierarchical feature data
 #'
-#' Used to manage tree-cut queries from the
-#' Metaviz app UI. 
-#' 
+#' Used to manage aggregation and range queries from the Metaviz app UI. 
 #' 
 MetavizGraph <- setRefClass("MetavizGraph",
                            fields=list(
@@ -24,7 +22,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                print("creating node_ids_DT")
                                .self$.node_ids_DT <- .create_node_ids(feature_order = feature_order[1:length(feature_order)-1])
                                
-                               print("creating nodes_table_dev")
+                               print("creating nodes_table")
                                .self$.nodes_table <- .create_nodes_table(feature_order = feature_order)
                              },
                              
