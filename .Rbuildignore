@@ -1,0 +1,5 @@
+.gitignore
+inst/www
+work
+^.*\.Rproj$
+^\.Rproj\.user$
