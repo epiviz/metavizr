@@ -54,9 +54,9 @@ test_that("getRows", {
 
 #searchTaxonomy
 test_that("searchTaxonomy", {
-  skip("search not implemented")
-  load(file.path(system.file("tests", package="metavizr"), "msd16s.RData"))
-  mObj <- metavizr:::EpivizMetagenomicsData(msd16s)
+  #load(file.path(system.file("tests", package="metavizr"), "msd16s.RData"))
+  feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
+  mObj <- metavizr:::EpivizMetagenomicsData(msd16s, feature_order = feature_order)
   res <- mObj$searchTaxonomy(query = "bact", max_results = 10)
   expect_equal(10, length(res))
 })

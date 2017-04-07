@@ -57,7 +57,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       } else {
         message("MRExperiment Object validated... PASS")
       }
-      .self$.feature_order <- feature_order
+
       if(is.null(feature_order)) {
         .self$.feature_order = colnames(fData(object))
       }
@@ -595,7 +595,7 @@ EpivizMetagenomicsData$methods(
     return(result)
   },
   
-  searchTaxonomy=function(query, max_results) {
+  searchTaxonomy=function(query = NULL, max_results = 15) {
     " Find feature using text-based search
     
     \\describe{
@@ -606,7 +606,62 @@ EpivizMetagenomicsData$methods(
     \\value{result}{List of features that contain the substring query}
     "
     
+    if(is.null(query)){
+      return(list())
+    }
+    
+    nodes_table_lowercase <- .self$.graph$.nodes_table
+    nodes_table_lowercase <- nodes_table_lowercase[,node_label:=tolower(node_label)]
+    query_lowercase <- tolower(query)
+    matching_nodes <- nodes_table_lowercase[grepl(query, node_label),]
+    
+    if(nrow(matching_nodes) > max_results){
+      num_results <- max_results
+    } else{
+      num_results <- nrow(matching_nodes)
+    }
+    matching_nodes <- matching_nodes[,head(.SD, num_results)]
+    
+    node_labels <- matching_nodes[,node_label]
+    node_ids <- matching_nodes[,child]
+    levels <- matching_nodes[,level]
+    starts <- length(node_labels)
+    ends <- length(node_labels)
+    
+    leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
+    setnames(leaf_ordering_table, c("leaf", "otu_index"))
+    
+    leaf_table_lowercase <- .self$.graph$.leaf_of_table
+    leaf_table_lowercase <- leaf_table_lowercase[,node_label:=tolower(node_label)]
+    
+    for(i in seq(1, length(node_labels))){
+      node <- node_labels[i]
+      
+      list_of_leaves <- leaf_table_lowercase[node_label==node,leaf]
+      leaf_indexes_temp <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
+      
+      if(length(leaf_indexes_temp) > 0){
+        start <- min(leaf_indexes_temp)
+      } else{
+        start <- node
+      }
+      
+      if(length(leaf_indexes_temp) > 0){
+        end <- max(leaf_indexes_temp)
+      } else{
+        end <- node
+      }
+      
+      starts[i] <- start
+      ends[i] <- end
+    }
+    
     results = list()
+    for(i in seq(1, num_results)){
+      results[[i]] <- list("gene"=node_labels[i], "start"=starts[i], 
+                           "end"=ends[i], "seqName"="metavizr", 
+                           "nodeId"=node_ids[i], "level"=levels[i])
+    }
     return(results)
   },
   
