@@ -108,7 +108,7 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
   }
 \value{toRet}{Formatted named list.}}
 
-\item{\code{searchTaxonomy(query, max_results)}}{Find feature using text-based search
+\item{\code{searchTaxonomy(query = NULL, max_results = 15)}}{Find feature using text-based search
 
 \describe{
 \item{query}{String of feature for which to search}
@@ -116,6 +116,19 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 }
 \value{result}{List of features that contain the substring query}}
+
+\item{\code{toNEO4JDbHTTP(batch_url, neo4juser, neo4jpass, datasource)}}{Write an `EpivizMetagenomicsData` object to a Neo4j graph database
+
+@param batch_url (character) Neo4j database url and port for processing batch http requests
+@param neo4juser (character) Neo4j database user name
+@param neo4jpass (character) Neo4j database password
+@param datasource (character) Name of Neo4j datasource node for this `EpivizMetagenomicsData` object 
+
+@examples
+library(metagenomeSeq)
+data("mouseData")
+mobj <- metavizr:::EpivizMetagenomicsData$new(object=mouseData)
+mobj$toNEO4JDbHTTP(batch_url = "http://localhost:7474/db/data/batch", neo4juser = "neo4juser", neo4jpass = "neo4jpass", datasource = "mouse_data")}
 
 \item{\code{update(new_object, send_request = TRUE)}}{Update underlying data object with new object}
 }}

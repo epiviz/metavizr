@@ -6,6 +6,7 @@
 #' @importFrom vegan diversity
 #' @import data.table
 #' @import methods
+#' @import httr
 #' @exportClass EpivizMetagenomicsData
 #' @examples
 #' 
@@ -24,6 +25,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .nodeSelections = "ANY",
     .levelSelected = "ANY",
     .lastRootId = "character",
+    .json_query = "ANY",
     
     # Tables
     .leaf_sample_count_table = "ANY",
@@ -753,3 +755,455 @@ EpivizMetagenomicsData$methods(
     return(result)
   }
 )
+
+EpivizMetagenomicsData$methods(
+  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, datasource) {
+    ' 
+    Write an `EpivizMetagenomicsData` object to a Neo4j graph database
+    
+    @param batch_url (character) Neo4j database url and port for processing batch http requests
+    @param neo4juser (character) Neo4j database user name
+    @param neo4jpass (character) Neo4j database password
+    @param datasource (character) Name of Neo4j datasource node for this `EpivizMetagenomicsData` object 
+    
+    @examples
+    library(metagenomeSeq)
+    data("mouseData")
+    mobj <- metavizr:::EpivizMetagenomicsData$new(object=mouseData)
+    mobj$toNEO4JDbHTTP(batch_url = "http://localhost:7474/db/data/batch", neo4juser = "neo4juser", neo4jpass = "neo4jpass", datasource = "mouse_data")
+    '
+    
+    cat("Saving sample data...")
+    .saveSampleDataNEO4JHTTP(batch_url, neo4juser, neo4jpass)
+    cat("Done\n")
+    
+    cat("Saving datasource data...")
+    .saveDataSourceNEO4JHTTP(batch_url, neo4juser, neo4jpass, datasource)
+    cat("Done\n")
+    
+    cat("Saving hierarchy...")
+    .saveHierarchyNEO4JHTTP(batch_url, neo4juser, neo4jpass, datasource)
+    cat("Done\n")
+    
+    cat("Saving properties...")
+    .neo4jUpdatePropertiesHTTP(batch_url, neo4juser, neo4jpass, call_number = 1)
+    cat("Done\n")
+    
+    cat("Saving Data Matrix...")
+    .saveMatrixNEO4JHTTP(batch_url, neo4juser, neo4jpass, datasource)
+    cat("Done\n")
+    
+    cat("Saving properties...")
+    .neo4jUpdatePropertiesHTTP(batch_url, neo4juser, neo4jpass, call_number = 2)
+    cat("Done\n")
+  },
+  
+  .buildBatchJSON = function(query_in, param_list, id_in=0, id_last=TRUE, full_query=TRUE,json_query_in=NULL, params_complete=FALSE){
+    json_start <- "["
+    method <- "{\"method\" : \"POST\","
+    to <- "\"to\" : \"cypher\","
+    body_start <- "\"body\" : {"
+    params_start <- "\"params\" : {"
+    params_end <- "}"
+    body_end <- "},"
+    
+    if(id_last){
+      id <- paste("\"id\": ", as.character(id_in), "}", sep="")
+    }
+    else{
+      id <- paste("\"id\": ", as.character(id_in), "},", sep="")
+    }
+    json_end <- "]"
+    json_query <- ""
+    if(is.null(json_query_in)){
+      json_query <- ""
+    }
+    else{
+      json_query <- json_query_in
+    }
+    params = ""
+    
+    if(is.null(param_list)){
+      query = paste("\"query\" : \"", query_in, "\"", sep = "")
+      json_query <- paste0(json_query, method, to, body_start, query, body_end, id)
+      query_final <- paste0(json_start, json_query, json_end)
+      .self$.json_query <- query_final
+      return(query_final)
+    }
+    
+    query = paste("\"query\" : \"", query_in, "\",", sep = "")
+    for(k in seq(1, length(param_list))){
+      if(k == length(param_list)){
+        if(params_complete){
+          params <- paste0(params, "\"", names(param_list[k]), "\" : ", unlist(unname(param_list[k])), "")
+        }
+        else{
+          params <- paste0(params, "\"", names(param_list[k]), "\" : {", unlist(unname(param_list[k])), "}")
+        }
+      }
+      else{
+        if(params_complete){
+          params <- paste0(params, "\"", names(param_list[k]), "\" : ", unlist(unname(param_list[k])), ",")
+        }
+        else{
+          params <- paste0(params, "\"", names(param_list[k]), "\" : {\"", unlist(unname(param_list[k])), "\"}", ",")
+        }
+      }
+    }
+    json_query <- paste0(json_query, method, to, body_start, query, params_start, params, params_end, body_end, id)
+    if(!full_query){
+      return(json_query)
+    }
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    return(query_final)
+  },
+  
+  .saveSampleDataNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, file=NULL) {
+    
+    json_start <- "["
+    query <- "CREATE (:Sample {props})"
+    
+    json_end <- "]"
+    json_query <- ""
+    
+    sampleAnnotationToNeo4j = .sampleAnnotation
+    sampleAnnotationToNeo4j['id'] = rownames(.sampleAnnotation)
+    keys = colnames(sampleAnnotationToNeo4j)
+    id_counter <- 0
+    for (j in 1:nrow(sampleAnnotationToNeo4j)){
+      row <- sampleAnnotationToNeo4j[j,]
+      props <- ""
+      for (i in 1:(length(keys)-1)){
+        if  (typeof(keys[i]) == "numeric")
+          props <- paste(props, "\"", keys[i], "\"", " : ", "\"", gsub("'", "", row[, keys[i]]), "\"",", ", sep="")
+        else
+          props <- paste(props, "\"", keys[i], "\"", " : \"", gsub("'", "",row[, keys[i]]), "\", ",sep="")
+      }
+      i = length(keys)
+      if  (typeof(keys[i]) == "numeric")
+        props = paste(props, "\"", keys[i], "\"", " : ", "\"", gsub("'", "",row[, keys[i]]), "\"", sep="")
+      else
+        props = paste(props, "\"", keys[i], "\"", " : \"", gsub("'", "",row[, keys[i]]), "\"", sep="")
+      
+      params <- list("props"=props)
+      if (id_counter < nrow(sampleAnnotationToNeo4j)-1){
+        json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = FALSE, full_query = FALSE, json_query_in = json_query)
+      }
+      else {
+        json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query)
+      }
+      id_counter <- id_counter + 1
+    }
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    
+    if(!is.null(batch_url)) {
+      POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+    }
+  },
+  
+  .saveDataSourceNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, datasource, file=NULL) {
+    query <- "CREATE (:Datasource {label: {label_param}})"
+    params <- list(label_param=paste("\"", as.character(datasource), "\"", sep=""))
+    
+    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    else {
+      write(query, file=file, append = TRUE)
+    }
+  },
+
+  .saveHierarchyNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, datasource, file=NULL) {
+
+    dfToNeo4j <- as.data.frame(.self$.graph$.nodes_table)
+    names(dfToNeo4j)[names(dfToNeo4j) == "child"] <- "id"
+    names(dfToNeo4j)[names(dfToNeo4j) == "level"] <- "depth"
+    names(dfToNeo4j)[names(dfToNeo4j) == "node_label"] <- "label"
+    names(dfToNeo4j)[names(dfToNeo4j) == "parent"] <- "parentId"
+    dfToNeo4j[,"lineageLabel"] <- dfToNeo4j[,"lineage"]
+    
+    dfToNeo4j$partition = NA
+    
+    json_start <- "["
+    json_end <- "]"
+    datasource_param_key <- "datasource"
+    datasource_param_value <- as.character(datasource)
+    
+    keys = colnames(dfToNeo4j)
+    query <- "CREATE (:Feature {props})"
+    json_query <- ""
+    cypherCount = 0
+    id_counter <- 0
+    
+    for (j in 1:nrow(dfToNeo4j)){
+      row <- dfToNeo4j[j,]
+      props <- "" 
+      for (i in 1:(length(keys))){
+        if  (typeof(keys[i]) == "numeric")
+          props <- paste(props, "\"", keys[i], "\"", " : ", "\"", gsub("'", "",row[, keys[i]]), "\"", ", ",sep="")
+        else
+          props <- paste(props, "\"", keys[i], "\"", " : \"", gsub("'", "",row[, keys[i]]), "\", ", sep="")
+      }
+      i = length(keys)
+      
+      props <- paste(props, "\"", datasource_param_key, "\"", " : \"", datasource_param_value, "\"", sep="")
+      params <- list("props"=props)
+      
+      writeBatchOut <- j%%500 == 0
+      if (j <= nrow(dfToNeo4j)-1){
+        if (writeBatchOut){
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query)
+        }
+        else {
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = FALSE, full_query = FALSE, json_query_in = json_query)
+        }
+      }
+      else {
+        json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query)
+      }
+      id_counter <- id_counter + 1
+      
+      if (writeBatchOut){
+        query_final <- paste0(json_start, json_query, json_end)
+        .self$.json_query <- query_final
+        
+        if(!is.null(batch_url)) {
+          r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+          stop_for_status(r)
+          
+        }
+        id_counter <- 0
+        json_query <- ""
+      }
+    }
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    
+    if(!is.null(batch_url)) {
+      POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+    }
+    else {
+      write(query, file=file, append = TRUE)
+      
+      cypherCount = cypherCount + 1
+      
+      # write commits if data file is too long
+      if(cypherCount == 500) {
+        write(";", file=file, append = TRUE)
+        write("commit", file=file, append = TRUE)
+        write("begin", file=file, append = TRUE)
+        cypherCount = 0
+      }
+    }
+    
+    query <- "MATCH (ds:Datasource {label:{datasource_param}}) MATCH (fNode:Feature {id: {root_id}, datasource: {datasource_param}}) CREATE (ds)-[:DATASOURCE_OF]->(fNode)"
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), root_id=paste("\"", "1-1", "\"", sep=""))
+    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
+    
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    else {
+      write(query, file=file, append = TRUE)
+    }
+    
+    json_start <- "["
+    query <- "MATCH (fParent:Feature {id : {parent_id}, datasource: {datasource_param}}) MATCH (f:Feature {id : {child_id}, datasource: {datasource_param}}) CREATE (fParent)-[:PARENT_OF]->(f)"
+    
+    json_end <- "]"
+    json_query <- ""
+    
+    cypherCount = 0
+    id_counter <- 0
+    
+    for (j in 1:nrow(dfToNeo4j)){
+      row <- dfToNeo4j[j,]
+      parentid <- paste("\"", row$parentId, "\"", sep="")
+      childid <- paste("\"", row$id, "\"", sep="")
+      writeBatchOut <- j%%500 == 0
+      if (j <= nrow(dfToNeo4j)-1){
+        if (writeBatchOut){
+          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid)
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
+        }
+        else {
+          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid)
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = FALSE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
+        }
+      }
+      else {
+        params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid)
+        json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
+      }
+      id_counter <- id_counter + 1
+      
+      if (writeBatchOut){
+        query_final <- paste0(json_start, json_query, json_end)
+        .self$.json_query <- query_final
+        
+        if(!is.null(batch_url)) {
+          r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+          stop_for_status(r)
+        }
+        id_counter <- 0
+        json_query <- ""        
+      }
+    }
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    
+    query <- "MATCH (fNode:Feature {datasource: {datasource_param}})-[:PARENT_OF*]->(fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param} }) CREATE (fNode)-[:LEAF_OF]->(fLeaf)"
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)), "\"", sep=""))
+    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
+    
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    else {
+      write(query, file=file, append = TRUE)
+    }
+    
+    query <- "MATCH (fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param}}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)"
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)), "\"", sep=""))
+    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
+    
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+  },
+  
+  .saveMatrixNEO4JHTTP = function(batch_url, neo4juser, neo4jpass,  datasource, file=NULL) {
+    valuesToNeo4j = as.data.frame(melt(.self$.leaf_sample_count_table, id.vars = c("leaf"), measure.vars = c(colnames(.self$.leaf_sample_count_table)[1:(length(colnames(.self$.leaf_sample_count_table))-1)]), variable.name = "sample_id", variable.factor = FALSE))
+    
+    json_start <- "["
+    query <- "MATCH (f:Feature {id : {node_id}, datasource: {datasource_param}}) MATCH (s:Sample {id: {sample_id}}) CREATE (s)-[:COUNT {val: {count_param}}]->(f)"
+    
+    json_end <- "]"
+    json_query <- ""
+    
+    cypherCount = 0
+    id_counter <- 0
+    
+    for (j in 1:nrow(valuesToNeo4j)){
+      row <- valuesToNeo4j[j,]
+      nodeid <- paste("\"", row$leaf, "\"", sep="")
+      sampleid <- paste("\"", row$sample_id, "\"", sep="")
+      count <- paste("\"", as.character(row$value), "\"", sep="")
+      writeBatchOut <- j%%5000 == 0
+      if (j <= nrow(valuesToNeo4j)-1){
+        if (writeBatchOut){
+          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), node_id=nodeid, sample_id=sampleid, count_param=count)
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
+        }
+        else {
+          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), node_id=nodeid, sample_id=sampleid, count_param=count)
+          json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = FALSE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
+        }
+      }
+      else {
+        params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), node_id=nodeid, sample_id=sampleid, count_param=count)
+        json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
+      }
+      id_counter <- id_counter + 1
+      
+      if (writeBatchOut){
+        query_final <- paste0(json_start, json_query, json_end)
+        .self$.json_query <- query_final
+        
+        if(!is.null(batch_url)) {
+          r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+          stop_for_status(r)
+        }
+        id_counter <- 0
+        json_query <- ""
+      }
+      
+    }
+    
+    query_final <- paste0(json_start, json_query, json_end)
+    .self$.json_query <- query_final
+    
+    if(!is.null(batch_url)) {
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
+    }
+    
+  },
+  
+  .neo4jUpdatePropertiesHTTP = function(batch_url, neo4juser, neo4jpass, call_number) {
+    
+    if(call_number == 1){
+      query <- "CREATE INDEX ON :Feature (id)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      } 
+      
+      query <- "CREATE INDEX ON :Sample (id)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+    }
+    
+    if(call_number == 2){
+      query <- "MATCH (f:Feature) SET f.depth = toInt(f.depth)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+      
+      query <- "MATCH ()-[c:COUNT]->() SET c.val = toFloat(c.val)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+      
+      query <- "CREATE INDEX ON :Feature (depth)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+      
+      query <- "CREATE INDEX ON :Feature (start)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+      
+      query <- "CREATE INDEX ON :Feature (end)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
+    
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+    }
+
+  }
+)
+

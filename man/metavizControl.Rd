@@ -46,4 +46,5 @@ Default settings for the various plotting functions in metavizr.
 \examples{
 settings = metavizControl()
 
+
 }
