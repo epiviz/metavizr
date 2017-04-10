@@ -30,7 +30,9 @@ Imports:
     epivizrServer,
     epivizrStandalone,
     vegan,
-    GenomeInfoDb
+    GenomeInfoDb,
+    httr,
+    S4Vectors
 Suggests:
     knitr,
     BiocStyle,

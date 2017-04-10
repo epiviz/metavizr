@@ -19,6 +19,7 @@
 #' @examples
 #' settings = metavizControl()
 #'
+#' @import S4Vectors
 #' @export
 metavizControl<-function(aggregateAtDepth=3,
                          aggregateFun=function(x) colSums(x),
