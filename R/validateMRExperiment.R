@@ -4,6 +4,11 @@
 #' 
 #' @return TRUE or FALSE
 #' @export
+#' @examples
+#' library(metagenomeSeq)
+#' data(mouseData)
+#' validateObject(mouseData)
+#' 
 validateObject <- function(object) {
   
   if(class(object) != "MRexperiment") {

@@ -15,3 +15,9 @@ TRUE or FALSE
 \description{
 validate \code{\link[metagenomeSeq]{MRexperiment-class}} object
 }
+\examples{
+library(metagenomeSeq)
+data(mouseData)
+validateObject(mouseData)
+
+}

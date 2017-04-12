@@ -22,3 +22,7 @@ A selection object for a metavizControl object to accept
 \description{
 Method to select and set aggregation type to nodes in FacetZoom
 }
+\examples{
+generateSelection("Bacteroidales", 1L, 2L)
+
+}
