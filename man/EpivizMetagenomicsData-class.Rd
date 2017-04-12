@@ -17,8 +17,7 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \describe{
   \item{root}{Root of subtree}
   \item{df}{data.frame containing children to process}
-}
-\value{root}{Nested tree structure}}
+}}
 
 \item{\code{get_default_chart_type()}}{Get name of default chart type for this data type}
 
@@ -30,8 +29,7 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \item{measurements}{Samples to compute alpha diversity}
 \item{start}{Start of feature range to query }
 \item{end}{End of feature range to query}
-}
-\value{result}{List of alpha diversity values for given measurements}}
+}}
 
 \item{\code{getCombined(measurements = NULL, seqName, start = 1, end = 1000,
   order = NULL, nodeSelection = NULL, selectedLevels = 3)}}{Return the counts aggregated to selected nodes for the given samples
@@ -45,15 +43,13 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \item{nodeSelection}{Node-id and selectionType pairs}
 \item{selectedLevels}{Current aggregation level}
 
-}
-\value{result}{List of samples with aggregate counts per feature}}
+}}
 
 \item{\code{getHierarchy(nodeId = NULL)}}{Retrieve feature hierarchy information for subtree with specified root
 
 \describe{
   \item{nodeId}{Feature identifier with level info}
-}
-\value{ret_data_frame}{List containing hierarchy of subtree}}
+}}
 
 \item{\code{getPCA(measurements = NULL, start = 1, end = 1000)}}{Compute PCA over all features for given samples
 
@@ -61,11 +57,10 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \item{measurements}{Samples to compute PCA over}
 \item{start}{Start of feature range to query }
 \item{end}{End of feature range to query}
-}
-\value{result}{List of PC1, PC2, and percent variance explained for each measurements}}
+}}
 
 \item{\code{getRows(measurements = NULL, start = 1, end = 1000, selectedLevels = 3,
-  selections = NULL)}}{Return the sample annotation and features within the specified range and level
+  selections = NULL)}}{Return the sample annotation and features within the specified range and level for a given sample and features
     
     \describe{
       \item{measurements}{Samples to retrieve for}
@@ -75,7 +70,6 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
       \item{selectedLevels}{Current aggregation level}
 
     }
-    \value{data_rows}{List of annotations for a given sample and features}
     }
 
 \item{\code{getValues(measurements = NULL, start = 1, end = 1000,
@@ -88,8 +82,7 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \item{selections}{Node-id and selectionType pairs}
 \item{selectedLevels}{Current aggregation level}
 
-}
-\value{data_columns}{List of counts for sample as selected level of hierarchy}}
+}}
 
 \item{\code{propagateHierarchyChanges(selection = NULL, order = NULL,
   selectedLevels = NULL, request_with_labels = FALSE)}}{Update internal state for hierarchy
@@ -105,17 +98,15 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 \describe{
   \item{row}{Information for current node.}
-  }
-\value{toRet}{Formatted named list.}}
+  }}
 
-\item{\code{searchTaxonomy(query = NULL, max_results = 15)}}{Find feature using text-based search
+\item{\code{searchTaxonomy(query = NULL, max_results = 15)}}{Return list of features matching a text-based query
 
 \describe{
 \item{query}{String of feature for which to search}
 \item{max_results}{Maximum results to return}
 
-}
-\value{result}{List of features that contain the substring query}}
+}}
 
 \item{\code{update(new_object, send_request = TRUE)}}{Update underlying data object with new object}
 }}
