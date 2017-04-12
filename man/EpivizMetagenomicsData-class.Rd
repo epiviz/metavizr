@@ -20,6 +20,10 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 }
 \value{root}{Nested tree structure}}
 
+\item{\code{get_default_chart_type()}}{Get name of default chart type for this data type}
+
+\item{\code{get_measurements()}}{Get description of measurements served by this object}
+
 \item{\code{getAlphaDiversity(measurements = NULL, start = 1, end = 1000)}}{Compute alpha diversity using vegan for the given samples
 
 \describe{
@@ -44,16 +48,12 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 }
 \value{result}{List of samples with aggregate counts per feature}}
 
-\item{\code{get_default_chart_type()}}{Get name of default chart type for this data type}
-
 \item{\code{getHierarchy(nodeId = NULL)}}{Retrieve feature hierarchy information for subtree with specified root
 
 \describe{
   \item{nodeId}{Feature identifier with level info}
 }
 \value{ret_data_frame}{List containing hierarchy of subtree}}
-
-\item{\code{get_measurements()}}{Get description of measurements served by this object}
 
 \item{\code{getPCA(measurements = NULL, start = 1, end = 1000)}}{Compute PCA over all features for given samples
 
@@ -108,7 +108,7 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
   }
 \value{toRet}{Formatted named list.}}
 
-\item{\code{searchTaxonomy(query, max_results)}}{Find feature using text-based search
+\item{\code{searchTaxonomy(query = NULL, max_results = 15)}}{Find feature using text-based search
 
 \describe{
 \item{query}{String of feature for which to search}

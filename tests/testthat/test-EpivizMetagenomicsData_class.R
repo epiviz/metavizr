@@ -1,7 +1,8 @@
 context("testing EpivizMetagenomicsData Class")
 
 test_that("create EpivizMetagenomicsDataClass", {
-  #load(file.path(system.file("tests", package="metavizr"), "msd16s.RData"))
+  skip_if_not_installed("msd16s")
+  require(msd16s)
   feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
   mObj <- metavizr:::EpivizMetagenomicsData(msd16s, feature_order = feature_order)
   
@@ -10,7 +11,9 @@ test_that("create EpivizMetagenomicsDataClass", {
 })
 
 test_that("getHierarchy", {
-  #load(file.path(system.file("tests", package="metavizr"), "msd16s.RData"))
+  skip_if_not_installed("msd16s")
+  require(msd16s)
+
   feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
   
   mObj <- metavizr:::EpivizMetagenomicsData(msd16s, feature_order = feature_order)
@@ -22,7 +25,9 @@ test_that("getHierarchy", {
 })
 
 test_that("getValues", {
-  #load(file.path(system.file("tests", package="metavizr"), "msd16s.RData"))
+  skip_if_not_installed("msd16s")
+  require(msd16s)
+
   sampleId<- "100259"
   feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
   mObj <- metavizr:::EpivizMetagenomicsData(msd16s, feature_order = feature_order)
@@ -36,7 +41,9 @@ test_that("getValues", {
 })
 
 test_that("getRows", {
-  #load(file.path(system.file("tests", package="metavizr"), "msd16s.RData"))  
+  skip_if_not_installed("msd16s")
+  require(msd16s)
+
   feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
   
   mObj <- metavizr:::EpivizMetagenomicsData(msd16s, feature_order = feature_order)
@@ -54,7 +61,9 @@ test_that("getRows", {
 
 #searchTaxonomy
 test_that("searchTaxonomy", {
-  #load(file.path(system.file("tests", package="metavizr"), "msd16s.RData"))
+  skip_if_not_installed("msd16s")
+  require(msd16s)
+
   feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
   mObj <- metavizr:::EpivizMetagenomicsData(msd16s, feature_order = feature_order)
   res <- mObj$searchTaxonomy(query = "bact", max_results = 10)

@@ -24,9 +24,9 @@ Description: This package provides Websocket communication to the
         added to the web app as well.
 VignetteBuilder: knitr
 Depends: R (>= 3.3), metagenomeSeq (>= 1.17.1), methods, data.table,
-        phyloseq, Biobase
+        Biobase
 Imports: epivizr, epivizrData, epivizrServer, epivizrStandalone, vegan,
-        GenomeInfoDb
+        GenomeInfoDb, phyloseq
 Suggests: knitr, BiocStyle, matrixStats, msd16s (>= 0.109.1), etec16s,
         testthat, gss
 Collate: 'metavizControl.R' 'startMetaviz.R' 'utils.R'
