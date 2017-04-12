@@ -12,5 +12,14 @@ Class managing connection to metaviz application.
 
 \describe{
 \item{\code{navigate(chr, start, end)}}{Navigate to given position on the epiviz app.}
+
+\item{\code{slideshow(granges, n = length(granges), .callback = NULL)}}{Navigate on epiviz app successively to given positions.
+
+\describe{
+  \item{granges}{An object of class \code{\link{GenomicRanges}} indicating
+    set of genomic regions to navigate in epiviz app.}
+  \item{n}{(integer) The number of regions in \code{granges} to navigate to.}
+  \item{.callback}{(function) function to call after navigating to each region. Used for testing purposes.}
+}}
 }}
 
