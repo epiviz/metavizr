@@ -136,7 +136,6 @@ EpivizMetagenomicsData$methods(
       \\item{chart_id_or_object}{An object of class \\code{EpivizChart} or an id for
         a chart loaded to the epiviz app.}
     }
-    \\value{out}{List of sample annotations from datasource}
     "
     samplesToRet <- colnames(.self$.leaf_sample_count_table)
     samplesToRet <- samplesToRet[-(length(samplesToRet))]
@@ -161,7 +160,6 @@ EpivizMetagenomicsData$methods(
     \\describe{
       \\item{row}{Information for current node.}
       }
-    \\value{toRet}{Formatted named list.}
     "
     
     toRet = list()
@@ -196,7 +194,6 @@ EpivizMetagenomicsData$methods(
       \\item{root}{Root of subtree}
       \\item{df}{data.frame containing children to process}
     }
-    \\value{root}{Nested tree structure}
     "
     
     children = df[which(df['parentId'] == as.character(unlist(root['id']))),]
@@ -232,7 +229,6 @@ EpivizMetagenomicsData$methods(
     \\describe{
       \\item{nodeId}{Feature identifier with level info}
     }
-    \\value{ret_data_frame}{List containing hierarchy of subtree}
     "
 
     # getHierarchy can be called with NULL from App
@@ -411,7 +407,7 @@ EpivizMetagenomicsData$methods(
   },
   
   getRows=function(measurements = NULL, start = 1, end = 1000, selectedLevels = 3, selections = NULL) {
-    "Return the sample annotation and features within the specified range and level
+    "Return the sample annotation and features within the specified range and level for a given sample and features
     
     \\describe{
       \\item{measurements}{Samples to retrieve for}
@@ -421,7 +417,6 @@ EpivizMetagenomicsData$methods(
       \\item{selectedLevels}{Current aggregation level}
 
     }
-    \\value{data_rows}{List of annotations for a given sample and features}
     "
     
     nodes_at_level <- .self$.graph$.nodes_table[level==selectedLevels, ]
@@ -505,7 +500,6 @@ EpivizMetagenomicsData$methods(
     \\item{selectedLevels}{Current aggregation level}
     
     }
-    \\value{data_columns}{List of counts for sample as selected level of hierarchy}
     "
 
     nodes_at_level <- .self$.graph$.nodes_table[level==selectedLevels,]
@@ -571,7 +565,6 @@ EpivizMetagenomicsData$methods(
     \\item{selectedLevels}{Current aggregation level}
     
     }
-    \\value{result}{List of samples with aggregate counts per feature}
     "
     
     # update node selections types to metaviztree
@@ -597,14 +590,13 @@ EpivizMetagenomicsData$methods(
   },
   
   searchTaxonomy=function(query = NULL, max_results = 15) {
-    " Find feature using text-based search
+    "Return list of features matching a text-based query
     
     \\describe{
     \\item{query}{String of feature for which to search}
     \\item{max_results}{Maximum results to return}
     
     }
-    \\value{result}{List of features that contain the substring query}
     "
     
     if(is.null(query)){
@@ -674,7 +666,6 @@ EpivizMetagenomicsData$methods(
     \\item{start}{Start of feature range to query }
     \\item{end}{End of feature range to query}
     }
-    \\value{result}{List of PC1, PC2, and percent variance explained for each measurements}
     "
     
     if(is.null(measurements)){
@@ -722,7 +713,6 @@ EpivizMetagenomicsData$methods(
     \\item{start}{Start of feature range to query }
     \\item{end}{End of feature range to query}
     }
-    \\value{result}{List of alpha diversity values for given measurements}
     "
     
     if(is.null(measurements)){
