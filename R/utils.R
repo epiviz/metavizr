@@ -22,6 +22,9 @@ SelectionType = list(NONE=0, LEAVES=1, NODE=2)
 #' @return A selection object for a metavizControl object to accept
 #' @export
 #'
+#' @examples
+#' generateSelection("Bacteroidales", 1L, 2L)
+#' 
 generateSelection = function(feature_names, aggregation_level, selection_type, feature_order=NULL){
   fSelection <- list()
   fSelection$featureNames <- feature_names
