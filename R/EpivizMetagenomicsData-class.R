@@ -8,9 +8,10 @@
 #' @import methods
 #' @exportClass EpivizMetagenomicsData
 #' @examples
-#' 
+#'
+#' library(metagenomeSeq)
 #' data(mouseData)
-#' obj <- EpivizMetagenomicsData$new(mouseData, feature_order = colnames(fData(mouseData)))
+#' obj <- metavizr:::EpivizMetagenomicsData$new(mouseData, feature_order = colnames(fData(mouseData)))
 #' 
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   contains = "EpivizData",

@@ -122,7 +122,8 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 \examples{
 
+library(metagenomeSeq)
 data(mouseData)
-obj <- EpivizMetagenomicsData$new(mouseData, feature_order = colnames(fData(mouseData)))
+obj <- metavizr:::EpivizMetagenomicsData$new(mouseData, feature_order = colnames(fData(mouseData)))
 
 }
