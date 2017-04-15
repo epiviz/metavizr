@@ -190,7 +190,7 @@ timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
                              id="SubjectID",
                              time="Day",
                              lvl="Species",
-                             feature_order = feature_order,
+                             featureOrder = feature_order,
                              C=0.3,
                              B=1)
 ```
@@ -200,7 +200,7 @@ For plotting the data using Metaviz, we set the fit values as y-coordinates and 
 ```{r, eval=TRUE}
 feature_order2 <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
 
-splinesMRexp <- ts2MRexperiment(timeSeriesFits, feature_data = featureData(aggregateByTaxonomy(etec16s, lvl="Species", feature_order = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
+splinesMRexp <- ts2MRexperiment(timeSeriesFits, featureData = featureData(aggregateByTaxonomy(etec16s, lvl="Species", featureOrder = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
 ```
 
 Finally, we add the MRexperiment as a measurement using the `add_measurements` method and then visualize those measurements as a LinePlot.
