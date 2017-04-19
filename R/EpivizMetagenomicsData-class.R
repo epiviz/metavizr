@@ -295,7 +295,7 @@ EpivizMetagenomicsData$methods(
 
       if(nodesToRet[i] != "1-1"){
         parentId_taxonomy <- colnames(.self$.graph$.hierarchy_tree)[(level-1)]
-        parentId <- unique(.self$.graph$.node_ids_DT[get(taxonomy)==nodesToRet[i], get(parentId_taxonomy)])
+        parentId <- unique(.self$.graph$.node_ids_DT[get(taxonomy)==nodesToRet[i], get(parentId_taxonomy)])[1]
         parentIds[i] <- parentId
       } else{
         parentIds[i] <- "NA"
@@ -304,7 +304,7 @@ EpivizMetagenomicsData$methods(
       partition <- "NA"
       partitions[i] <- partition
       
-      list_of_leaves <- .self$.graph$.leaf_of_table[node_label==label,leaf]
+      list_of_leaves <- .self$.graph$.leaf_of_table[node_label %in% label,leaf]
       leaf_indexes_temp <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
       
       if(length(leaf_indexes_temp) > 0){
@@ -332,10 +332,10 @@ EpivizMetagenomicsData$methods(
       taxonomys[i] <- taxonomy
       
       nchildren <- length(unique(.self$.graph$.node_ids_DT[get(taxonomy)==nodesToRet[i],][[as.integer(level)+1]]))
-      nchildrens[i] <- nchildren
+      nchildrens[i] <- nchildren[1]
       
       nleaves_temp <- length(unname(unlist(unique(.self$.graph$.leaf_of_table[node_label==label, leaf]))))
-      nleaves[i] <- nleaves_temp
+      nleaves[i] <- nleaves_temp[1]
       
       if(nodesToRet[i] != "1-1"){
         orders[i] <- .self$.graph$.nodes_table[get("child")==nodesToRet[i],get("order")][[1]]
@@ -472,13 +472,8 @@ EpivizMetagenomicsData$methods(
         starts[i] <- min(res)
         indexes[i] <- min(res)
         metadata[['label']][i] <- feature_label
-        node_level <- as.character(.self$.graph$.nodes_table[node_label==nodes[i], level])
-        list_of_leaves <- .self$.graph$.leaf_of_table[node_label==nodes[i],leaf]
-        leaf_indexes <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
-        id <- paste(as.hexmode(as.integer(node_level)), as.hexmode(min(leaf_indexes)), sep="-")
-        metadata[['id']][i] <- id
-        lineage <- .self$.graph$.nodes_table[node_label==nodes[i], lineage]
-        metadata[['lineage']][i] <- lineage
+        metadata[['id']][i] <- unique(.self$.graph$.nodes_table[node_label==nodes[i], child])[1]
+        metadata[['lineage']][i] <- unique(.self$.graph$.nodes_table[node_label==nodes[i], lineage])[1]
       }
     }
     
@@ -576,6 +571,7 @@ EpivizMetagenomicsData$methods(
     
     selectedLevels = .self$.levelSelected
     selections = .self$.nodeSelections
+    measurements = unique(measurements)
 
     data_columns = getValues(measurements, start, end, selectedLevels, selections)
     data_rows = getRows(measurements, start, end, selectedLevels, selections)
