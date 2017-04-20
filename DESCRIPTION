@@ -26,7 +26,7 @@ VignetteBuilder: knitr
 Depends: R (>= 3.3), metagenomeSeq (>= 1.17.1), methods, data.table,
         Biobase
 Imports: epivizr, epivizrData, epivizrServer, epivizrStandalone, vegan,
-        GenomeInfoDb, phyloseq
+        GenomeInfoDb, phyloseq, httr
 Suggests: knitr, BiocStyle, matrixStats, msd16s (>= 0.109.1), etec16s,
         testthat, gss
 Collate: 'metavizControl.R' 'startMetaviz.R' 'utils.R'
