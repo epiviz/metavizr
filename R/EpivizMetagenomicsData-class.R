@@ -457,6 +457,7 @@ EpivizMetagenomicsData$methods(
     leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
     setnames(leaf_ordering_table, c("leaf", "otu_index"))
     leaf_ordering_table <- leaf_ordering_table[,leaf:=as.character(leaf)]
+    leaf_ordering_table <- leaf_ordering_table[otu_index >= start & otu_index <= end]
     
     first_join <- merge(leaf_ordering_table, merge(nodes_at_level, .self$.graph$.leaf_of_table, by="node_label"), by="leaf")
 
@@ -532,8 +533,14 @@ EpivizMetagenomicsData$methods(
       nodes_at_level <- .self$.graph$.nodes_table[child %in% kept_nodes,]
     }
     
-    data_columns = list()
-    leaf_sample_count_table_sub_select <- na.omit(.self$.leaf_sample_count_table[,mget(c(measurements,"leaf"))])
+    leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
+    setnames(leaf_ordering_table, c("leaf", "otu_index"))
+    leaf_ordering_table <- leaf_ordering_table[,leaf:=as.character(leaf)]
+    leaf_ordering_table <- leaf_ordering_table[otu_index >= start & otu_index <= end]
+    
+    leaf_sample_count_table_sub_select <- .self$.leaf_sample_count_table[,mget(c(measurements,"leaf"))]
+    leaf_sample_count_table_sub_select <- merge(leaf_sample_count_table_sub_select, leaf_ordering_table, by = "leaf")
+    
     first_join <- unique(merge(na.omit(.self$.graph$.leaf_of_table),na.omit(nodes_at_level), by="node_label"))
     
     leaf_sample_count_table_sub_select <- leaf_sample_count_table_sub_select[,leaf:=as.character(leaf)]
