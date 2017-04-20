@@ -19,6 +19,10 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
   \item{df}{data.frame containing children to process}
 }}
 
+\item{\code{get_default_chart_type()}}{Get name of default chart type for this data type}
+
+\item{\code{get_measurements()}}{Get description of measurements served by this object}
+
 \item{\code{getAlphaDiversity(measurements = NULL, start = 1, end = 1000)}}{Compute alpha diversity using vegan for the given samples
 
 \describe{
@@ -41,15 +45,11 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 }}
 
-\item{\code{get_default_chart_type()}}{Get name of default chart type for this data type}
-
 \item{\code{getHierarchy(nodeId = NULL)}}{Retrieve feature hierarchy information for subtree with specified root
 
 \describe{
   \item{nodeId}{Feature identifier with level info}
 }}
-
-\item{\code{get_measurements()}}{Get description of measurements served by this object}
 
 \item{\code{getPCA(measurements = NULL, start = 1, end = 1000)}}{Compute PCA over all features for given samples
 
@@ -107,6 +107,19 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \item{max_results}{Maximum results to return}
 
 }}
+
+\item{\code{toNEO4JDbHTTP(batch_url, neo4juser, neo4jpass, datasource)}}{Write an `EpivizMetagenomicsData` object to a Neo4j graph database
+
+@param batch_url (character) Neo4j database url and port for processing batch http requests
+@param neo4juser (character) Neo4j database user name
+@param neo4jpass (character) Neo4j database password
+@param datasource (character) Name of Neo4j datasource node for this `EpivizMetagenomicsData` object 
+
+@examples
+library(metagenomeSeq)
+data("mouseData")
+mobj <- metavizr:::EpivizMetagenomicsData$new(object=mouseData)
+mobj$toNEO4JDbHTTP(batch_url = "http://localhost:7474/db/data/batch", neo4juser = "neo4juser", neo4jpass = "neo4jpass", datasource = "mouse_data")}
 
 \item{\code{update(new_object, send_request = TRUE)}}{Update underlying data object with new object}
 }}
