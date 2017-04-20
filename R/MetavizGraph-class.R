@@ -13,16 +13,16 @@ MetavizGraph <- setRefClass("MetavizGraph",
                            methods=list(
                              initialize=function(object, feature_order=NULL) {
                                .self$.feature_order = feature_order
-                               print("creating hierarchy_tree")
+                               message("creating hierarchy_tree")
                                .self$.hierarchy_tree <- .create_hierarchy_tree(object, feature_order = feature_order)
                                
-                               print("creating leaf_of_table")
+                               message("creating leaf_of_table")
                                .self$.leaf_of_table <- .create_leaf_of_table(feature_order = feature_order)
                                
-                               print("creating node_ids_DT")
+                               message("creating node_ids_DT")
                                .self$.node_ids_DT <- .create_node_ids(feature_order = feature_order[1:length(feature_order)-1])
                                
-                               print("creating nodes_table")
+                               message("creating nodes_table")
                                .self$.nodes_table <- .create_nodes_table(feature_order = feature_order)
                              },
                              

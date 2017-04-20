@@ -70,7 +70,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
       .self$.sampleAnnotation <- pData(object)
 
-      print("creating leaf_sample_count_table")
+      message("creating leaf_sample_count_table")
       .self$.leaf_sample_count_table <- .create_leaf_sample_count_table(object, norm=norm)
 
       .self$.graph <- buildMetavizGraph(object, feature_order=feature_order)
