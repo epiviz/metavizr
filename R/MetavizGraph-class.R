@@ -46,12 +46,11 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                childs <- list()
                                parents <- list()
                                lineages <- list()
-                               levels <- list()
                                feature_names <- list()
                                childs <- .self$.node_ids_DT[,get(feature_order[1])]
                                parents <- unlist(rep("None", length(.self$.node_ids_DT[,get(feature_order[1])])))
                                lineages <- .self$.node_ids_DT[,get(feature_order[1])]
-                               levels <- rep(1, length(childs))
+                               levels <- rep(0, length(childs))
                                feature_names <- .self$.hierarchy_tree[,1]
                                for(i in seq(2, length(feature_order))){
                                  child_temp <- .self$.node_ids_DT[,get(feature_order[i])]
@@ -60,7 +59,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                  parents <- c(parents, parent_temp)
                                  lineage_temp <- lineage_DT[,get(feature_order[i])]
                                  lineages <- c(lineages, lineage_temp)
-                                 levels <- c(levels, rep(i, length(child_temp)))
+                                 levels <- c(levels, rep(i-1, length(child_temp)))
                                  feature_names <- c(feature_names, .self$.hierarchy_tree[,i])
                                }
                                ret_table <- data.table(child=unlist(childs), parent=unlist(parents), lineage = unlist(lineages), node_label=unlist(feature_names), level = unlist(levels))
@@ -148,7 +147,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                  for(n in nodes_at_level){
                                    list_of_leaves <- .self$.leaf_of_table[node_label==n,leaf]
                                    leaf_indexes <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
-                                   id <- paste(as.hexmode(f), as.hexmode(min(leaf_indexes)), sep="-")
+                                   id <- paste(as.hexmode(f-1), as.hexmode(min(leaf_indexes)), sep="-")
                                    replace_indices <- which(table_node_ids[,feature_order[f]] == n)
                                    table_node_ids[,feature_order[f]][replace_indices] <- id
                                  }

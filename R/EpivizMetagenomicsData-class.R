@@ -79,7 +79,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .self$.maxValue <- max(.self$.leaf_sample_count_table[, !c("leaf"), with=FALSE])
       .self$.nodeSelections <- list()
       .self$.levelSelected <- aggregateAtDepth
-      .self$.lastRootId <- "1-1"
+      .self$.lastRootId <- "0-1"
       
       featureSelection = control$featureSelection
       
@@ -242,7 +242,7 @@ EpivizMetagenomicsData$methods(
   
     #Split the node id to get level and index
     split_res <- strsplit(nodeId, "-")[[1]]
-    level <- as.integer(split_res[1])
+    level <- as.integer(split_res[1])+1
     index <- which(.self$.graph$.node_ids_DT[,level, with=FALSE] == nodeId)
     
     label <- as.character(unique(.self$.graph$.hierarchy_tree[,level][index]))
@@ -261,7 +261,7 @@ EpivizMetagenomicsData$methods(
       nodes_of_subtree <- c(nodes_of_subtree, unname(unlist(unique(hierarchy_slice[,i, with=FALSE]))))
     }
     
-    if(level == 1 || nodeId == "1-1"){
+    if(level == 0 || nodeId == "0-1"){
       nodesToRet <- c(root, unlist(nodes_of_subtree))
     } else{
       parent_of_root_taxonomy <- colnames(.self$.graph$.hierarchy_tree)[(level-1)]
@@ -275,7 +275,7 @@ EpivizMetagenomicsData$methods(
     labels <- rep(1, num_rows)
     leafIndexes <- rep(1, num_rows)
     parentIds <- rep(1, num_rows)
-    depths <- rep(1, num_rows)
+    depths <- rep(0, num_rows)
     partitions <- rep(1, num_rows)
     ends <- rep(1, num_rows)
     ids <- rep(1, num_rows)
@@ -290,8 +290,8 @@ EpivizMetagenomicsData$methods(
     for(i in seq(1,num_rows)){
       nodeId <- nodesToRet[i]
       split_res <- strsplit(nodesToRet[i], "-")[[1]]
-      level <- as.integer(split_res[1])
-      depths[i] <- level
+      depths[i] <- as.integer(split_res[1])
+      level <- as.integer(split_res[1])+1
       
       index <- which(.self$.graph$.node_ids_DT[,level,with=FALSE] == nodeId)
       
@@ -299,7 +299,7 @@ EpivizMetagenomicsData$methods(
       labels[i] <- label
       taxonomy <- colnames(.self$.graph$.hierarchy_tree)[level]
 
-      if(nodesToRet[i] != "1-1"){
+      if(nodesToRet[i] != "0-1"){
         parentId_taxonomy <- colnames(.self$.graph$.hierarchy_tree)[(level-1)]
         parentId <- unique(.self$.graph$.node_ids_DT[get(taxonomy)==nodesToRet[i], get(parentId_taxonomy)])[1]
         parentIds[i] <- parentId
@@ -343,7 +343,7 @@ EpivizMetagenomicsData$methods(
       nleaves_temp <- length(unname(unlist(unique(.self$.graph$.leaf_of_table[node_label==label, leaf]))))
       nleaves[i] <- nleaves_temp[1]
       
-      if(nodesToRet[i] != "1-1"){
+      if(nodesToRet[i] != "0-1"){
         orders[i] <- .self$.graph$.nodes_table[get("child")==nodesToRet[i],get("order")][[1]]
       } else {
         orders[i] <- 1
