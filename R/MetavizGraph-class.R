@@ -86,14 +86,14 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                 \\value{ret_table}{data.table leaf of relationship for each node}
                                "                               
                                
-                               leaf_ofs <- list()
-                               ancestors <- list()
-                               leaf_index <- length(feature_order)
-                               for(i in seq(1, length(feature_order))){
-                                 ancestors <- c(ancestors, .self$.hierarchy_tree[,feature_order[i]])
-                                 leaf_ofs <- c(leaf_ofs, .self$.hierarchy_tree[,feature_order[leaf_index]])
-                               }
-                               ret_table <- data.table(leaf=unlist(leaf_ofs), node_label=unlist(ancestors))
+                               temp_hiearchy_DT <- as.data.table(.self$.hierarchy_tree)
+                               num_features <- length(feature_order)
+                               hiearchy_cols <- colnames(.self$.hierarchy_tree)
+                               
+                               melt_res <- melt(temp_hiearchy_DT, id.vars = c(.self$.feature_order[num_features]), measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols)-1)]))
+                               ret_table <- melt_res[,c(1,3)]
+                               setnames(ret_table, c("leaf", "node_label"))
+                               
                                ret_table <- ret_table[,leaf:=as.character(leaf)]
                                return(ret_table)
                              },
