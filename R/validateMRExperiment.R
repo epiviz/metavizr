@@ -3,6 +3,9 @@
 #' @param object an object of class \code{\link[metagenomeSeq]{MRexperiment-class}}
 #' 
 #' @return TRUE or FALSE
+#' @importFrom Biobase featureData
+#' @importFrom Biobase pData
+#' @importFrom Biobase phenoData
 #' @export
 #' @examples
 #' library(metagenomeSeq)
