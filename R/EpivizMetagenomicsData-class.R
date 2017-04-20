@@ -248,21 +248,25 @@ EpivizMetagenomicsData$methods(
     label <- as.character(unique(.self$.graph$.hierarchy_tree[,level][index]))
     taxonomy <- colnames(.self$.graph$.hierarchy_tree)[level]
     
-    level_one_down <- level+1
-    level_two_down <- level+2
-    level_three_down <- level+3
+    if(length(.self$.feature_order) >= level+3){
+      last_level_of_subtree <- level+3
+    } else{
+      last_level_of_subtree <- length(.self$.feature_order)
+    }
     
-    hierarchy_slice <- unique(.self$.graph$.node_ids_DT[get(taxonomy)==nodeId, level_one_down:level_three_down])
-    nodes_level_1 <- unname(unlist(unique(hierarchy_slice[,1])))
-    nodes_level_2 <- unname(unlist(unique(hierarchy_slice[,2])))
-    nodes_level_3 <- unname(unlist(unique(hierarchy_slice[,3])))
+    hierarchy_slice <- unique(.self$.graph$.node_ids_DT[get(taxonomy)==nodeId, (level+1):last_level_of_subtree])
     
-    if(!(level == "1" || nodeId == "1-1")){
+    nodes_of_subtree <- list()
+    for(i in seq(1,length((level+1):last_level_of_subtree))){
+      nodes_of_subtree <- c(nodes_of_subtree, unname(unlist(unique(hierarchy_slice[,i, with=FALSE]))))
+    }
+    
+    if(level == 1 || nodeId == "1-1"){
+      nodesToRet <- c(root, unlist(nodes_of_subtree))
+    } else{
       parent_of_root_taxonomy <- colnames(.self$.graph$.hierarchy_tree)[(level-1)]
       parent_of_root <- unique(.self$.graph$.node_ids_DT[get(taxonomy)==nodeId, get(parent_of_root_taxonomy)])
-      nodesToRet <- c(parent_of_root,root, nodes_level_1, nodes_level_2, nodes_level_3)
-    } else{
-      nodesToRet <- c(root, nodes_level_1, nodes_level_2, nodes_level_3)
+      nodesToRet <- c(parent_of_root,root, unlist(nodes_of_subtree))
     }
     
     num_rows <- length(nodesToRet)
