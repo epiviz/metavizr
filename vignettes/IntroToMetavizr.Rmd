@@ -189,7 +189,7 @@ timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
                              class="AnyDayDiarrhea",
                              id="SubjectID",
                              time="Day",
-                             lvl="Species",
+                             lvl="Family",
                              featureOrder = feature_order,
                              C=0.3,
                              B=1)
@@ -198,9 +198,9 @@ timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
 For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `ts2MRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
 
 ```{r, eval=TRUE}
-feature_order2 <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+feature_order2 <- c("Kingdom", "Phylum", "Class", "Order", "Family")
 
-splinesMRexp <- ts2MRexperiment(timeSeriesFits, featureData = featureData(aggregateByTaxonomy(etec16s, lvl="Species", featureOrder = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
+splinesMRexp <- ts2MRexperiment(timeSeriesFits, featureData = featureData(aggregateByTaxonomy(etec16s, lvl="Family", featureOrder = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
 ```
 
 Finally, we add the MRexperiment as a measurement using the `add_measurements` method and then visualize those measurements as a LinePlot.
@@ -210,8 +210,8 @@ Finally, we add the MRexperiment as a measurement using the `add_measurements` m
 splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(MRcounts(splinesMRexp[i,]))) >= 2})
 splines_to_plot_indices <- which(splines_to_plot == TRUE)
 
-ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base21", control=metavizControl(norm = FALSE, aggregateAtDepth = 7), feature_order = feature_order2)
-splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines2", control = metavizControl(norm=FALSE, aggregateAtDepth = 7), feature_order = feature_order2)
+ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base21", control=metavizControl(norm = FALSE, aggregateAtDepth = 5), feature_order = feature_order2)
+splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines2", control = metavizControl(norm=FALSE, aggregateAtDepth = 5), feature_order = feature_order2)
 splineMeasurements <- splineObj$get_measurements()
 splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
 
