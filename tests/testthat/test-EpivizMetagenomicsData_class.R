@@ -31,7 +31,7 @@ test_that("getValues", {
   
   sampleId<- "PM1:20080107"
   mObj <- metavizr:::EpivizMetagenomicsData(mouseData, feature_order = feature_order)
-  res <- mObj$getValues(measurement = sampleId, start=0, end=10172, selectedLevels = 3)
+  res <- mObj$getValues(measurement = sampleId, start=0, end=10172, selectedLevels = 4)
   
   expected <- c(2565.789474, 3125.000000, 2250.000000,6.578947,322.368421,125.000000,19.736842)
   expect_equal(nnzero(expected), nnzero(unique(res[[sampleId]])))
@@ -46,7 +46,7 @@ test_that("getRows", {
   feature_order <- colnames(fData(mouseData))
   
   mObj <- metavizr:::EpivizMetagenomicsData(mouseData, feature_order = feature_order)
-  res <- mObj$getRows(start=0, end=10172, selectedLevels = 3)
+  res <- mObj$getRows(start=0, end=10172, selectedLevels = 4)
   expected_label <- c("Actinomycetales","Coriobacteriales", "Bifidobacteriales","Lactobacillales",
                       "Clostridiales","Erysipelotrichales","Rhizobiales","Campylobacterales",
                       "Enterobacteriales","Pasteurellales","Not_Annotated_order")
