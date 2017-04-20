@@ -460,15 +460,18 @@ EpivizMetagenomicsData$methods(
     leaf_ordering_table <- leaf_ordering_table[otu_index >= start & otu_index <= end]
     
     first_join <- merge(leaf_ordering_table, merge(nodes_at_level, .self$.graph$.leaf_of_table, by="node_label"), by="leaf")
-
+    setorderv(first_join, "otu_index")
+    
     data_rows = list()
-    nodes <- nodes_at_level[,node_label]
+    nodes <- unique(first_join$node_label)
 
     ends <- list()
     starts <- list()
     indexes <- list()
     metadata <- list()
     metadata[['label']] <- list()
+    metadata[['id']] <- list()
+    metadata[['lineage']] <- list()
 
     for (i in seq(1, length(nodes))) {
       row_info <- list()
@@ -547,6 +550,7 @@ EpivizMetagenomicsData$methods(
     first_join <- first_join[,leaf:=as.character(leaf)]
     
     second_join <- merge(na.omit(leaf_sample_count_table_sub_select), na.omit(first_join), by="leaf", all.x = TRUE)
+    setorderv(second_join, "otu_index")
     results <- second_join[,lapply(.SD, sum), .SDcols=measurements, by=node_label]
     close_results <- as.data.frame(results)
     
