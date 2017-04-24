@@ -24,6 +24,10 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                
                                message("creating nodes_table")
                                .self$.nodes_table <- .create_nodes_table(feature_order = feature_order)
+                               
+                               
+                               .self$.leaf_of_table <- merge(unique(.self$.nodes_table[,mget(c("id", "node_label"))]), unique(.self$.leaf_of_table) , by="node_label")
+                               .self$.leaf_of_table <- .self$.leaf_of_table[,id:=as.character(id)]
                              },
                              
                              .create_nodes_table=function(feature_order){
@@ -47,10 +51,10 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                
                                nodes_tab_root <- .self$.node_ids_DT[,get(feature_order[1])]
                                root_parents <- rep("None", length(.self$.node_ids_DT[,get(feature_order[1])]))
-                               nodes_tab_root <- data.frame(child = nodes_tab_root, parent = root_parents, lineage = .self$.node_ids_DT[,get(feature_order[1])], 
+                               nodes_tab_root <- data.frame(id = nodes_tab_root, parent = root_parents, lineage = .self$.node_ids_DT[,get(feature_order[1])], 
                                                             node_label = .self$.hierarchy_tree[,1], level = rep(1, length(.self$.hierarchy_tree[,1])))
                                
-                               nodes_tab <- data.frame(child = .self$.node_ids_DT[,get(.self$.feature_order[2])], 
+                               nodes_tab <- data.frame(id = .self$.node_ids_DT[,get(.self$.feature_order[2])], 
                                                        parent = .self$.node_ids_DT[,get(.self$.feature_order[1])], 
                                                        lineage = lineage_DT[,get(feature_order[2])], node_label = .self$.hierarchy_tree[,2], 
                                                        level = rep(2, length(.self$.hierarchy_tree[,2])))
@@ -58,7 +62,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                nodes_tab <- rbind(unique(nodes_tab_root), unique(nodes_tab))
                                
                                for(i in seq(3, length(feature_order))){
-                                 temp_nodes_tab <- data.frame(child = .self$.node_ids_DT[,get(.self$.feature_order[i])], 
+                                 temp_nodes_tab <- data.frame(id = .self$.node_ids_DT[,get(.self$.feature_order[i])], 
                                                               parent = .self$.node_ids_DT[,get(.self$.feature_order[i-1])], 
                                                               lineage = lineage_DT[,get(feature_order[i])],  node_label = .self$.hierarchy_tree[,i],  
                                                               level = rep(i, length(.self$.hierarchy_tree[,i])))
@@ -67,7 +71,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                }
                                
                                ret_table <- as.data.table(nodes_tab)
-                               ret_table <- ret_table[,child:=as.character(child)]
+                               ret_table <- ret_table[,id:=as.character(id)]
                                ret_table <- ret_table[,parent:=as.character(parent)]
                                ret_table <- ret_table[,lineage:=as.character(lineage)]
                                ret_table <- ret_table[,node_label:=as.character(node_label)]

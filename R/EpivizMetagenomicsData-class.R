@@ -30,6 +30,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     
     # Tables
     .leaf_sample_count_table = "ANY",
+    .leaf_sample_count_table_long = "ANY",
     .graph = "ANY"
   ),
   
@@ -70,13 +71,16 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
       .self$.sampleAnnotation <- pData(object)
 
-      message("creating leaf_sample_count_table")
-      .self$.leaf_sample_count_table <- .create_leaf_sample_count_table(object, norm=norm)
-
       .self$.graph <- buildMetavizGraph(object, feature_order=feature_order)
       
-      .self$.minValue <- min(.self$.leaf_sample_count_table[, !c("leaf"), with=FALSE])
-      .self$.maxValue <- max(.self$.leaf_sample_count_table[, !c("leaf"), with=FALSE])
+      message("creating leaf_sample_count_table")
+      .self$.leaf_sample_count_table <- .create_leaf_sample_count_table(object, norm=norm)
+      
+      message("creating leaf_sample_count_table_long")
+      .self$.leaf_sample_count_table_long <- .create_leaf_sample_count_table_long(object, norm=norm)
+      
+      .self$.minValue <- min(.self$.leaf_sample_count_table[, !c("leaf", "otu_index"), with=FALSE])
+      .self$.maxValue <- max(.self$.leaf_sample_count_table[, !c("leaf", "otu_index"), with=FALSE])
       .self$.nodeSelections <- list()
       .self$.levelSelected <- aggregateAtDepth
       .self$.lastRootId <- "0-1"
@@ -88,7 +92,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         featureSelection <- featureSelection[which(names(featureSelection) != "NA")]
         featureSelection <- featureSelection[which(names(featureSelection) != "no_match")]
         for(i in seq(1,length(featureSelection))){
-            node_id <- as.character(.self$.graph$.nodes_table[node_label==names(featureSelection)[i],child])
+            node_id <- as.character(.self$.graph$.nodes_table[node_label==names(featureSelection)[i],id])
             temp_selections[[node_id]] <- unname(featureSelection)[i]
         }
         
@@ -102,8 +106,20 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .create_leaf_sample_count_table=function(obj_in, norm = TRUE){
       normed_counts <- as.data.frame(MRcounts(cumNorm(obj_in), norm = norm))
       normed_counts[["leaf"]] <- rownames(normed_counts)
+      normed_counts[["otu_index"]] <- .self$.graph$.hierarchy_tree[,c("otu_index")]
       ret_table <- as.data.table(normed_counts)
       return(ret_table)
+    },
+    
+    .create_leaf_sample_count_table_long=function(obj_in, norm = TRUE){
+      normed_counts <- as.data.frame(MRcounts(cumNorm(obj_in), norm = norm))
+      normed_counts[["leaf"]] <- rownames(normed_counts)
+      normed_counts[["otu_index"]] <- .self$.graph$.hierarchy_tree[,c("otu_index")]
+      ret_table <- as.data.table(normed_counts)
+      ret_table_long <- melt(ret_table, id.vars = c("leaf", "otu_index"), measure.vars = c(colnames(ret_table)[1:(length(colnames(ret_table))-2)]), variable.name = "sample", variable.factor = FALSE)
+      ret_table_long <- ret_table_long[value>0.0,]
+      setorderv(ret_table_long, "otu_index")
+      return(ret_table_long)
     },
     
     update=function(newObject, ...) {
@@ -120,7 +136,7 @@ EpivizMetagenomicsData$methods(
     nrow(.self$.graph$.hierarchy_tree)
   },
   nmeasurements=function() {
-    ncol(.self$.leaf_sample_count_table)-1
+    ncol(.self$.leaf_sample_count_table)-2
   },
 
   nlevels=function() {
@@ -141,6 +157,7 @@ EpivizMetagenomicsData$methods(
     "
     samplesToRet <- colnames(.self$.leaf_sample_count_table)
     samplesToRet <- samplesToRet[-(length(samplesToRet))]
+    samplesToRet <- samplesToRet[-(length(samplesToRet)-1)]
     out <- lapply(samplesToRet, function(sample) {
      epivizrData:::EpivizMeasurement(id=sample,
           name=sample,
@@ -344,7 +361,7 @@ EpivizMetagenomicsData$methods(
       nleaves[i] <- nleaves_temp[1]
       
       if(nodesToRet[i] != "0-1"){
-        orders[i] <- .self$.graph$.nodes_table[get("child")==nodesToRet[i],get("order")][[1]]
+        orders[i] <- .self$.graph$.nodes_table[get("id")==nodesToRet[i],get("order")][[1]]
       } else {
         orders[i] <- 1
       }
@@ -394,7 +411,7 @@ EpivizMetagenomicsData$methods(
     if(request_with_labels && !is.null(selection)){
       temp_selections = list()
       for(i in seq(1,length(selection))){
-        temp_selections[[.self$.graph$.nodes_table[node_label==names(selection)[i],child]]] <- selection[i]
+        temp_selections[[.self$.graph$.nodes_table[node_label==names(selection)[i],id]]] <- selection[i]
       }
       selection <- temp_selections
     }
@@ -426,7 +443,7 @@ EpivizMetagenomicsData$methods(
     "
     
     nodes_at_level <- .self$.graph$.nodes_table[level==selectedLevels, ]
-    nodes_at_level_ids <- nodes_at_level[,child]
+    nodes_at_level_ids <- nodes_at_level[,id]
     
     if(!is.null(selections) && !(length(selections) == 0)){
       nodes_at_level_selections <- rep(2, length(nodes_at_level_ids))
@@ -438,20 +455,20 @@ EpivizMetagenomicsData$methods(
         selections <- selections[-expand_selections]
       }
       
-      child_lineage <- .self$.graph$.nodes_table[child %in% names(selections),]
+      child_lineage <- .self$.graph$.nodes_table[id %in% names(selections),]
       remove_selections <- which(selections == 0)
       if(length(remove_selections) > 0){
         kept_nodes <- child_lineage[!grepl(paste(paste(names(remove_selections), collapse=",|"), ",",sep=""), lineage),]
-        kept_nodes <- kept_nodes[!(child %in% names(remove_selections)),]
+        kept_nodes <- kept_nodes[!(id %in% names(remove_selections)),]
       } else {
         kept_nodes <- child_lineage
       }
       
       agg_selections <- which(selections == 2)
       if(length(agg_selections) > 0){
-        kept_nodes <- as.character(kept_nodes[!grepl(paste(paste(names(agg_selections), collapse=",|"), ",",sep=""), lineage), child])
+        kept_nodes <- as.character(kept_nodes[!grepl(paste(paste(names(agg_selections), collapse=",|"), ",",sep=""), lineage), id])
       }
-      nodes_at_level <- .self$.graph$.nodes_table[child %in% kept_nodes,]
+      nodes_at_level <- .self$.graph$.nodes_table[id %in% kept_nodes,]
     }
 
     leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
@@ -459,11 +476,11 @@ EpivizMetagenomicsData$methods(
     leaf_ordering_table <- leaf_ordering_table[,leaf:=as.character(leaf)]
     leaf_ordering_table <- leaf_ordering_table[otu_index >= start & otu_index <= end]
     
-    first_join <- merge(leaf_ordering_table, merge(nodes_at_level, .self$.graph$.leaf_of_table, by="node_label"), by="leaf")
+    first_join <- merge(leaf_ordering_table, merge(nodes_at_level, .self$.graph$.leaf_of_table, by="id"), by="leaf")
     setorderv(first_join, "otu_index")
     
     data_rows = list()
-    nodes <- unique(first_join$node_label)
+    nodes <- unique(first_join$node_label.x)
 
     ends <- list()
     starts <- list()
@@ -476,13 +493,13 @@ EpivizMetagenomicsData$methods(
     for (i in seq(1, length(nodes))) {
       row_info <- list()
       feature_label <- nodes[i]
-      res <- first_join[node_label==feature_label,otu_index]
+      res <- first_join[node_label.x==feature_label,otu_index]
       if(length(res) > 0) {
         ends[i] <- max(res)
         starts[i] <- min(res)
         indexes[i] <- min(res)
         metadata[['label']][i] <- feature_label
-        metadata[['id']][i] <- unique(.self$.graph$.nodes_table[node_label==nodes[i], child])[1]
+        metadata[['id']][i] <- unique(.self$.graph$.nodes_table[node_label==nodes[i], id])[1]
         metadata[['lineage']][i] <- unique(.self$.graph$.nodes_table[node_label==nodes[i], lineage])[1]
       }
     }
@@ -508,7 +525,7 @@ EpivizMetagenomicsData$methods(
     "
 
     nodes_at_level <- .self$.graph$.nodes_table[level==selectedLevels,]
-    nodes_at_level_ids <- nodes_at_level[,child]
+    nodes_at_level_ids <- nodes_at_level[,id]
     
     if(!is.null(selections) && !(length(selections) == 0)){
       nodes_at_level_selections <- rep(2, length(nodes_at_level_ids))
@@ -520,45 +537,41 @@ EpivizMetagenomicsData$methods(
         selections <- selections[-expand_selections]
       }
       
-      child_lineage <- .self$.graph$.nodes_table[child %in% names(selections),]
+      child_lineage <- .self$.graph$.nodes_table[id %in% names(selections),]
       remove_selections <- which(selections == 0)
       if(length(remove_selections) > 0){
         kept_nodes <- child_lineage[!grepl(paste(paste(names(remove_selections), collapse=",|"), ",",sep=""), lineage),]
-        kept_nodes <- kept_nodes[!(child %in% names(remove_selections)),]
+        kept_nodes <- kept_nodes[!(id %in% names(remove_selections)),]
       } else {
         kept_nodes <- child_lineage
       }
       
       agg_selections <- which(selections == 2)
       if(length(agg_selections) > 0){
-        kept_nodes <- as.character(kept_nodes[!grepl(paste(paste(names(agg_selections), collapse=",|"), ",",sep=""), lineage), child])
+        kept_nodes <- as.character(kept_nodes[!grepl(paste(paste(names(agg_selections), collapse=",|"), ",",sep=""), lineage), id])
       }
-      nodes_at_level <- .self$.graph$.nodes_table[child %in% kept_nodes,]
+      nodes_at_level <- .self$.graph$.nodes_table[id %in% kept_nodes,]
     }
     
-    leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
-    setnames(leaf_ordering_table, c("leaf", "otu_index"))
-    leaf_ordering_table <- leaf_ordering_table[,leaf:=as.character(leaf)]
-    leaf_ordering_table <- leaf_ordering_table[otu_index >= start & otu_index <= end]
+    leaf_sample_count_table_sub_select <- .self$.leaf_sample_count_table_long[otu_index >= start & otu_index <= end]
+
+    first_join <- unique(merge(unique(.self$.graph$.leaf_of_table),unique(nodes_at_level), by="id")) 
     
-    leaf_sample_count_table_sub_select <- .self$.leaf_sample_count_table[,mget(c(measurements,"leaf"))]
-    leaf_sample_count_table_sub_select <- merge(leaf_sample_count_table_sub_select, leaf_ordering_table, by = "leaf")
-    
-    temp_nodes_level <- unique(nodes_at_level$node_label)
-    leaf_of_table_sub_select <- .self$.graph$.leaf_of_table[which(node_label %in% temp_nodes_level)]
-    first_join <- unique(merge(na.omit(leaf_of_table_sub_select),na.omit(nodes_at_level), by="node_label"))
-    
+    leaf_sample_count_table_sub_select <- leaf_sample_count_table_sub_select[,-(which(colnames(leaf_sample_count_table_sub_select)=="otu_index")), with=FALSE]
+    leaf_sample_count_table_sub_select <- leaf_sample_count_table_sub_select[sample %in% measurements,]
     leaf_sample_count_table_sub_select <- leaf_sample_count_table_sub_select[,leaf:=as.character(leaf)]
     first_join <- first_join[,leaf:=as.character(leaf)]
     
-    second_join <- merge(na.omit(leaf_sample_count_table_sub_select), na.omit(first_join), by="leaf", all.x = TRUE)
-    setorderv(second_join, "otu_index")
-    results <- second_join[,lapply(.SD, sum), .SDcols=measurements, by=node_label]
-    close_results <- as.data.frame(results)
-    
+    second_join <- merge(na.omit(unique(leaf_sample_count_table_sub_select)), na.omit(unique(first_join)), by="leaf", all.x = TRUE)
+
+    results <- second_join[,sum(value), by=list(sample, node_label.x)]
+    close_results <- as.data.frame(dcast(data = results, formula = node_label.x ~ sample, value.var='V1'))
+    close_results[is.na(close_results)] <- 0.0
+    names_to_add <- names(close_results[,1])
     data_columns = list()
     for(m in measurements){
       inner_result <- close_results[,m]
+      names(inner_result) <- names_to_add
       data_columns[[m]] <- inner_result
     }
     return(data_columns)
@@ -631,7 +644,7 @@ EpivizMetagenomicsData$methods(
     matching_nodes <- matching_nodes[,head(.SD, num_results)]
     
     node_labels <- matching_nodes[,node_label]
-    node_ids <- matching_nodes[,child]
+    node_ids <- matching_nodes[,id]
     levels <- matching_nodes[,level]
     starts <- length(node_labels)
     ends <- length(node_labels)
@@ -686,6 +699,7 @@ EpivizMetagenomicsData$methods(
     if(is.null(measurements)){
       samples <- colnames(.self$.leaf_sample_count_table)
       measurements <- samples[-(length(samples))]
+      measurements <- measurements[-(length(samples)-1)]
     }
     
     init <- as.data.frame(.self$.leaf_sample_count_table[,mget(measurements)])
@@ -733,6 +747,7 @@ EpivizMetagenomicsData$methods(
     if(is.null(measurements)){
       samples <- colnames(.self$.leaf_sample_count_table)
       measurements <- samples[-(length(samples))]
+      measurements <- measurements[-(length(samples)-1)]
     }
     
     df <- as.data.frame(.self$.leaf_sample_count_table[,mget(measurements)])
@@ -925,7 +940,7 @@ EpivizMetagenomicsData$methods(
   .saveHierarchyNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, datasource, file=NULL) {
     
     dfToNeo4j <- as.data.frame(.self$.graph$.nodes_table)
-    names(dfToNeo4j)[names(dfToNeo4j) == "child"] <- "id"
+    #names(dfToNeo4j)[names(dfToNeo4j) == "child"] <- "id"
     names(dfToNeo4j)[names(dfToNeo4j) == "level"] <- "depth"
     names(dfToNeo4j)[names(dfToNeo4j) == "node_label"] <- "label"
     names(dfToNeo4j)[names(dfToNeo4j) == "parent"] <- "parentId"
@@ -1098,7 +1113,8 @@ EpivizMetagenomicsData$methods(
   },
   
   .saveMatrixNEO4JHTTP = function(batch_url, neo4juser, neo4jpass,  datasource, file=NULL) {
-    valuesToNeo4j = as.data.frame(melt(.self$.leaf_sample_count_table, id.vars = c("leaf"), measure.vars = c(colnames(.self$.leaf_sample_count_table)[1:(length(colnames(.self$.leaf_sample_count_table))-1)]), variable.name = "sample_id", variable.factor = FALSE))
+    leaf_sample_count_table_temp <- .self$.leaf_sample_count_table[,-(which(colnames(.self$.leaf_sample_count_table) == "otu_index")), with=FALSE]
+    valuesToNeo4j = as.data.frame(melt(leaf_sample_count_table_temp, id.vars = c("leaf"), measure.vars = c(colnames(leaf_sample_count_table_temp)[1:(length(colnames(leaf_sample_count_table_temp))-1)]), variable.name = "sample_id", variable.factor = FALSE))
     
     json_start <- "["
     query <- "MATCH (f:Feature {id : {node_id}, datasource: {datasource_param}}) MATCH (s:Sample {id: {sample_id}}) CREATE (s)-[:COUNT {val: {count_param}}]->(f)"
