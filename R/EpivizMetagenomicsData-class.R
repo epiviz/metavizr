@@ -544,7 +544,9 @@ EpivizMetagenomicsData$methods(
     leaf_sample_count_table_sub_select <- .self$.leaf_sample_count_table[,mget(c(measurements,"leaf"))]
     leaf_sample_count_table_sub_select <- merge(leaf_sample_count_table_sub_select, leaf_ordering_table, by = "leaf")
     
-    first_join <- unique(merge(na.omit(.self$.graph$.leaf_of_table),na.omit(nodes_at_level), by="node_label"))
+    temp_nodes_level <- unique(nodes_at_level$node_label)
+    leaf_of_table_sub_select <- .self$.graph$.leaf_of_table[which(node_label %in% temp_nodes_level)]
+    first_join <- unique(merge(na.omit(leaf_of_table_sub_select),na.omit(nodes_at_level), by="node_label"))
     
     leaf_sample_count_table_sub_select <- leaf_sample_count_table_sub_select[,leaf:=as.character(leaf)]
     first_join <- first_join[,leaf:=as.character(leaf)]
