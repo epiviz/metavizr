@@ -1,0 +1,37 @@
+Package: metavizr
+Type: Package
+Version: 1.0.0
+Authors@R: c( person("Hector", "Corrada Bravo",
+        email="hcorrada@gmail.com", role=c("cre","aut")),
+        person("Florin", "Chelaru", email="florin.chelaru@gmail.com",
+        role=c("aut")), person("Justin", "Wagner",
+        email="jwagner@cs.umd.edu", role=c("aut")), person("Jayaram",
+        "Kancherla", email="jayaram.kancherla@gmail.com",
+        role=c("aut")), person("Joseph", "Paulson",
+        email="jpaulson@jimmy.harvard.edu", role=c("aut")))
+Maintainer: Hector Corrada Bravo <hcorrada@gmail.com>
+License: MIT + file LICENSE
+Title: R Interface to the metaviz web app for interactive metagenomics
+        data analysis and visualization
+Description: This package provides Websocket communication to the
+        metaviz web app (http://metaviz.cbcb.umd.edu) for interactive
+        visualization of metagenomics data. Objects in R/bioc
+        interactive sessions can be displayed in plots and data can be
+        explored using a facetzoom visualization. Fundamental
+        Bioconductor data structures are supported (e.g., MRexperiment
+        objects), while providing an easy mechanism to support other
+        data structures. Visualizations (using d3.js) can be easily
+        added to the web app as well.
+VignetteBuilder: knitr
+Depends: R (>= 3.3), metagenomeSeq (>= 1.17.1), methods, data.table,
+        Biobase
+Imports: epivizr, epivizrData, epivizrServer, epivizrStandalone, vegan,
+        GenomeInfoDb, phyloseq, httr
+Suggests: knitr, BiocStyle, matrixStats, msd16s (>= 0.109.1), etec16s,
+        testthat, gss
+Collate: 'metavizControl.R' 'startMetaviz.R' 'utils.R'
+        'EpivizMetagenomicsData-class.R' 'register-methods.R'
+        'validateMRExperiment.R' 'MetavizApp-class.R'
+        'MetavizGraph-class.R'
+biocViews: Visualization, Infrastructure, GUI, Metagenomics
+RoxygenNote: 6.0.1

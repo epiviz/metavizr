@@ -1,0 +1,261 @@
+---
+title: "Introduction to metavizr: interactive visualization for metagenomics"
+author: "Héctor Corrada Bravo, Florin Chelaru, Justin Wagner, Jayaram Kancherla, Joseph Paulson"
+date: "`r Sys.Date()`"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{Introduction to metavizr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+[`Metaviz`](http://metaviz.cbcb.umd.edu) is tool for interactive visualization and exploration of metagenomic sequencing data. Metaviz a provides main navigation tool for exploring hierarchical feature data that is coupled with multiple data visualizations including heatmaps, stacked bar charts, and scatter plots. Metaviz supports a flexible plugin framework so users can add new [d3](http://d3js.org/) visualizations. You can find more information about Metaviz at [http://metaviz.cbcb.umd.edu/help](http://metaviz.cbcb.umd.edu/help).
+
+The `metavizr` package implements two-way communication between the `R/Bioconductor` computational genomics environment and `Metaviz`. Objects in an `R/Bioconductor` session can be visualized and explored using the `Metaviz` navigation tool and plots. Metavizr uses Websockets to communicate between the browser Javascript client and the `R/Bioconductor` session.  Websockets are the protocols underlying the popular [Shiny](http://www.rstudio.com/shiny/) system for authoring interactive web-based reports in R.
+
+# Preliminaries: the data
+
+In this vignette we will look at two data sets one from a case/control study and another with a time series. We load the first data set from the `msd16s` Bioconductor package.  This data is from the Moderate to Severe Diaherrial disease study in children from four countries: Banglash, Kenya, Mali, and the Gambia.  Case and control stool samples were gathered from each country across several age ranges, 0-6 months, 6-12 months, 12-18 months, 18-24 months, and 24-60 months.  An analysis of this data is described in Pop et al. [1].  
+
+```{r, eval=TRUE, echo=TRUE, results='hide', warning=FALSE, error=FALSE, message=FALSE}
+require(metavizr)
+require(metagenomeSeq)
+require(msd16s)
+```
+
+# The metavizr session manager
+
+The connection to `Metaviz` is managed through a session manager object of class `EpivizApp`. We can create this object and open `Metaviz` using the `startMetaviz` function.
+
+```{r, eval=FALSE, echo=TRUE}
+app <- startMetaviz()
+
+```
+
+*NOTE:* The following commands are not visible when building the vignette.  These commands are for registering each chart type so that the vignette will build when starting a new Metaviz session using localhost.  These commands are not needed if using `startMetaviz` with default which starts a Metaviz session using http://metaviz.cbcb.umd.edu.
+
+```{r, eval=TRUE, echo=FALSE}
+
+app <- startMetaviz(host="http://localhost", http_port=8989, debug=TRUE, open_browser=FALSE, non_interactive=TRUE, try_ports=TRUE)
+
+# register IciclePlot
+
+js_chart_settings <- list(list(id = "title", type = "string", defaultValue = "", label = "Title", possibleValues = NULL), list(id = "marginTop", type = "number", defaultValue = 50, label = "Top margin", possibleValues = NULL), list(id = "marginBottom", type = "number", defaultValue = 23, label = "Bottom margin", possibleValues = NULL), list(id = "marginLeft", type = "number", defaultValue = 20, label = "Left margin", possibleValues = NULL), list(id = "marginRight", type = "number", defaultValue = 10, label = "Right margin", possibleValues = NULL))
+
+js_chart_colors = c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf")
+
+app$chart_mgr$register_chart_type("epiviz.ui.charts.tree.Icicle", "epiviz.ui.charts.tree.Icicle", js_chart_settings=js_chart_settings, js_chart_colors=js_chart_colors)
+
+
+# register HeatpmapPlot
+
+js_chart_settings <- list(list("id"="title","type"="string","defaultValue"="","label"="Title","possibleValues"=NULL),list("id"="marginTop","type"="number","defaultValue"=80,"label"="Top margin","possibleValues"=NULL),list("id"="marginBottom","type"="number","defaultValue"=40,"label"="Bottom margin","possibleValues"=NULL),list("id"="marginLeft","type"="number","defaultValue"=120,"label"="Left margin","possibleValues"=NULL),list("id"="marginRight","type"="number","defaultValue"=40,"label"="Right margin","possibleValues"=NULL),list("id"="measurementGroupsAggregator","type"="categorical","defaultValue"="mean-stdev","label"="Aggregator for measurement groups","possibleValues"=list("mean-stdev","quartiles","count","min","max","sum")),list("id"="colLabel","type"="measurementsMetadata","defaultValue"="colLabel","label"="Columns labels","possibleValues"=NULL),list("id"="rowLabel","type"="measurementsAnnotation","defaultValue"="name","label"="Row labels","possibleValues"=NULL),list("id"="showColorsForRowLabels","type"="boolean","defaultValue"=FALSE,"label"="Row labels as colors","possibleValues"=NULL),list("id"="maxColumns","type"="number","defaultValue"=40,"label"="Max columns","possibleValues"=NULL),list("id"="yMin","type"="number","defaultValue"="default","label"="Min Value","possibleValues"=NULL),list("id"="yMax","type"="number","defaultValue"="default","label"="Max Value","possibleValues"=NULL),list("id"="cluster","type"="categorical","defaultValue"="rows","label"="Cluster","possibleValues"=list("none","rows","columns","both")),list("id"="clusteringAlg","type"="categorical","defaultValue"="none","label"="Clustering Algorithm","possibleValues"=list("none","agglomerative")),list("id"="clusteringMetric","type"="categorical","defaultValue"="euclidean","label"="Clustering Metric","possibleValues"=list("euclidean")),list("id"="clusteringLinkage","type"="categorical","defaultValue"="complete","label"="Clustering Linkage","possibleValues"=list("complete")),list("id"="showDendrogram","type"="boolean","defaultValue"=TRUE,"label"="Show Dendrogram","possibleValues"=NULL))
+
+js_chart_colors = c("#1859a9","#ed2d2e","#008c47","#010101","#f37d22","#662c91","#a11d20","#b33893")
+
+app$chart_mgr$register_chart_type("HeatmapPlot", "epiviz.plugins.charts.HeatmapPlot", js_chart_settings=js_chart_settings, js_chart_colors=js_chart_colors)
+
+
+# register StackedLinePlot
+
+js_chart_settings <- list(list("id"="title","type"="string","defaultValue"="","label"="Title","possibleValues"=NULL),list("id"="marginTop","type"="number","defaultValue"=30,"label"="Top margin","possibleValues"=NULL),list("id"="marginBottom","type"="number","defaultValue"=50,"label"="Bottom margin","possibleValues"=NULL),list("id"="marginLeft","type"="number","defaultValue"=30,"label"="Left margin","possibleValues"=NULL),list("id"="marginRight","type"="number","defaultValue"=15,"label"="Right margin","possibleValues"=NULL),list("id"="measurementGroupsAggregator","type"="categorical","defaultValue"="mean-stdev","label"="Aggregator for measurement groups","possibleValues"=list("mean-stdev","quartiles","count","min","max","sum")),list("id"="colLabel","type"="measurementsMetadata","defaultValue"="colLabel","label"="Color by","possibleValues"=NULL),list("id"="rowLabel","type"="measurementsAnnotation","defaultValue"="name","label"="Labels","possibleValues"=NULL),list("id"="offset","type"="categorical","defaultValue"="zero","label"="Offset","possibleValues"=list("zero","wiggle")),list("id"="interpolation","type"="categorical","defaultValue"="step-after","label"="Interpolation","possibleValues"=list("linear","step-before","step-after","basis","basis-open","basis-closed","bundle","cardinal","cardinal-open","monotone")),list("id"="scaleToPercent","type"="boolean","defaultValue"=TRUE,"label"="Scale to Percent","possibleValues"=NULL),list("id"="useGroupBy","type"="boolean","defaultValue"=FALSE,"label"="Use Group by","possibleValues"=NULL),list("id"="groupBy","type"="measurementsAnnotation","defaultValue"="name","label"="Group By","possibleValues"=NULL),list("id"="hoverOpacity","type"="number","defaultValue"=0.6,"label"="Hover Opacity","possibleValues"=NULL))
+
+js_chart_colors = c("#393b79","#5254a3","#6b6ecf","#9c9ede","#637939","#8ca252","#b5cf6b","#cedb9c","#8c6d31","#bd9e39","#e7ba52","#e7cb94","#843c39","#ad494a","#d6616b","#e7969c","#7b4173","#a55194","#ce6dbd","#de9ed6")
+
+app$chart_mgr$register_chart_type("StackedLinePlot", "epiviz.plugins.charts.StackedLinePlot", js_chart_settings=js_chart_settings, js_chart_colors=js_chart_colors)
+
+# register LinePlot
+
+js_chart_settings <- list(list("id"="title","type"="string","defaultValue"="","label"="Title","possibleValues"=NULL),list("id"="marginTop","type"="number","defaultValue"=30,"label"="Top margin","possibleValues"=NULL),list("id"="marginBottom","type"="number","defaultValue"=50,"label"="Bottom margin","possibleValues"=NULL),list("id"="marginLeft","type"="number","defaultValue"=30,"label"="Left margin","possibleValues"=NULL),list("id"="marginRight","type"="number","defaultValue"=15,"label"="Right margin","possibleValues"=NULL),list("id"="measurementGroupsAggregator","type"="categorical","defaultValue"="mean-stdev","label"="Aggregator for measurement groups","possibleValues"=list("mean-stdev","quartiles","count","min","max","sum")),list("id"="colLabel","type"="measurementsMetadata","defaultValue"="colLabel","label"="Columns labels","possibleValues"=NULL),list("id"="rowLabel","type"="measurementsAnnotation","defaultValue"="name","label"="Row labels","possibleValues"=NULL),list("id"="showPoints","type"="boolean","defaultValue"=FALSE,"label"="Show points","possibleValues"=NULL),list("id"="showLines","type"="boolean","defaultValue"=TRUE,"label"="Show lines","possibleValues"=NULL),list("id"="showErrorBars","type"="boolean","defaultValue"=TRUE,"label"="Show error bars","possibleValues"=NULL),list("id"="pointRadius","type"="number","defaultValue"=4,"label"="Point radius","possibleValues"=NULL),list("id"="lineThickness","type"="number","defaultValue"=3,"label"="Line thickness","possibleValues"=NULL),list("id"="yMin","type"="number","defaultValue"="default","label"="Min Y","possibleValues"=NULL),list("id"="yMax","type"="number","defaultValue"="default","label"="Max Y","possibleValues"=NULL),list("id"="interpolation","type"="categorical","defaultValue"="basis","label"="Interpolation","possibleValues"=list("linear","step-before","step-after","basis","basis-open","basis-closed","bundle","cardinal","cardinal-open","monotone")))
+
+js_chart_colors = c("#393b79","#5254a3","#6b6ecf","#9c9ede","#637939","#8ca252","#b5cf6b","#cedb9c","#8c6d31","#bd9e39","#e7ba52","#e7cb94","#843c39","#ad494a","#d6616b","#e7969c","#7b4173","#a55194","#ce6dbd","#de9ed6")
+
+app$chart_mgr$register_chart_type("LinePlot", "epiviz.plugins.charts.LinePlot", js_chart_settings=js_chart_settings, js_chart_colors=js_chart_colors)
+
+app$server$start_server()
+
+```
+
+This opens a websocket connection between the interactive `R` session and the browser client. This will allow us to visualize data stored in the `Metaviz` server along with data in the interactive `R` session.
+
+----
+
+*Windows users:* In Windows platforms we need to use the `service` function to let the interactive `R` session connect to the `epiviz` web app and serve data requests. We then escape (using `ctl-c` or `esc` depending on your environment) to continue with the interactive `R` session. This is required anytime you want `metavizr` to serve data to the web app, for example, when interacting with the UI. (We are actively developing support for non-blocking sessions in Windows platforms).
+
+```{r, eval=TRUE}
+app$server$service()
+```
+
+----
+
+For vignette purposes, we will subset the 992 `msd16s` samples to those 301 from Bangladesh.  Also, we will aggregate the count matrix to the species level.  We have found that 
+matrix sizes with 100 samples and 4000 features perform well for interactive visualization with an R session using WebSockets.  For larger abundance matrices, we recommend using the graph database backend available at [https://github.com/epiviz/metaviz-data-provider](https://github.com/epiviz/metaviz-data-provider).  Once having subset the data, we set the aggregation level to "class", normalize, find features differentially abundant at the "class" level, propagate those selections to an MRexperiment that is aggreagted to "species" level, and then explore the hiearchy.
+
+```{r, eval=TRUE}
+feature_order <- c("superkingdom", "phylum", "class", "order", "family", "genus", "species", "OTU")
+aggregated_feature_order <- feature_order[1:7]
+
+msd16s_species <- msd16s
+fData(msd16s) <- fData(msd16s)[feature_order]
+fData(msd16s_species) <- fData(msd16s_species)[aggregated_feature_order]
+  
+bangladesh <- msd16s[, which(pData(msd16s)$Country == "Bangladesh")]
+bangladesh_species <- msd16s_species[, which(pData(msd16s_species)$Country == "Bangladesh")]
+
+aggregated_species <-  cumNorm(aggregateByTaxonomy(bangladesh_species, lvl="species"), p = 0.75)
+
+aggregation_level <- "class"
+aggregated_bangladesh <- aggregateByTaxonomy(bangladesh, lvl=aggregation_level)
+
+normed_bangladesh <-  cumNorm(aggregated_bangladesh, p = 0.75)
+bangladesh_sample_data <-  pData(normed_bangladesh)
+mod <-  model.matrix(~1+Dysentery, data = bangladesh_sample_data)
+results_bangladesh <-  fitFeatureModel(normed_bangladesh, mod)
+logFC_bangladesh <- MRcoefs(results_bangladesh, number = nrow(normed_bangladesh))
+
+features <- rownames(logFC_bangladesh)
+featuresToKeep_names <- features[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > 1),]$adjPvalues < .1)]
+featuresToKeep <- rep(2, length(featuresToKeep_names))
+names(featuresToKeep) <- featuresToKeep_names
+
+featuresToRemove_names <- features[!(features %in% featuresToKeep_names)]
+featuresToRemove <- rep(0, length(featuresToRemove_names))
+names(featuresToRemove) <- featuresToRemove_names
+```
+
+A metavizControl allows users to specify settings for operating over the MRexperiment object including data analysis such as normalization and log transform.  We create a metavizControl with the featureSelection as the nodes that be found to be differentially abundant and those will be visible when creating Metaviz plots.  The rest of the settings in the metavizControl will use the default parameters.
+
+```{r,eval=TRUE}
+control <- metavizr::metavizControl(featureSelection = c(featuresToKeep, featuresToRemove))
+```
+
+# Adding an Icicle navigation widget to explore metagenomic features
+
+Once the browser is open we can visualize the metagenomic features from the `mouseData` object. We use the `plot` method to do so. The `plot` function can take as input any of the classes registered with epivirData.
+
+```{r,eval=TRUE}
+#specify the feature hierarchy for the dataset
+icicle_plot <- app$plot(aggregated_species, datasource_name="mmssdd", control = control, feature_order = aggregated_feature_order)
+```
+
+You should now see an icicle widget to explore the hierarchy of the metagenomic features from the `mouseData` object. To navigate the complex, hierarchical structure of the feature space, we developed an icicle/facet zoom visualization. Because of the limitations in the screen size and performance rendering big trees, the icicle plot is an efficient visualization for navigating trees. The icicle visualization helps zoom in and out of trees and traverse subtrees. Every node in the icicle has a state associated with it. There are three possible states for a node 1) expand - use all subtree nodes during analysis 2) collapse - aggregate all nodes under the subtree to the selected node 3) remove - discard all nodes in the subtree for the analysis. The state of a node is also propagated to all its children and can be identified by the opacity of the node. Row level controls are available to the left of the icicle - to set the state of all nodes at a selected depth/taxonomic class of the hierarchy. Icicle is traversible if the ends on the row controls are chevrons. Users can set states on the nodes to define a cut over the feature space. The cut defines how the count data is queried, analyzed and visualized in other plots like heat maps or stacked line plots. In addition to defining the cut, we also have a navigation bar on top of the icicle to limit the range of features when querying for count data. Navigation bar is a flexible component (increase/decrease the length) and controls are available to move the bar left/right and extend over the entire range of the current tree in the icicle. Each of these actions would query the count data and automatically propagate the changes to other visualizations in the workspace. When navigating outside the scope of the navigation bar, chevrons (left/right) appear on the navigation bar to help identify the current position. Brushing/hovering is another important visual element we focused on our implementation of an icicle. Hovering over a node hovers its path in the tree i.e. highlight both its parents and children. When there are other visualizations like heat maps or stacked line plots in the workspace, hovering over a chart element highlights the mapped feature nodes in all the other plots.
+
+# Visualizing count data from the `mouseData` MRExperiment object
+
+Now we can view the data as a heatmap calling `revisualize`:
+
+```{r, eval=TRUE}
+heatmap <- app$chart_mgr$revisualize(chart_type = "HeatmapPlot", chart = icicle_plot)
+```
+
+Using the same data, we can also revisualize it in a stacked plot to see the abundance of various features across samples. Since the measurements are added from creating the icicle_plot, we only need to add a stacked line plot. 
+
+```{r, eval=TRUE}
+stackedPlot <- app$chart_mgr$revisualize(chart_type ="StackedLinePlot", chart = icicle_plot)
+```
+
+Finally, we can update the threshold cutoff we had for fold change, pass those modifications the icicle plot, and see the updates propogate to the heat map and stacked plot.  This shows the use case of statistically-guided interactive visualizations.
+
+```{r, eval=TRUE}
+
+feature_names2 <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > .5),]$adjPvalues < .05),])
+fSelection2 <- rep(2, length(feature_names2))
+names(fSelection2) <- feature_names2
+
+app$get_ms_object(icicle_plot)$propagateHierarchyChanges(fSelection2, selectedLevels = which(feature_order==aggregation_level), request_with_labels = TRUE)
+```
+
+
+# Longitudinal Data Analysis
+
+Another feature of metavizr is to visualize data using a line plot.  We detail the steps to perform this analysis and create a line plot using Metaviz such as those used in Paulson et al. when analyzing this time series data with a smoothing-spline [2] and [3].
+
+First, import the etec16s dataset, select sample data from the first 9 days, and choose the feature annotations of interest.
+
+```{r, eval=TRUE}
+library(etec16s)
+data(etec16s)
+etec16s <- etec16s[,-which(pData(etec16s)$Day>9)]
+```
+
+Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
+
+```{r, eval=TRUE}
+featureData(etec16s)$Kingdom <- "Bacteria"
+feature_order <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "OTU.ID")
+
+timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
+                             formula = abundance~id + time*class + AntiGiven,
+                             class="AnyDayDiarrhea",
+                             id="SubjectID",
+                             time="Day",
+                             lvl="Family",
+                             featureOrder = feature_order,
+                             C=0.3,
+                             B=1,
+                             seed=1234)
+```
+
+For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `ts2MRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
+
+```{r, eval=TRUE}
+feature_order2 <- c("Kingdom", "Phylum", "Class", "Order", "Family")
+
+splinesMRexp <- ts2MRexperiment(timeSeriesFits, featureData = featureData(aggregateByTaxonomy(etec16s, lvl="Family", featureOrder = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
+```
+
+Finally, we add the MRexperiment as a measurement using the `add_measurements` method and then visualize those measurements as a LinePlot.
+
+
+```{r, eval=TRUE}
+splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(MRcounts(splinesMRexp[i,]))) >= 2})
+splines_to_plot_indices <- which(splines_to_plot == TRUE)
+
+ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base21", control=metavizControl(norm = FALSE, aggregateAtDepth = 5), feature_order = feature_order2)
+splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines2", control = metavizControl(norm=FALSE, aggregateAtDepth = 5), feature_order = feature_order2)
+splineMeasurements <- splineObj$get_measurements()
+splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
+
+```
+
+We can update the colors and settings on the spline chart. For example, lets limit the y axis to be between -10 and 10. To do so we use the `set_chart_settings` method. We can list existing settings for a chart using the `list_chart_settings` function.
+
+```{r, eval=TRUE, echo=FALSE}
+
+# list available charts
+app$chart_mgr$list_chart_types()
+
+# list available settings for "LinePlot"
+app$chart_mgr$list_chart_type_settings("LinePlot")
+
+# update settings on splineChart 
+settings <- list(yMin = -10, yMax = 10, colLabel="label")
+colors <- c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf")
+app$chart_mgr$set_chart_settings(splineChart, settings=settings, colors = colors)
+```
+
+
+![Spline metavizr](images/Spline.png)
+
+### Close Metavizr and end session
+
+To close the connection with metaviz and the R session, we use the stop_app function.
+
+```{r,eval=TRUE}
+app$stop_app()
+```
+
+### SessionInfo
+
+```{r session-info, cache=FALSE}
+sessionInfo()
+```
+
+References:
+
+[1] Pop, M., Walker, A.W., Paulson, J., Lindsay, B., Antonio, M., Hossain, M.A., Oundo, J., Tamboura, B., Mai, V., Astrovskaya, I. and Bravo, H.C., 2014. Diarrhea in young children from low-income countries leads to large-scale alterations in intestinal microbiota composition. Genome biology, 15(6), p.1.
+
+[2] Pop, M., Paulson, J.N., Chakraborty, S., Astrovskaya, I., Lindsay, B.R., Li, S., Bravo, H.C., Harro, C., Parkhill, J., Walker, A.W. and Walker, R.I., 2016. Individual-specific changes in the human gut microbiota after challenge with enterotoxigenic Escherichia coli and subsequent ciprofloxacin treatment. BMC genomics, 17(1), p.1.
+
+[3] Paulson J.N., Talukder H., and Bravo H.C, Longitudinal differential abundance analysis of microbial marker-gene surveys using smoothing splines. In Submission. 
+
