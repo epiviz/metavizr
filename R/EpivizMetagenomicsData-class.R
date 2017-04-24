@@ -233,7 +233,7 @@ EpivizMetagenomicsData$methods(
     children = children[order(children['order']),]
     
     if(nrow(children) > 0){
-      for(row_index in seq(1,nrow(children))){
+      for(row_index in seq_len(nrow(children))){
         childDict = row_to_dict(children[row_index,])
         subDict = df_to_tree(childDict, otherChildren)
         
@@ -313,7 +313,7 @@ EpivizMetagenomicsData$methods(
     leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
     setnames(leaf_ordering_table, c("leaf", "otu_index"))
     
-    for(i in seq(1,num_rows)){
+    for(i in seq_len(num_rows)){
       if(as.integer(strsplit(nodesToRet[i], "-")[[1]][1]) == last_level_of_subtree){
         depths[i] = length(emdc$.feature_order)
         level = length(emdc$.feature_order)
@@ -446,7 +446,7 @@ EpivizMetagenomicsData$methods(
     
     if(request_with_labels && !is.null(selection)){
       temp_selections = list()
-      for(i in seq(1,length(selection))){
+      for(i in seq_along(selection)){
         temp_selections[[.self$.graph$.nodes_table[node_label==names(selection)[i],id]]] <- selection[i]
       }
       selection <- temp_selections
@@ -515,7 +515,6 @@ EpivizMetagenomicsData$methods(
     first_join <- merge(leaf_ordering_table, merge(nodes_at_level, .self$.graph$.leaf_of_table, by="id"), by="leaf")
     setorderv(first_join, "otu_index")
     
-    data_rows = list()
     nodes <- unique(first_join$node_label.x)
 
     ends <- list()
@@ -526,8 +525,7 @@ EpivizMetagenomicsData$methods(
     metadata[['id']] <- list()
     metadata[['lineage']] <- list()
 
-    for (i in seq(1, length(nodes))) {
-      row_info <- list()
+    for (i in seq_along(nodes)) {
       feature_label <- nodes[i]
       res <- first_join[node_label.x==feature_label,otu_index]
       if(length(res) > 0) {
@@ -540,10 +538,7 @@ EpivizMetagenomicsData$methods(
       }
     }
     
-    data_rows[['end']] <- ends
-    data_rows[['start']] <- starts
-    data_rows[['index']] <- indexes
-    data_rows[['metadata']] <- metadata
+    data_rows = list(end=ends, start=starts, index =indexes, metadata=metadata)
     return(data_rows)
   },
   
@@ -697,7 +692,7 @@ EpivizMetagenomicsData$methods(
     leaf_table_lowercase <- .self$.graph$.leaf_of_table
     leaf_table_lowercase <- leaf_table_lowercase[,node_label:=tolower(node_label)]
     
-    for(i in seq(1, length(node_labels))){
+    for(i in seq_along(node_labels)){
       node <- node_labels[i]
       
       list_of_leaves <- leaf_table_lowercase[node_label==node,leaf]
@@ -720,7 +715,7 @@ EpivizMetagenomicsData$methods(
     }
     
     results = list()
-    for(i in seq(1, num_results)){
+    for(i in seq_len(num_results)){
       results[[i]] <- list("gene"=node_labels[i], "start"=starts[i], 
                            "end"=ends[i], "seqName"="metavizr", 
                            "nodeId"=node_ids[i], "level"=levels[i])
@@ -799,7 +794,7 @@ EpivizMetagenomicsData$methods(
     alpha_diversity <- vegan::diversity(t(df), index = "shannon")
 
     data <- list()
-    for (row in 1:length(alpha_diversity)) {
+    for (row in seq_along(alpha_diversity)) {
       temp <- list()
       temp$sample_id = colnames(df)[row]
       temp$alphaDiversity = unname(alpha_diversity[row])
@@ -894,7 +889,7 @@ EpivizMetagenomicsData$methods(
     }
     
     query = paste("\"query\" : \"", query_in, "\",", sep = "")
-    for(k in seq(1, length(param_list))){
+    for(k in seq_along(param_list)){
       if(k == length(param_list)){
         if(params_complete){
           params <- paste0(params, "\"", names(param_list[k]), "\" : ", unlist(unname(param_list[k])), "")
@@ -933,10 +928,10 @@ EpivizMetagenomicsData$methods(
     sampleAnnotationToNeo4j['id'] = rownames(.sampleAnnotation)
     keys = colnames(sampleAnnotationToNeo4j)
     id_counter <- 0
-    for (j in 1:nrow(sampleAnnotationToNeo4j)){
+    for (j in seq_len(nrow(sampleAnnotationToNeo4j))){
       row <- sampleAnnotationToNeo4j[j,]
       props <- ""
-      for (i in 1:(length(keys)-1)){
+      for (i in seq_len(length(keys)-1)){
         if  (typeof(keys[i]) == "numeric")
           props <- paste(props, "\"", keys[i], "\"", " : ", "\"", gsub("'", "", row[, keys[i]]), "\"",", ", sep="")
         else
@@ -1001,10 +996,10 @@ EpivizMetagenomicsData$methods(
     cypherCount = 0
     id_counter <- 0
     
-    for (j in 1:nrow(dfToNeo4j)){
+    for (j in seq_len(nrow(dfToNeo4j))){
       row <- dfToNeo4j[j,]
       props <- "" 
-      for (i in 1:(length(keys))){
+      for (i in seq_along(keys)){
         if  (typeof(keys[i]) == "numeric")
           props <- paste(props, "\"", keys[i], "\"", " : ", "\"", gsub("'", "",row[, keys[i]]), "\"", ", ",sep="")
         else
@@ -1091,7 +1086,7 @@ EpivizMetagenomicsData$methods(
     cypherCount = 0
     id_counter <- 0
     
-    for (j in 1:nrow(dfToNeo4j)){
+    for (j in seq_len(nrow(dfToNeo4j))){
       row <- dfToNeo4j[j,]
       parentid <- paste("\"", row$parentId, "\"", sep="")
       childid <- paste("\"", row$id, "\"", sep="")
@@ -1167,7 +1162,7 @@ EpivizMetagenomicsData$methods(
     cypherCount = 0
     id_counter <- 0
     
-    for (j in 1:nrow(valuesToNeo4j)){
+    for (j in seq_len(nrow(valuesToNeo4j))){
       row <- valuesToNeo4j[j,]
       nodeid <- paste("\"", row$leaf, "\"", sep="")
       sampleid <- paste("\"", row$sample_id, "\"", sep="")
