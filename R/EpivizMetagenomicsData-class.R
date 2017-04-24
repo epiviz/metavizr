@@ -156,8 +156,8 @@ EpivizMetagenomicsData$methods(
     }
     "
     samplesToRet <- colnames(.self$.leaf_sample_count_table)
-    samplesToRet <- samplesToRet[-(length(samplesToRet))]
-    samplesToRet <- samplesToRet[-(length(samplesToRet)-1)]
+    samplesToRet <- samplesToRet[-which(samplesToRet == "leaf")]
+    samplesToRet <- samplesToRet[-which(samplesToRet == "otu_index")]
     out <- lapply(samplesToRet, function(sample) {
      epivizrData:::EpivizMeasurement(id=sample,
           name=sample,
@@ -570,9 +570,15 @@ EpivizMetagenomicsData$methods(
     names_to_add <- names(close_results[,1])
     data_columns = list()
     for(m in measurements){
-      inner_result <- close_results[,m]
-      names(inner_result) <- names_to_add
-      data_columns[[m]] <- inner_result
+      if(m %in% colnames(close_results)){
+        inner_result <- close_results[,m]
+        names(inner_result) <- names_to_add
+        data_columns[[m]] <- inner_result
+      } else{
+        inner_result <- rep(0.0, nrow(close_results))
+        names(inner_result) <- names_to_add
+        data_columns[[m]] <- inner_result
+      }
     }
     return(data_columns)
   },
@@ -698,8 +704,8 @@ EpivizMetagenomicsData$methods(
     
     if(is.null(measurements)){
       samples <- colnames(.self$.leaf_sample_count_table)
-      measurements <- samples[-(length(samples))]
-      measurements <- measurements[-(length(samples)-1)]
+      samples <- samples[-(which(samples == "otu_index"))]
+      measurements <- samples[-(which(samples == "leaf"))]
     }
     
     init <- as.data.frame(.self$.leaf_sample_count_table[,mget(measurements)])
@@ -746,8 +752,8 @@ EpivizMetagenomicsData$methods(
     
     if(is.null(measurements)){
       samples <- colnames(.self$.leaf_sample_count_table)
-      measurements <- samples[-(length(samples))]
-      measurements <- measurements[-(length(samples)-1)]
+      samples <- samples[-(which(samples == "otu_index"))]
+      measurements <- samples[-(which(samples == "leaf"))]
     }
     
     df <- as.data.frame(.self$.leaf_sample_count_table[,mget(measurements)])
