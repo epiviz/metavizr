@@ -150,21 +150,24 @@ MetavizGraph <- setRefClass("MetavizGraph",
        \\value{table_node_ids}{data.table with node ids in sorted hierarchy}
       "  
       table_node_ids <- .self$.hierarchy_tree
-      leaf_ordering_table <- as.data.table(.self$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
-      setnames(leaf_ordering_table, c("leaf", "otu_index"))
-      
-      for(f in seq(1,length(feature_order))){
-        nodes_at_level <- unique(.self$.hierarchy_tree[,feature_order[f]])
-        for(n in nodes_at_level){
-          list_of_leaves <- .self$.leaf_of_table[node_label==n,leaf]
-          leaf_indexes <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
-          id <- paste(as.hexmode(f-1), as.hexmode(min(leaf_indexes)), sep="-")
-          replace_indices <- which(table_node_ids[,feature_order[f]] == n)
-          table_node_ids[,feature_order[f]][replace_indices] <- id
+      id_list <- sapply(feature_order, function(level) {
+        depth <- which(feature_order == level)
+        temp_level <- data.table(table_node_ids[, c(level, "otu_index")])
+        temp_level_count <- temp_level[, .(leaf_index = .I[which.min(otu_index)], count = .N), by=eval(level)]
+        
+        level_features <- as.character(table_node_ids[[level]])
+        for(i in seq_len(nrow(temp_level_count))) {
+          row <- temp_level_count[i,]
+          id <- paste(as.hexmode(depth-1), as.hexmode(row$leaf_index), sep="-")
+          level_features <- replace(level_features, which(level_features == row[[level]]), id)
         }
-      }
+        level_features
+      })
       
-      return(as.data.table(table_node_ids))
+      node_ids_dt <- as.data.table(id_list)
+      node_ids_dt$otu_index <- as.character(table_node_ids$otu_index)
+      
+      return(node_ids_dt)
     }
   )
 )
