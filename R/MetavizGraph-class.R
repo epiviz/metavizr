@@ -7,7 +7,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
     .feature_order = "ANY",
     .leaf_of_table = "ANY",
     .hierarchy_tree = "ANY",
-    .node_ids_DT = "ANY",
+    .node_ids_table = "ANY",
     .nodes_table = "ANY"
   ),
   
@@ -21,8 +21,8 @@ MetavizGraph <- setRefClass("MetavizGraph",
       message("creating leaf_of_table")
       .self$.leaf_of_table <- .create_leaf_of_table(feature_order = feature_order)
                            
-      message("creating node_ids_DT")
-      .self$.node_ids_DT <- .create_node_ids(feature_order = feature_order)
+      message("creating node_ids_table")
+      .self$.node_ids_table <- .create_node_ids(feature_order = feature_order)
                                
       message("creating nodes_table")
       .self$.nodes_table <- .create_nodes_table(feature_order = feature_order)
@@ -41,8 +41,8 @@ MetavizGraph <- setRefClass("MetavizGraph",
       \\value{ret_table}{data.table containing information for each node}
       "
                                
-      lineage_DF <- as.data.frame(.self$.node_ids_DT)
-      lineage_table <- .self$.node_ids_DT
+      lineage_DF <- as.data.frame(.self$.node_ids_table)
+      lineage_table <- .self$.node_ids_table
       lineage_DF[,feature_order[1]] <- lineage_table[,get(feature_order[1])]
                                
       for(i in seq(2,length(feature_order))){
@@ -51,21 +51,21 @@ MetavizGraph <- setRefClass("MetavizGraph",
       lineage_DT <- as.data.table(lineage_DF)
                                
                                
-      nodes_tab_root <- .self$.node_ids_DT[,get(feature_order[1])]
-      root_parents <- rep("None", length(.self$.node_ids_DT[,get(feature_order[1])]))
-      nodes_tab_root <- data.frame(id = nodes_tab_root, parent = root_parents, lineage = .self$.node_ids_DT[,get(feature_order[1])], 
+      nodes_tab_root <- .self$.node_ids_table[,get(feature_order[1])]
+      root_parents <- rep("None", length(.self$.node_ids_table[,get(feature_order[1])]))
+      nodes_tab_root <- data.frame(id = nodes_tab_root, parent = root_parents, lineage = .self$.node_ids_table[,get(feature_order[1])], 
                                    node_label = .self$.hierarchy_tree[,1], level = rep(1, length(.self$.hierarchy_tree[,1])))
                                
-      nodes_tab <- data.frame(id = .self$.node_ids_DT[,get(.self$.feature_order[2])], 
-                              parent = .self$.node_ids_DT[,get(.self$.feature_order[1])], 
+      nodes_tab <- data.frame(id = .self$.node_ids_table[,get(.self$.feature_order[2])], 
+                              parent = .self$.node_ids_table[,get(.self$.feature_order[1])], 
                               lineage = lineage_DT[,get(feature_order[2])], node_label = .self$.hierarchy_tree[,2], 
                               level = rep(2, length(.self$.hierarchy_tree[,2])))
                                
       nodes_tab <- rbind(unique(nodes_tab_root), unique(nodes_tab))
                                
       for(i in seq(3, length(feature_order))){
-        temp_nodes_tab <- data.frame(id = .self$.node_ids_DT[,get(.self$.feature_order[i])], 
-                                     parent = .self$.node_ids_DT[,get(.self$.feature_order[i-1])], 
+        temp_nodes_tab <- data.frame(id = .self$.node_ids_table[,get(.self$.feature_order[i])], 
+                                     parent = .self$.node_ids_table[,get(.self$.feature_order[i-1])], 
                                      lineage = lineage_DT[,get(feature_order[i])],  node_label = .self$.hierarchy_tree[,i],  
                                      level = rep(i, length(.self$.hierarchy_tree[,i])))
                                  
