@@ -445,11 +445,10 @@ EpivizMetagenomicsData$methods(
     "
     
     if(request_with_labels && !is.null(selection)){
-      temp_selections = list()
-      for(i in seq_along(selection)){
-        temp_selections[[.self$.graph$.nodes_table[node_label==names(selection)[i],id]]] <- selection[i]
-      }
-      selection <- temp_selections
+      selection_ids <- sapply(names(selection), function(i){
+        .self$.graph$.nodes_table[node_label==i,id]
+      })
+      names(selection) <- selection_ids
     }
     
     # update node selections types to metaviztree
@@ -517,9 +516,9 @@ EpivizMetagenomicsData$methods(
     
     nodes <- unique(first_join$node_label.x)
 
-    ends <- list()
-    starts <- list()
-    indexes <- list()
+    ends <- rep(0, length(nodes))
+    starts <- rep(0, length(nodes))
+    indexes <- rep(0, length(nodes))
     metadata <- list()
     metadata[['label']] <- list()
     metadata[['id']] <- list()
