@@ -20,7 +20,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                .self$.leaf_of_table <- .create_leaf_of_table(feature_order = feature_order)
                                
                                message("creating node_ids_DT")
-                               .self$.node_ids_DT <- .create_node_ids(feature_order = feature_order[1:length(feature_order)-1])
+                               .self$.node_ids_DT <- .create_node_ids(feature_order = feature_order)
                                
                                message("creating nodes_table")
                                .self$.nodes_table <- .create_nodes_table(feature_order = feature_order)
