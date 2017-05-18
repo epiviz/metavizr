@@ -757,7 +757,7 @@ EpivizMetagenomicsData$methods(
 
     data <- list()
     for (row in rownames(ord$rotation)) {
-      temp <- list(sample_id = row, PC1 = ord$rotation[row,][1], PC2 = ord$rotation[row,][2])
+      temp <- list(sample_id = row, PC1 = unname(ord$rotation[row,][1]), PC2 = unname(ord$rotation[row,][2]))
       annotation = as.list(.self$.sampleAnnotation[row,])
       for (anno in names(annotation)) {
         temp[[anno]] = annotation[[anno]]
