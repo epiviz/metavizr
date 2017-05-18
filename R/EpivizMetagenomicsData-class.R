@@ -751,22 +751,18 @@ EpivizMetagenomicsData$methods(
     if("leaf" %in% colnames(init)){
       init <- init[,-which(colnames(init)=="leaf")]
     }
-    x <- t(init)
+    x <- init
     df <- log2(x+1)
     ord <- prcomp(df)
 
-    res <- apply(ord$x, 1, function(x) {
-      return (list(PC1 = unlist(x["PC1"]), PC2 = unlist(x["PC2"])))
-    })
-
     data <- list()
-    for (row in names(res)) {
-      temp <- list(sample_id = row, PC1 = unname(res[[row]]$PC1), PC2 = unname(res[[row]]$PC2))
+    for (row in rownames(ord$rotation)) {
+      temp <- list(sample_id = row, PC1 = ord$rotation[row,][1], PC2 = ord$rotation[row,][2])
       annotation = as.list(.self$.sampleAnnotation[row,])
       for (anno in names(annotation)) {
         temp[[anno]] = annotation[[anno]]
       }
-
+      
       data[[row]] <- temp
     }
 
