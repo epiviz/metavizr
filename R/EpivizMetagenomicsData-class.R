@@ -422,6 +422,15 @@ EpivizMetagenomicsData$methods(
       rest = ret_data_frame[-1,]
       rootDict = row_to_dict(root)
       result = df_to_tree(rootDict, rest)
+      
+      result[["rootTaxonomies"]] = .self$.graph$.feature_order
+      lineage = .self$.graph$.nodes_table[get("id")==nodesToRet[1],get("lineage")][[1]]
+      
+      lineageLabel <- sapply(strsplit(lineage, ",")[[1]], function(str_id) {
+        .self$.graph$.nodes_table[get("id") == str_id, get("node_label")][[1]]
+      })
+      
+      result[["lineageLabel"]] = paste(lineageLabel, sep=", ")
 
       resultResp = list(nodeSelectionTypes = .self$.nodeSelections, 
                         selectionLevel = .self$.levelSelected, 
