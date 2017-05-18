@@ -722,7 +722,7 @@ EpivizMetagenomicsData$methods(
     return(results)
   },
   
-  getPCA=function(measurements = NULL, start = 1, end = 1000) {
+  getPCA=function(measurements = NULL) {
     " Compute PCA over all features for given samples
     
     \\describe{
@@ -765,7 +765,7 @@ EpivizMetagenomicsData$methods(
     return(result)
   },
   
-  getAlphaDiversity=function(measurements = NULL, start = 1, end = 1000) {
+  getAlphaDiversity=function(measurements = NULL) {
     " Compute alpha diversity using vegan for the given samples
     
     \\describe{
