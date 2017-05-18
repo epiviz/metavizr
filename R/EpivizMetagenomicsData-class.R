@@ -118,7 +118,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
                              measure.vars = c(colnames(temp_table)[1:(length(colnames(temp_table))-2)]), 
                              variable.name = "sample", variable.factor = FALSE)
       
-      ret_table_long <- temp_table_long[value>0.0,]
+      ret_table_long <- temp_table_long[value != 0.0,]
       setorderv(ret_table_long, "otu_index")
       return(ret_table_long)
     },
