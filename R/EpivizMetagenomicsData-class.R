@@ -166,7 +166,7 @@ EpivizMetagenomicsData$methods(
           datasourceId=.self$.id,
           datasourceGroup=.self$.id,
           defaultChartType="heatmap",
-          annotation="anno",
+          annotation=as.list(.sampleAnnotation[sample,]),
           minValue=.self$.minValue,
           maxValue=.self$.maxValue,
           metadata=c("colLabel", "ancestors", "lineage", "label"))
