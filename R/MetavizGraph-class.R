@@ -62,7 +62,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                      lineage = lineage_DT[,get(feature_order[i])],  node_label = .self$.hierarchy_tree[,i],  
                                      level = rep(i, length(.self$.hierarchy_tree[,i])))
         
-        nodes_tab <- rbind(unique(nodes_tab), unique(temp_nodes_tab))
+        nodes_tab <- rbind(nodes_tab[rownames(unique(nodes_tab[,c("id","parent")])),], temp_nodes_tab[rownames(unique(temp_nodes_tab[,c("id","parent")])),])
       }
       
       ret_table <- as.data.table(nodes_tab)
@@ -121,23 +121,54 @@ MetavizGraph <- setRefClass("MetavizGraph",
         fd[,i] = as.character(fd[,i]) 
       } 
       fData(obj_in) = fd
-                               
-      replacing_na_obj_fData <- fData(obj_in)[,feature_order]
-      for(i in seq(1, length(feature_order))){
-        na_indices <- which(is.na(replacing_na_obj_fData[,i]))
-        replacing_na_obj_fData[,i][na_indices] <- paste("Not_Annotated", feature_order[i], sep="_")
-        na_indices <- which(replacing_na_obj_fData[,i] == "NA")
-        replacing_na_obj_fData[,i][na_indices] <- paste("Not_Annotated", feature_order[i], sep="_")
-      }
-                               
-      obj_fData <- as.data.table(replacing_na_obj_fData)
+      
+      obj_fData <- as.data.table(fData(obj_in)[,feature_order])
       cols <- feature_order[1:length(feature_order)-1]
       order <- rep(1, length(feature_order)-1)
       ordered_fData <- setorderv(obj_fData, cols = cols, order = order)
-                               
+      
       otu_indexes <- seq(1:length(ordered_fData[,get(feature_order[length(feature_order)])]))
       ordered_fData <- ordered_fData[, otu_index:=otu_indexes]
-                               
+      ordered_fData <- as.data.frame(ordered_fData)
+      #replacing_na_obj_fData <- fData(obj_in)[,feature_order]
+      
+      # na_indices <- which(is.na(ordered_fData[,1]))
+      # ordered_fData[,i][na_indices] <- paste("Not_Annotated", feature_order[i], sep="_")
+      # na_indices <- which(ordered_fData[,1] == "NA")
+      # ordered_fData[,i][na_indices] <- paste("Not_Annotated", feature_order[i], sep="_")
+      # for(i in seq(2, length(feature_order))){
+      #   na_indices <- which(is.na(ordered_fData[,i]))
+      #   for(j in seq(1, length(na_indices))){
+      #     ordered_fData[,i][na_indices[j]] <- paste("Not_Annotated", ordered_fData[,i-1][na_indices[j]], sep="_")
+      #   }
+      #   na_indices <- which(ordered_fData[,i] == "NA")
+      #   for(j in seq(1, length(na_indices))){
+      #     ordered_fData[,i][na_indices[j]] <- paste("Not_Annotated", ordered_fData[,i-1][na_indices[j]], sep="_")
+      #   }
+      #   #ordered_fData[,i][na_indices] <- paste("Not_Annotated", ordered_fData[,i-1], sep="_")
+      # }
+      
+      
+      # na_indices <- which(is.na(replacing_na_obj_fData[,i]))
+      # replacing_na_obj_fData[,i][na_indices] <- paste("Not_Annotated", feature_order[i], sep="_")
+      # na_indices <- which(replacing_na_obj_fData[,i] == "NA")
+      # replacing_na_obj_fData[,i][na_indices] <- paste("Not_Annotated", feature_order[i], sep="_")
+      # replacing_na_obj_fData
+      # for(i in seq(2, length(feature_order))){
+      #   na_indices <- which(is.na(replacing_na_obj_fData[,i]))
+      #   replacing_na_obj_fData[,i][na_indices] <- paste("Not_Annotated", replacing_na_obj_fData[,i-1], sep="_")
+      #   na_indices <- which(replacing_na_obj_fData[,i] == "NA")
+      #   replacing_na_obj_fData[,i][na_indices] <- paste("Not_Annotated", replacing_na_obj_fData[,i-1], sep="_")
+      # }
+      #                          
+      # obj_fData <- as.data.table(replacing_na_obj_fData)
+      # cols <- feature_order[1:length(feature_order)-1]
+      # order <- rep(1, length(feature_order)-1)
+      # ordered_fData <- setorderv(obj_fData, cols = cols, order = order)
+      #                          
+      # otu_indexes <- seq(1:length(ordered_fData[,get(feature_order[length(feature_order)])]))
+      # ordered_fData <- ordered_fData[, otu_index:=otu_indexes]
+      
       return(as.data.frame(ordered_fData))
     },
                              
@@ -156,9 +187,15 @@ MetavizGraph <- setRefClass("MetavizGraph",
         temp_level_count <- temp_level[, .(leaf_index = .I[which.min(otu_index)], count = .N), by=eval(level)]
         
         level_features <- as.character(table_node_ids[[level]])
+        random_ids <- sample(1:1000000, nrow(temp_level_count), replace=FALSE)
         for(i in seq_len(nrow(temp_level_count))) {
           row <- temp_level_count[i,]
-          id <- paste(as.hexmode(depth-1), as.hexmode(row$leaf_index), sep="-")
+          #id <- paste(as.hexmode(depth-1), as.hexmode(as.integer(row$leaf_index)-1), sep="-")
+          if(depth==1 && i == 1){
+            id <- paste(as.hexmode(depth-1), as.hexmode(0), sep="-")
+          } else{
+          id <- paste(as.hexmode(depth-1), as.hexmode(random_ids[i]), sep="-")
+          }
           level_features <- replace(level_features, which(level_features == row[[level]]), id)
         }
         level_features

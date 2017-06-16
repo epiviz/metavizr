@@ -62,6 +62,10 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
         message("MRExperiment Object validated... PASS")
       }
 
+      if(norm){
+        object <- cumNorm(object)
+      }
+      
       if(is.null(feature_order)) {
         .self$.feature_order = colnames(fData(object))
       }
@@ -82,7 +86,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .self$.maxValue <- max(.self$.leaf_sample_count_table[, !c("leaf", "otu_index"), with=FALSE])
       .self$.nodeSelections <- list()
       .self$.levelSelected <- aggregateAtDepth
-      .self$.lastRootId <- "0-1"
+      .self$.lastRootId <- "0-0"
       
       featureSelection = control$featureSelection
       
@@ -104,7 +108,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
 
     # Create leaf_sample_count data.table
     .create_leaf_sample_count_table=function(obj_in, norm = TRUE){
-      normed_counts <- as.data.frame(MRcounts(cumNorm(obj_in), norm = norm))
+      normed_counts <- as.data.frame(MRcounts(obj_in), norm=norm)
       normed_counts[["leaf"]] <- rownames(normed_counts)
       normed_counts[["otu_index"]] <- .self$.graph$.hierarchy_tree[,c("otu_index")]
       ret_table <- as.data.table(normed_counts)
@@ -287,7 +291,7 @@ EpivizMetagenomicsData$methods(
     
     nodes_of_subtree <- unlist(nodes_of_subtree)
     
-    if(level == 0 || nodeId == "0-1"){
+    if(level == 0 || nodeId == "0-0"){
       nodesToRet <- c(root, unlist(nodes_of_subtree))
     } else{
       parent_of_root_taxonomy <- colnames(graph_tree)[(level-1)]
@@ -312,6 +316,24 @@ EpivizMetagenomicsData$methods(
     
     leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
     setnames(leaf_ordering_table, c("leaf", "otu_index"))
+    
+    lineage_DF <- as.data.frame(.self$.graph$.node_ids_table)
+    lineage_table <- .self$.graph$.node_ids_table
+    lineage_DF[,feature_order[1]] <- lineage_table[,get(feature_order[1])]
+
+    for(i in seq(2,length(feature_order))){
+      lineage_DF[,feature_order[i]] <- paste(lineage_DF[,feature_order[i-1]], lineage_table[,get(feature_order[i])], sep=",")
+    }
+    lineage_DT <- as.data.table(lineage_DF)
+
+    lineage_DT_long <- melt(lineage_DT, id.vars = c("otu_index"),
+                            measure.vars = c(colnames(lineage_DT)[1:(length(colnames(lineage_DT))-1)]),
+                            variable.name = "taxonomy", variable.factor = FALSE)
+
+    setnames(lineage_DT_long, c("otu_index", "taxonomy", "lineage"))
+
+    temp_nodes_table <- merge(.self$.graph$.nodes_table, lineage_DT_long, by="lineage")
+    temp_nodes_table <- temp_nodes_table[, otu_index:=as.integer(otu_index)]
     
     for(i in seq_len(num_rows)){
       if(as.integer(strsplit(nodesToRet[i], "-")[[1]][1]) == last_level_of_subtree){
@@ -351,7 +373,7 @@ EpivizMetagenomicsData$methods(
       labels[i] <- label
       taxonomy <- colnames(graph_tree)[level]
 
-      if(nodesToRet[i] != "0-1"){
+      if(nodesToRet[i] != "0-0"){
         parentId_taxonomy <- colnames(graph_tree)[(level-1)]
         parentId <- unique(.self$.graph$.node_ids_table[get(taxonomy)==nodesToRet[i], get(parentId_taxonomy)])[1]
         parentIds[i] <- parentId
@@ -362,9 +384,9 @@ EpivizMetagenomicsData$methods(
       partition <- "NA"
       partitions[i] <- partition
       
-      list_of_leaves <- .self$.graph$.leaf_of_table[node_label %in% label,leaf]
-      leaf_indexes_temp <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
-      
+      #list_of_leaves <- .self$.graph$.leaf_of_table[node_label %in% label,leaf]
+      #leaf_indexes_temp <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
+      leaf_indexes_temp <- temp_nodes_table[lineage == .self$.graph$.nodes_table[id == nodesToRet[i],lineage,], otu_index,]
       if(length(leaf_indexes_temp) > 0){
         start <- min(leaf_indexes_temp)
       }    else{
@@ -395,7 +417,7 @@ EpivizMetagenomicsData$methods(
       nleaves_temp <- length(unname(unlist(unique(.self$.graph$.leaf_of_table[node_label==label, leaf]))))
       nleaves[i] <- nleaves_temp[1]
       
-      if(nodesToRet[i] != "0-1"){
+      if(nodesToRet[i] != "0-0"){
         orders[i] <- .self$.graph$.nodes_table[get("id")==nodesToRet[i],get("order")][[1]]
       } else {
         orders[i] <- 1
@@ -422,7 +444,16 @@ EpivizMetagenomicsData$methods(
       rest = ret_data_frame[-1,]
       rootDict = row_to_dict(root)
       result = df_to_tree(rootDict, rest)
-
+      
+      result[["rootTaxonomies"]] = .self$.graph$.feature_order
+      lineage = .self$.graph$.nodes_table[get("id")==nodesToRet[1],get("lineage")][[1]]
+      
+      lineageLabel <- sapply(strsplit(lineage, ",")[[1]], function(str_id) {
+        .self$.graph$.nodes_table[get("id") == str_id, get("node_label")][[1]]
+      })
+      
+      result[["lineageLabel"]] = paste(lineageLabel, sep=", ")
+      
       resultResp = list(nodeSelectionTypes = .self$.nodeSelections, 
                         selectionLevel = .self$.levelSelected, 
                         tree = result)
@@ -805,7 +836,7 @@ EpivizMetagenomicsData$methods(
 
 
 EpivizMetagenomicsData$methods(
-  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, datasource) {
+  toNEO4JDbHTTP =function(batch_url, neo4juser, neo4jpass, datasource, description=NULL) {
     ' 
     Write an `EpivizMetagenomicsData` object to a Neo4j graph database
     
@@ -826,7 +857,7 @@ EpivizMetagenomicsData$methods(
     cat("Done\n")
     
     cat("Saving datasource data...")
-    .saveDataSourceNEO4JHTTP(batch_url, neo4juser, neo4jpass, datasource)
+    .saveDataSourceNEO4JHTTP(batch_url, neo4juser, neo4jpass, datasource, description)
     cat("Done\n")
     
     cat("Saving hierarchy...")
@@ -836,17 +867,17 @@ EpivizMetagenomicsData$methods(
     cat("Saving properties...")
     .neo4jUpdatePropertiesHTTP(batch_url, neo4juser, neo4jpass, create_id_index = TRUE)
     cat("Done\n")
-    
+     
     cat("Saving Data Matrix...")
     .saveMatrixNEO4JHTTP(batch_url, neo4juser, neo4jpass, datasource)
     cat("Done\n")
-    
+     
     cat("Saving properties...")
     .neo4jUpdatePropertiesHTTP(batch_url, neo4juser, neo4jpass, create_prop_index = TRUE)
     cat("Done\n")
   },
   
-  .buildBatchJSON = function(query_in, param_list, id_in=0, id_last=TRUE, full_query=TRUE,json_query_in=NULL, params_complete=FALSE){
+  .buildBatchJSON = function(query_in, param_list, id=0, id_last=TRUE, full_query=TRUE,json_query_in=NULL, params_complete=FALSE){
     json_start <- "["
     method <- "{\"method\" : \"POST\","
     to <- "\"to\" : \"cypher\","
@@ -856,10 +887,10 @@ EpivizMetagenomicsData$methods(
     body_end <- "},"
     
     if(id_last){
-      id <- paste("\"id\": ", as.character(id_in), "}", sep="")
+      id <- paste("\"id\": ", as.character(id), "}", sep="")
     }
     else{
-      id <- paste("\"id\": ", as.character(id_in), "},", sep="")
+      id <- paste("\"id\": ", as.character(id), "},", sep="")
     }
     json_end <- "]"
     json_query <- ""
@@ -947,13 +978,18 @@ EpivizMetagenomicsData$methods(
     .self$.json_query <- query_final
     
     if(!is.null(batch_url)) {
-      POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
     }
   },
   
-  .saveDataSourceNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, datasource, file=NULL) {
-    query <- "CREATE (:Datasource {label: {label_param}})"
-    params <- list(label_param=paste("\"", as.character(datasource), "\"", sep=""))
+  .saveDataSourceNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, datasource, file=NULL, description=NULL) {
+    description_temp <- as.character(description)
+    if(is.null(description)){
+      description_temp = as.character(datasource)
+    }
+    query <- "CREATE (:Datasource {label: {label_param}, description: {description_param}})"
+    params <- list(label_param=paste("\"", as.character(datasource), "\"", sep=""), description_param=paste("\"", as.character(description_temp), "\"", sep=""))
     
     query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
     if(!is.null(batch_url)) {
@@ -968,11 +1004,73 @@ EpivizMetagenomicsData$methods(
   .saveHierarchyNEO4JHTTP =function(batch_url, neo4juser, neo4jpass, datasource, file=NULL) {
     
     dfToNeo4j <- as.data.frame(.self$.graph$.nodes_table)
-    #names(dfToNeo4j)[names(dfToNeo4j) == "child"] <- "id"
-    names(dfToNeo4j)[names(dfToNeo4j) == "level"] <- "depth"
+    dfToNeo4j <- dfToNeo4j[order(dfToNeo4j[,"id"]),]
     names(dfToNeo4j)[names(dfToNeo4j) == "node_label"] <- "label"
     names(dfToNeo4j)[names(dfToNeo4j) == "parent"] <- "parentId"
     dfToNeo4j[,"lineageLabel"] <- dfToNeo4j[,"lineage"]
+    dfToNeo4j[,"depth"] <- (as.integer(dfToNeo4j[,"level"])-1)
+    dfToNeo4j[,"taxonomy"] <- .self$.feature_order[as.integer(dfToNeo4j[,"level"])]
+    
+    leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
+    setnames(leaf_ordering_table, c("leaf", "otu_index"))
+    
+    leaf_table_lowercase <- .self$.graph$.leaf_of_table
+    leaf_table_lowercase <- leaf_table_lowercase[,node_label:=tolower(node_label)]
+    
+    starts <- rep(1,nrow(dfToNeo4j))
+    ends <- rep(1,nrow(dfToNeo4j))
+    nleaves <- rep(1, nrow(dfToNeo4j))
+    nchildrens <- rep(1, nrow(dfToNeo4j))
+    
+    graph_tree <- .self$.graph$.hierarchy_tree[,-which(colnames(.self$.graph$.hierarchy_tree) == "otu_index")]
+    
+    lineage_DF <- as.data.frame(.self$.graph$.node_ids_table)
+    lineage_table <- .self$.graph$.node_ids_table
+    lineage_DF[,feature_order[1]] <- lineage_table[,get(feature_order[1])]
+    
+    for(i in seq(2,length(feature_order))){
+      lineage_DF[,feature_order[i]] <- paste(lineage_DF[,feature_order[i-1]], lineage_table[,get(feature_order[i])], sep=",")
+    }
+    lineage_DT <- as.data.table(lineage_DF)
+    
+    lineage_DT_long <- melt(lineage_DT, id.vars = c("otu_index"), 
+                            measure.vars = c(colnames(lineage_DT)[1:(length(colnames(lineage_DT))-1)]), 
+                            variable.name = "taxonomy", variable.factor = FALSE)
+    
+    setnames(lineage_DT_long, c("otu_index", "taxonomy", "lineage"))
+    
+    temp_nodes_table <- merge(.self$.graph$.nodes_table, lineage_DT_long, by="lineage")
+    temp_nodes_table <- temp_nodes_table[, otu_index:=as.integer(otu_index)]
+    
+    for(i in 1:nrow(dfToNeo4j)){
+      node <- dfToNeo4j[,"label"][i]
+      
+      #list_of_leaves <- leaf_table_lowercase[node_label==tolower(node),leaf]
+      leaf_indexes_temp <- temp_nodes_table[lineage == dfToNeo4j[,"lineage"][i], otu_index,]
+      #leaf_indexes_temp <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
+      nleaves[i] <- length(leaf_indexes_temp)
+      if(length(leaf_indexes_temp) > 0){
+        start <- min(leaf_indexes_temp)
+      } else{
+        start <- node
+      }
+      
+      if(length(leaf_indexes_temp) > 0){
+        end <- max(leaf_indexes_temp)
+      } else{
+        end <- node
+      }
+      
+      starts[i] <- start
+      ends[i] <- end
+      nchildrens[i] <- nrow(.self$.graph$.node_ids_table[get(.self$.feature_order[as.integer(dfToNeo4j[,"level"][i])])==dfToNeo4j[,"id"][i],])
+    }
+    
+    dfToNeo4j$start <- as.integer(starts)
+    dfToNeo4j$leafIndex <- as.integer(starts)
+    dfToNeo4j$end <- as.integer(ends)
+    dfToNeo4j$nchildren <- nchildrens
+    dfToNeo4j$nleaves <- nleaves
     
     dfToNeo4j$partition = NA
     
@@ -984,10 +1082,9 @@ EpivizMetagenomicsData$methods(
     keys = colnames(dfToNeo4j)
     query <- "CREATE (:Feature {props})"
     json_query <- ""
-    cypherCount = 0
     id_counter <- 0
     
-    for (j in seq_len(nrow(dfToNeo4j))){
+    for (j in 1:nrow(dfToNeo4j)){
       row <- dfToNeo4j[j,]
       props <- "" 
       for (i in seq_along(keys)){
@@ -1001,7 +1098,7 @@ EpivizMetagenomicsData$methods(
       props <- paste(props, "\"", datasource_param_key, "\"", " : \"", datasource_param_value, "\"", sep="")
       params <- list("props"=props)
       
-      writeBatchOut <- j%%500 == 0
+      writeBatchOut <- j%%5000 == 0
       if (j <= nrow(dfToNeo4j)-1){
         if (writeBatchOut){
           json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query)
@@ -1020,6 +1117,8 @@ EpivizMetagenomicsData$methods(
         .self$.json_query <- query_final
         
         if(!is.null(batch_url)) {
+          print("Posting query_final")
+          print(query_final)
           r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
           stop_for_status(r)
           
@@ -1032,35 +1131,29 @@ EpivizMetagenomicsData$methods(
     .self$.json_query <- query_final
     
     if(!is.null(batch_url)) {
-      POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
-    }
-    else {
-      write(query, file=file, append = TRUE)
-      
-      cypherCount = cypherCount + 1
-      
-      # write commits if data file is too long
-      if(cypherCount == 500) {
-        write(";", file=file, append = TRUE)
-        write("commit", file=file, append = TRUE)
-        write("begin", file=file, append = TRUE)
-        cypherCount = 0
-      }
+      print("Posting query_final")
+      print(query_final)
+      r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+      stop_for_status(r)
     }
     
     query <- "CREATE INDEX ON :Feature (id)"
     query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
     
     if(!is.null(batch_url)) {
+      print("Posting query_final")
+      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     } 
     
     query <- "MATCH (ds:Datasource {label:{datasource_param}}) MATCH (fNode:Feature {id: {root_id}, datasource: {datasource_param}}) CREATE (ds)-[:DATASOURCE_OF]->(fNode)"
-    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), root_id=paste("\"", "1-1", "\"", sep=""))
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), root_id=paste("\"", "0-0", "\"", sep=""))
     query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
     
     if(!is.null(batch_url)) {
+      print("Posting query_final")
+      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
@@ -1069,31 +1162,36 @@ EpivizMetagenomicsData$methods(
     }
     
     json_start <- "["
-    query <- "MATCH (fParent:Feature {id : {parent_id}, datasource: {datasource_param}}) MATCH (f:Feature {id : {child_id}, datasource: {datasource_param}}) CREATE (fParent)-[:PARENT_OF]->(f)"
+    query <- "MATCH (fParent:Feature {id : {parent_id}, datasource: {datasource_param}}) WHERE {lineage_param} CONTAINS fParent.lineage MATCH (f:Feature {id : {child_id}, datasource: {datasource_param}, lineage: {lineage_param}, order: {order_param}}) CREATE (fParent)-[:PARENT_OF]->(f)"
     
     json_end <- "]"
     json_query <- ""
     
-    cypherCount = 0
     id_counter <- 0
     
-    for (j in seq_len(nrow(dfToNeo4j))){
+    for (j in 1:nrow(dfToNeo4j)){
       row <- dfToNeo4j[j,]
       parentid <- paste("\"", row$parentId, "\"", sep="")
+      if(parentid == "None"){
+        continue
+      }
       childid <- paste("\"", row$id, "\"", sep="")
-      writeBatchOut <- j%%500 == 0
+      lineage <- paste("\"", row$lineage, "\"", sep="")
+      order <- paste("\"", row$order, "\"", sep="")
+      
+      writeBatchOut <- j%%5000 == 0
       if (j <= nrow(dfToNeo4j)-1){
         if (writeBatchOut){
-          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid)
+          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid, lineage_param = lineage, order_param = order)
           json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
         }
         else {
-          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid)
+          params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid, lineage_param = lineage, order_param = order)
           json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = FALSE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
         }
       }
       else {
-        params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid)
+        params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), parent_id=parentid, child_id=childid, lineage_param = lineage, order_param = order)
         json_query <- .buildBatchJSON(query_in = query, param_list = params, id= id_counter, id_last = TRUE, full_query = FALSE, json_query_in = json_query, params_complete = TRUE)
       }
       id_counter <- id_counter + 1
@@ -1103,6 +1201,8 @@ EpivizMetagenomicsData$methods(
         .self$.json_query <- query_final
         
         if(!is.null(batch_url)) {
+          print("Posting query_final")
+          print(query_final)
           r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
           stop_for_status(r)
         }
@@ -1114,49 +1214,54 @@ EpivizMetagenomicsData$methods(
     .self$.json_query <- query_final
     
     if(!is.null(batch_url)) {
+      print("Posting query_final less than write batch out")
+      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
     
     query <- "MATCH (fNode:Feature {datasource: {datasource_param}})-[:PARENT_OF*]->(fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param} }) CREATE (fNode)-[:LEAF_OF]->(fLeaf)"
-    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)), "\"", sep=""))
-    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
-    
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)-1), "\"", sep=""))
+    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE)
+
     if(!is.null(batch_url)) {
+      print("Posting query_final leaf_of first")
+      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
     else {
       write(query, file=file, append = TRUE)
     }
-    
+
     query <- "MATCH (fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param}}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)"
-    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)), "\"", sep=""))
-    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
-    
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)-1), "\"", sep=""))
+    query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE)
+
     if(!is.null(batch_url)) {
+      print("Posting query_final leaf_of second")
+      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
   },
   
   .saveMatrixNEO4JHTTP = function(batch_url, neo4juser, neo4jpass,  datasource, file=NULL) {
-    leaf_sample_count_table_temp <- .self$.leaf_sample_count_table[,-(which(colnames(.self$.leaf_sample_count_table) == "otu_index")), with=FALSE]
-    valuesToNeo4j = as.data.frame(melt(leaf_sample_count_table_temp, id.vars = c("leaf"), measure.vars = c(colnames(leaf_sample_count_table_temp)[1:(length(colnames(leaf_sample_count_table_temp))-1)]), variable.name = "sample_id", variable.factor = FALSE))
+    leaf_sample_count_table_temp <- .self$.leaf_sample_count_table_long[,-(which(colnames(.self$.leaf_sample_count_table_long) == "otu_index")), with=FALSE]
+    valuesToNeo4j = as.data.frame(leaf_sample_count_table_temp)
     
     json_start <- "["
-    query <- "MATCH (f:Feature {id : {node_id}, datasource: {datasource_param}}) MATCH (s:Sample {id: {sample_id}}) CREATE (s)-[:COUNT {val: {count_param}}]->(f)"
+    query <- "MATCH (f:Feature {label : {node_id}, datasource: {datasource_param}}) MATCH (s:Sample {id: {sample_id}}) CREATE (s)-[:COUNT {val: {count_param}}]->(f)"
     
     json_end <- "]"
     json_query <- ""
     
-    cypherCount = 0
     id_counter <- 0
     
-    for (j in seq_len(nrow(valuesToNeo4j))){
+    for (j in 1:nrow(valuesToNeo4j)){
       row <- valuesToNeo4j[j,]
       nodeid <- paste("\"", row$leaf, "\"", sep="")
-      sampleid <- paste("\"", row$sample_id, "\"", sep="")
+      sampleid <- paste("\"", row$sample, "\"", sep="")
       count <- paste("\"", as.character(row$value), "\"", sep="")
       writeBatchOut <- j%%5000 == 0
       if (j <= nrow(valuesToNeo4j)-1){
@@ -1180,6 +1285,8 @@ EpivizMetagenomicsData$methods(
         .self$.json_query <- query_final
         
         if(!is.null(batch_url)) {
+          print("Posting query_final")
+          print(query_final)
           r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
           stop_for_status(r)
         }
@@ -1193,6 +1300,8 @@ EpivizMetagenomicsData$methods(
     .self$.json_query <- query_final
     
     if(!is.null(batch_url)) {
+      print("Posting query_final")
+      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
@@ -1221,6 +1330,46 @@ EpivizMetagenomicsData$methods(
       }
       
       query <- "MATCH ()-[c:COUNT]->() SET c.val = toFloat(c.val)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+      
+      query <- "MATCH (f:Feature) SET f.start = toInt(f.start)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+      
+      query <- "MATCH (f:Feature) SET f.end = toInt(f.end)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+      
+      query <- "MATCH (f:Feature) SET f.nleaves = toInt(f.nleaves)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+      
+      query <- "MATCH (f:Feature) SET f.nchildren = toInt(f.nchildren)"
+      query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
+      
+      if(!is.null(batch_url)) {
+        r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
+        stop_for_status(r)
+      }
+      
+      query <- "MATCH (f:Feature) SET f.leafIndex = toInt(f.leafIndex)"
       query_final <- .buildBatchJSON(query_in = query, param_list = NULL)
       
       if(!is.null(batch_url)) {
