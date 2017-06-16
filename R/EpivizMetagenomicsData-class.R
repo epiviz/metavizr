@@ -1021,7 +1021,7 @@ EpivizMetagenomicsData$methods(
     ends <- rep(1,nrow(dfToNeo4j))
     nleaves <- rep(1, nrow(dfToNeo4j))
     nchildrens <- rep(1, nrow(dfToNeo4j))
-    
+    lineageLabels <- rep("", nrow(dfToNeo4j))
     graph_tree <- .self$.graph$.hierarchy_tree[,-which(colnames(.self$.graph$.hierarchy_tree) == "otu_index")]
     
     lineage_DF <- as.data.frame(.self$.graph$.node_ids_table)
@@ -1066,6 +1066,13 @@ EpivizMetagenomicsData$methods(
       starts[i] <- start
       ends[i] <- end
       nchildrens[i] <- nrow(.self$.graph$.node_ids_table[get(.self$.feature_order[as.integer(dfToNeo4j[,"level"][i])])==dfToNeo4j[,"id"][i],])
+      lineage = .self$.graph$.nodes_table[get("id")==dfToNeo4j[,"id"][i],get("lineage")][[1]]
+      
+      lineageLabel <- sapply(strsplit(lineage, ",")[[1]], function(str_id) {
+        .self$.graph$.nodes_table[get("id") == str_id, get("node_label")][[1]]
+      })
+      
+      lineageLabels[i] <- paste(lineageLabel, collapse=",")    
     }
     
     dfToNeo4j$start <- as.integer(starts)
@@ -1073,6 +1080,7 @@ EpivizMetagenomicsData$methods(
     dfToNeo4j$end <- as.integer(ends)
     dfToNeo4j$nchildren <- nchildrens
     dfToNeo4j$nleaves <- nleaves
+    dfToNeo4j$lineageLabel <- lineageLabels
     
     dfToNeo4j$partition = NA
     
