@@ -1026,6 +1026,8 @@ EpivizMetagenomicsData$methods(
     
     lineage_DF <- as.data.frame(.self$.graph$.node_ids_table)
     lineage_table <- .self$.graph$.node_ids_table
+    feature_order <- .self$.feature_order
+    
     lineage_DF[,feature_order[1]] <- lineage_table[,get(feature_order[1])]
     
     for(i in seq(2,length(feature_order))){
