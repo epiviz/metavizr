@@ -1127,8 +1127,6 @@ EpivizMetagenomicsData$methods(
         .self$.json_query <- query_final
         
         if(!is.null(batch_url)) {
-          print("Posting query_final")
-          print(query_final)
           r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
           stop_for_status(r)
           
@@ -1141,8 +1139,6 @@ EpivizMetagenomicsData$methods(
     .self$.json_query <- query_final
     
     if(!is.null(batch_url)) {
-      print("Posting query_final")
-      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
@@ -1151,8 +1147,6 @@ EpivizMetagenomicsData$methods(
     query_final <- .buildBatchJSON(query_in = query, param_list = NULL) 
     
     if(!is.null(batch_url)) {
-      print("Posting query_final")
-      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     } 
@@ -1162,8 +1156,6 @@ EpivizMetagenomicsData$methods(
     query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE) 
     
     if(!is.null(batch_url)) {
-      print("Posting query_final")
-      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
@@ -1211,8 +1203,6 @@ EpivizMetagenomicsData$methods(
         .self$.json_query <- query_final
         
         if(!is.null(batch_url)) {
-          print("Posting query_final")
-          print(query_final)
           r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
           stop_for_status(r)
         }
@@ -1224,8 +1214,6 @@ EpivizMetagenomicsData$methods(
     .self$.json_query <- query_final
     
     if(!is.null(batch_url)) {
-      print("Posting query_final less than write batch out")
-      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
@@ -1235,8 +1223,6 @@ EpivizMetagenomicsData$methods(
     query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE)
 
     if(!is.null(batch_url)) {
-      print("Posting query_final leaf_of first")
-      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
@@ -1249,8 +1235,6 @@ EpivizMetagenomicsData$methods(
     query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE)
 
     if(!is.null(batch_url)) {
-      print("Posting query_final leaf_of second")
-      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
@@ -1295,8 +1279,6 @@ EpivizMetagenomicsData$methods(
         .self$.json_query <- query_final
         
         if(!is.null(batch_url)) {
-          print("Posting query_final")
-          print(query_final)
           r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
           stop_for_status(r)
         }
@@ -1310,8 +1292,6 @@ EpivizMetagenomicsData$methods(
     .self$.json_query <- query_final
     
     if(!is.null(batch_url)) {
-      print("Posting query_final")
-      print(query_final)
       r <- POST(batch_url, body = query_final, encode = "json", authenticate(user = neo4juser, password = neo4jpass))
       stop_for_status(r)
     }
