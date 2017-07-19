@@ -649,7 +649,7 @@ EpivizMetagenomicsData$methods(
   
   getCombined=function(measurements = NULL, 
                           seqName, start = 1, end = 1000, 
-                          order = NULL, nodeSelection = NULL, selectedLevels = 3) {
+                          order = NULL, nodeSelection = NULL, selectedLevels = NULL) {
     "Return the counts aggregated to selected nodes for the given samples
     
     \\describe{
@@ -671,7 +671,10 @@ EpivizMetagenomicsData$methods(
       }
     }
     
-    .self$.levelSelected = selectedLevels
+    # .self$.levelSelected = selectedLevels
+    if(is.null(selectedLevels)) {
+      selectedLevels = .self$.levelSelected
+    }
     selections = .self$.nodeSelections
     measurements = unique(measurements)
 
