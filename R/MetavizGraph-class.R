@@ -186,9 +186,9 @@ MetavizGraph <- setRefClass("MetavizGraph",
       ordered_fData_df <- as.data.frame(ordered_fData)
       
       if(length(unique(ordered_fData_df[,1])) > 1){
-        rootFeature <- rep("AllFeatures", nrow(ordered_fData_df))
-        ordered_fData_df <- cbind(rootFeature, ordered_fData_df)
-        .self$.feature_order <- unlist(c("rootFeature", feature_order))
+        allFeatures <- rep("AllFeatures", nrow(ordered_fData_df))
+        ordered_fData_df <- cbind(allFeatures, ordered_fData_df)
+        .self$.feature_order <- unlist(c("allFeatures", feature_order))
       }
       
       return(ordered_fData_df)
