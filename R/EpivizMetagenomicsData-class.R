@@ -27,6 +27,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     .levelSelected = "ANY",
     .lastRootId = "character",
     .json_query = "ANY",
+    .graph_feature_order = "character",
     
     # Tables
     .leaf_sample_count_table = "ANY",
@@ -76,6 +77,7 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       .self$.sampleAnnotation <- pData(object)
 
       .self$.graph <- buildMetavizGraph(object, feature_order=feature_order)
+      .self$.graph_feature_order <- .self$.graph$.feature_order
       
       message("creating leaf_sample_count_table")
       .self$.leaf_sample_count_table <- .create_leaf_sample_count_table(object, norm=norm)
@@ -1006,8 +1008,8 @@ EpivizMetagenomicsData$methods(
     names(dfToNeo4j)[names(dfToNeo4j) == "parent"] <- "parentId"
     dfToNeo4j[,"lineageLabel"] <- dfToNeo4j[,"lineage"]
     
-    dfToNeo4j[,"depth"] <- (as.integer(dfToNeo4j[,"level"])-1)
-    dfToNeo4j[,"taxonomy"] <- .self$.feature_order[as.integer(dfToNeo4j[,"level"])]
+    dfToNeo4j[,"depth"] <- (as.integer(dfToNeo4j[,"level"]))
+    dfToNeo4j[,"taxonomy"] <- .self$.feature_order[(as.integer(dfToNeo4j[,"level"]) + 1)]
         
     leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
     setnames(leaf_ordering_table, c("leaf", "otu_index"))
@@ -1021,33 +1023,13 @@ EpivizMetagenomicsData$methods(
     nchildrens <- rep(1, nrow(dfToNeo4j))
     lineageLabels <- rep("", nrow(dfToNeo4j))
     
-    graph_tree <- .self$.graph$.hierarchy_tree[,-which(colnames(.self$.graph$.hierarchy_tree) == "otu_index")]
-        
-    lineage_DF <- as.data.frame(.self$.graph$.node_ids_table)
-    lineage_table <- .self$.graph$.node_ids_table
-    feature_order <- .self$.feature_order
-    lineage_DF[,feature_order[1]] <- lineage_table[,get(feature_order[1])]
-        
-    for(i in seq(2,length(feature_order))){
-          lineage_DF[,feature_order[i]] <- paste(lineage_DF[,feature_order[i-1]], lineage_table[,get(feature_order[i])], sep=",")
-    }
-    lineage_DT <- as.data.table(lineage_DF)
-        
-    lineage_DT_long <- melt(lineage_DT, id.vars = c("otu_index"), 
-      measure.vars = c(colnames(lineage_DT)[1:(length(colnames(lineage_DT))-1)]), 
-      variable.name = "taxonomy", variable.factor = FALSE)
-        
-    setnames(lineage_DT_long, c("otu_index", "taxonomy", "lineage"))
-        
-    temp_nodes_table <- merge(.self$.graph$.nodes_table, lineage_DT_long, by="lineage")
+    temp_nodes_table <- merge(.self$.graph$.nodes_table, .self$.graph$.leaf_of_table, by="lineage")
     temp_nodes_table <- temp_nodes_table[, otu_index:=as.integer(otu_index)]
         
     for(i in 1:nrow(dfToNeo4j)){
       node <- dfToNeo4j[,"label"][i]
             
-      #list_of_leaves <- leaf_table_lowercase[node_label==tolower(node),leaf]
       leaf_indexes_temp <- temp_nodes_table[lineage == dfToNeo4j[,"lineage"][i], otu_index,]
-      #leaf_indexes_temp <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
       nleaves[i] <- length(leaf_indexes_temp)
       
       if(length(leaf_indexes_temp) > 0){
@@ -1064,7 +1046,7 @@ EpivizMetagenomicsData$methods(
             
       starts[i] <- start
       ends[i] <- end
-      nchildrens[i] <- nrow(.self$.graph$.node_ids_table[get(.self$.feature_order[as.integer(dfToNeo4j[,"level"][i])])==dfToNeo4j[,"id"][i],])
+      nchildrens[i] <- nrow(.self$.graph$.node_ids_table[get(.self$.graph_feature_order[(as.integer(dfToNeo4j[,"level"][i])+1)])==dfToNeo4j[,"id"][i],])
       lineage = .self$.graph$.nodes_table[get("id")==dfToNeo4j[,"id"][i],get("lineage")][[1]]
             
       lineageLabel <- sapply(strsplit(lineage, ",")[[1]], function(str_id) {
@@ -1216,7 +1198,7 @@ EpivizMetagenomicsData$methods(
     }
     
     query <- "MATCH (fNode:Feature {datasource: {datasource_param}})-[:PARENT_OF*]->(fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param} }) CREATE (fNode)-[:LEAF_OF]->(fLeaf)"
-    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)-1), "\"", sep=""))
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)), "\"", sep=""))
     query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE)
     
     if(!is.null(batch_url)) {
@@ -1228,7 +1210,7 @@ EpivizMetagenomicsData$methods(
     }
     
     query <- "MATCH (fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param}}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)"
-    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)-1), "\"", sep=""))
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)), "\"", sep=""))
     query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE)
     
     if(!is.null(batch_url)) {
