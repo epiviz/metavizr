@@ -710,18 +710,19 @@ EpivizMetagenomicsData$methods(
     data_rows = getRows(measurements, start, end, selectedLevels, selections)
     
     colFrame = as.data.frame(data_columns)
+    colnames(colFrame) <- names(data_columns)
     label = unlist(data_rows$metadata$label)
     lineage = unlist(data_rows$metadata$lineage)
     id = unlist(data_rows$metadata$id)
     rowMetadataFrame = data.frame(label=label, id=id, linege=lineage)
     data_rows$metadata <- NULL
     rowFrame = as.data.frame(data_rows)
-    
+
     non_zero_indices <- which(!apply(colFrame,1,FUN = function(x){all(x == 0)}))
     data_columns <- as.list(colFrame[non_zero_indices, ])
     data_rows <- as.list(rowFrame[non_zero_indices, ])
     data_metadata_rows <- as.list(rowMetadataFrame[non_zero_indices, ])
-    
+
     data_rows[["metadata"]] = data_metadata_rows
 
     result <- list(
