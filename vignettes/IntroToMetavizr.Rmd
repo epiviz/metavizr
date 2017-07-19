@@ -158,11 +158,14 @@ Finally, we can update the threshold cutoff we had for fold change, pass those m
 
 ```{r, eval=TRUE}
 
-feature_names2 <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > .5),]$adjPvalues < .05),])
-fSelection2 <- rep(2, length(feature_names2))
-names(fSelection2) <- feature_names2
+feature_names_update <- rownames(logFC_bangladesh[which(logFC_bangladesh[which(abs(logFC_bangladesh$logFC) > .5),]$adjPvalues < .05),])
+fSelection_update <- rep(2, length(feature_names_update))
+names(fSelection_update) <- feature_names_update
 
-app$get_ms_object(icicle_plot)$propagateHierarchyChanges(fSelection2, selectedLevels = which(feature_order==aggregation_level), request_with_labels = TRUE)
+agg_level = which(feature_order==aggregation_level)
+select_value = 2
+names(select_value) = agg_level
+app$get_ms_object(icicle_plot)$propagateHierarchyChanges(fSelection_update, selectedLevels = select_value, request_with_labels = TRUE)
 ```
 
 

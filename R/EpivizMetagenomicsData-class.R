@@ -515,6 +515,19 @@ EpivizMetagenomicsData$methods(
     if(!is.null(selectedLevels)) {
       .self$.levelSelected <- as.integer(names(selectedLevels)[1])
     }
+    
+    if(!is.null(selectedLevels)){
+      sanitize_selections <- list()
+      for(n in names(.self$.nodeSelections)){
+        n_level <- as.integer(unlist(strsplit(n, "-"))[1])
+        selection_value <- as.integer(.self$.nodeSelections[[n]])
+        if(!(selection_value == 2 && n_level <= .self$.levelSelected)){
+          sanitize_selections[[n]] = .self$.nodeSelections[[n]]
+        }
+      }
+      .self$.nodeSelections <- sanitize_selections
+    }
+    
     .self$.mgr$.clear_datasourceGroup_cache(.self)
   },
   
@@ -568,7 +581,7 @@ EpivizMetagenomicsData$methods(
     first_join <- merge(leaf_ordering_table, merge(nodes_at_level, .self$.graph$.leaf_of_table, by="id"), by="leaf")
     setorderv(first_join, "otu_index.x")
     
-    nodes <- sort(as.data.frame(unique(first_join[,c("node_label.x", "lineage.x")]))[,"node_label.x"])
+    nodes <- as.data.frame(unique(first_join[,c("node_label.x", "lineage.x")]))[,"node_label.x"]
     
     ends <- rep(0, length(nodes))
     starts <- rep(0, length(nodes))
@@ -709,6 +722,8 @@ EpivizMetagenomicsData$methods(
 
     data_columns = getValues(measurements, start, end, selectedLevels, selections)
     data_rows = getRows(measurements, start, end, selectedLevels, selections)
+    
+    
     
     result <- list(
       cols = data_columns,
