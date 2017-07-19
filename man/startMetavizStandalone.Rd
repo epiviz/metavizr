@@ -4,13 +4,14 @@
 \alias{startMetavizStandalone}
 \title{Start metaviz app in standalone (locally) and create \code{\link[metavizr]{MetavizApp}} object to manage connection.}
 \usage{
-startMetavizStandalone(branch = "metaviz-4.1",
-  register_function = .register_all_metaviz_things, ...)
+startMetavizStandalone(register_function = .register_all_metaviz_things,
+  use_viewer_option = FALSE, ...)
 }
 \arguments{
-\item{branch}{(character) branch to pull from metaviz github repo to run standalone.}
-
 \item{register_function}{(function) function used to register actions and charts on the metaviz app.}
+
+\item{use_viewer_option}{(function) run application in viewer defined by \code{getOption("viewer")}.
+This allows standalone app to run in Rstudio's viewer (FALSE by default)}
 
 \item{...}{additional parameters passed to \code{\link[epivizrStandalone]{startStandalone}}.}
 }
@@ -22,7 +23,7 @@ Start metaviz app in standalone (locally) and create \code{\link[metavizr]{Metav
 }
 \examples{
 # see package vignette for example usage
-app <- startMetaviz(non_interactive=TRUE, open_browser=TRUE)
+app <- startMetavizStandalone()
 app$stop_app()
 
 }

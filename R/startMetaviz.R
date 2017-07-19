@@ -184,10 +184,21 @@ startMetaviz <- function(host="http://metaviz.cbcb.umd.edu",
   mApp
 }
 
+
+.viewer_option_browse_fun <- function(url) {
+  viewer <- getOption("viewer")
+  if (is.null(viewer)) {
+    utils::browseURL(url)
+  } else {
+    viewer(url)
+  }
+}
+
 #' Start metaviz app in standalone (locally) and create \code{\link[metavizr]{MetavizApp}} object to manage connection.
 #' 
-#' @param branch (character) branch to pull from metaviz github repo to run standalone.
 #' @param register_function (function) function used to register actions and charts on the metaviz app.
+#' @param use_viewer_option (function) run application in viewer defined by \code{getOption("viewer")}.
+#'  This allows standalone app to run in Rstudio's viewer (FALSE by default)
 #' @param ... additional parameters passed to \code{\link[epivizrStandalone]{startStandalone}}.
 #' 
 #' @return An object of class \code{\link{MetavizApp}}
@@ -196,13 +207,12 @@ startMetaviz <- function(host="http://metaviz.cbcb.umd.edu",
 #' @import GenomeInfoDb
 #' @examples
 #' # see package vignette for example usage
-#' app <- startMetaviz(non_interactive=TRUE, open_browser=TRUE)
+#' app <- startMetavizStandalone()
 #' app$stop_app()
 #' 
 #' @export
-startMetavizStandalone <- function(branch="metaviz-4.1", 
-                                   register_function = 
-                                     .register_all_metaviz_things, ...) {
+startMetavizStandalone <- function(register_function = .register_all_metaviz_things,
+                                   use_viewer_option=FALSE, ...) {
   chr="metavizr"
   start=1
   end=100
@@ -210,12 +220,35 @@ startMetavizStandalone <- function(branch="metaviz-4.1",
                  seqlengths=100000,
                  isCircular=FALSE,
                  genome="metavizr")
-  setStandalone(branch=branch)
+  
+  path <- system.file("www", package="epivizrStandalone")
+  
+  
+
   app <- startStandalone(seqinfo=seq, 
                          register_function=register_function, 
+                         use_viewer_option = use_viewer_option,
                          chr=chr, start=start, end=end, ...)
   
   mApp <- MetavizApp$new(.url_parms=app$.url_parms, .browser_fun=app$.browser_fun,
                          server=app$server, data_mgr=app$data_mgr, chart_mgr=app$chart_mgr)
   mApp
+}
+
+#' set metaviz app standalone settings
+#' 
+#' @param url (character) github url to use. defaults to (\url{"https://github.com/epiviz/epiviz.git"}).
+#' @param branch (character) branch on the github repository. defaults to (master).
+#' @param local_path (character) if you already have a local instance of metaviz and would like to run standalone use this.
+#' @param non_interactive (logical) don't download repo, used for testing purposes.
+#' @return path to the metaviz app git repository
+#' 
+#' @import epivizrStandalone
+#' @examples
+#' # see package vignette for example usage
+#' setMetavizStandalone()
+#' 
+#' @export
+setMetavizStandalone <- function(url="https://github.com/epiviz/epiviz.git", branch="metaviz-4.1", local_path=NULL, non_interactive=FALSE) {
+  setStandalone(url = url, branch = branch, local_path = local_path, non_interactive = non_interactive)
 }
