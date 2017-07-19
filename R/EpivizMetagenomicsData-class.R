@@ -5,6 +5,7 @@
 #' @importClassesFrom epivizrData EpivizData
 #' @importFrom vegan diversity
 #' @import data.table
+#' @import digest
 #' @import methods
 #' @import httr
 #' @exportClass EpivizMetagenomicsData
@@ -111,7 +112,21 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
     # Create leaf_sample_count data.table
     .create_leaf_sample_count_table=function(obj_in, norm = TRUE){
       normed_counts <- as.data.frame(MRcounts(obj_in, norm=norm))
-      normed_counts[["leaf"]] <- rownames(normed_counts)
+      leaf_names <- rownames(normed_counts)
+      replacing_na_obj_fData <- fData(obj_in)[,.self$.feature_order]
+      na_indices <- which(is.na(leaf_names))
+      for(j in seq(1, length(na_indices))){
+          leaf_names[na_indices[j]] <- paste("Not_Annotated", .self$.feature_order[length(.self$.feature_order)], replacing_na_obj_fData[,.self$.feature_order[1]][na_indices[j]], sep="_")
+      }
+      na_indices <- which(leaf_names == "NA")
+      for(j in seq(1, length(na_indices))){
+          leaf_names[na_indices[j]] <- paste("Not_Annotated", .self$.feature_order[length(.self$.feature_order)], replacing_na_obj_fData[,.self$.feature_order[1]][na_indices[j]], sep="_")
+      }
+      null_indices <- which(leaf_names == "NULL")
+      for(j in seq(1, length(null_indices))){
+          leaf_names[null_indices[j]] <- paste("Not_Annotated", .self$.feature_order[length(.self$.feature_order)], replacing_na_obj_fData[,.self$.feature_order[1]][null_indices[j]], sep="_")
+      }
+      normed_counts[["leaf"]] <- leaf_names
       normed_counts[["otu_index"]] <- .self$.graph$.hierarchy_tree[,c("otu_index")]
       ret_table <- as.data.table(normed_counts)
       return(ret_table)
@@ -389,7 +404,10 @@ EpivizMetagenomicsData$methods(
       
       #list_of_leaves <- .self$.graph$.leaf_of_table[node_label %in% label,leaf]
       #leaf_indexes_temp <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
-      leaf_indexes_temp <- temp_nodes_table[lineage == .self$.graph$.nodes_table[id == nodesToRet[i],lineage,], otu_index,]
+      ids_match <- .self$.graph$.nodes_table[id == nodesToRet[i],]
+      parents_match <- ids_match[parent == parentIds[i]]
+      leaf_indexes_temp <- temp_nodes_table[lineage == parents_match[,lineage,], otu_index,]
+      #leaf_indexes_temp <- temp_nodes_table[lineage == .self$.graph$.nodes_table[id == nodesToRet[i],lineage,], otu_index,]
       if(length(leaf_indexes_temp) > 0){
         start <- min(leaf_indexes_temp)
       }    else{
@@ -630,7 +648,17 @@ EpivizMetagenomicsData$methods(
 
     results <- second_join[,sum(value), by=list(sample, node_label.x)]
     close_results <- as.data.frame(dcast(data = results, formula = node_label.x ~ sample, value.var='V1'))
+    zero_results <- setdiff(nodes_at_level[,node_label], close_results[,"node_label.x"])
+    if(length(zero_results) > 0){
+      for(k in seq(1, length(zero_results))){
+        new_index <- nrow(close_results)+1
+        close_results[new_index,] <- 0.0
+        close_results[new_index,]["node_label.x"] <- zero_results[k]
+      }
+    }
+    close_results <- close_results[order(close_results[,"node_label.x"]),]
     close_results[is.na(close_results)] <- 0.0
+    rownames(close_results) <- seq(1,nrow(close_results))
     names_to_add <- names(close_results[,1])
     data_columns = list()
     for(m in measurements){

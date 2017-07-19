@@ -28,7 +28,7 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 }}
 
 \item{\code{getCombined(measurements = NULL, seqName, start = 1, end = 1000,
-  order = NULL, nodeSelection = NULL, selectedLevels = 3)}}{Return the counts aggregated to selected nodes for the given samples
+  order = NULL, nodeSelection = NULL, selectedLevels = NULL)}}{Return the counts aggregated to selected nodes for the given samples
 
 \describe{
 \item{measurements}{Samples to get counts for}
@@ -108,7 +108,7 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 }}
 
-\item{\code{toNEO4JDbHTTP(batch_url, neo4juser, neo4jpass, datasource)}}{Write an `EpivizMetagenomicsData` object to a Neo4j graph database
+\item{\code{toNEO4JDbHTTP(batch_url, neo4juser, neo4jpass, datasource, description = NULL)}}{Write an `EpivizMetagenomicsData` object to a Neo4j graph database
 
 @param batch_url (character) Neo4j database url and port for processing batch http requests
 @param neo4juser (character) Neo4j database user name
