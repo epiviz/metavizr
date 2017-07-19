@@ -521,7 +521,7 @@ EpivizMetagenomicsData$methods(
     leaf_ordering_table <- leaf_ordering_table[otu_index >= start & otu_index <= end]
     
     first_join <- merge(leaf_ordering_table, merge(nodes_at_level, .self$.graph$.leaf_of_table, by="id"), by="leaf")
-    setorderv(first_join, "otu_index")
+    setorderv(first_join, "otu_index.x")
     
     nodes <- sort(as.data.frame(unique(first_join[,c("node_label.x", "lineage.x")]))[,"node_label.x"])
     
@@ -535,7 +535,7 @@ EpivizMetagenomicsData$methods(
 
     for (i in seq_along(nodes)) {
       feature_label <- nodes[i]
-      res <- first_join[node_label.x==feature_label,otu_index]
+      res <- first_join[node_label.x==feature_label,otu_index.x]
       if(length(res) > 0) {
         ends[i] <- max(res)
         starts[i] <- min(res)
