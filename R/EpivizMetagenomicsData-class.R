@@ -294,10 +294,10 @@ EpivizMetagenomicsData$methods(
     label <- as.character(unique(graph_tree[,level][index]))
     taxonomy <- colnames(graph_tree)[level]
     
-    if(length(.self$.feature_order) >= level+3){
+    if(length(.self$.graph$.feature_order) >= level+3){
       last_level_of_subtree <- level+3
     } else{
-      last_level_of_subtree <- length(.self$.feature_order)
+      last_level_of_subtree <- length(.self$.graph$.feature_order)
     }
     
     hierarchy_slice <- unique(.self$.graph$.node_ids_table[get(taxonomy)==nodeId, (level+1):last_level_of_subtree])
@@ -331,15 +331,15 @@ EpivizMetagenomicsData$methods(
     nleaves <- rep(1, num_rows)
     orders <- rep(1, num_rows)
     
-    leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.feature_order[length(.self$.feature_order)], "otu_index")])
+    leaf_ordering_table <- as.data.table(.self$.graph$.hierarchy_tree[,c(.self$.graph$.feature_order[length(.self$.graph$.feature_order)], "otu_index")])
     setnames(leaf_ordering_table, c("leaf", "otu_index"))
     
     lineage_DF <- as.data.frame(.self$.graph$.node_ids_table)
     lineage_table <- .self$.graph$.node_ids_table
-    lineage_DF[,.self$.feature_order[1]] <- lineage_table[,get(.self$.feature_order[1])]
+    lineage_DF[,.self$.graph$.feature_order[1]] <- lineage_table[,get(.self$.graph$.feature_order[1])]
     
-    for(i in seq(2,length(.self$.feature_order))){
-        lineage_DF[,.self$.feature_order[i]] <- paste(lineage_DF[,.self$.feature_order[i-1]], lineage_table[,get(.self$.feature_order[i])], sep=",")
+    for(i in seq(2,length(.self$.graph$.feature_order))){
+        lineage_DF[,.self$.graph$.feature_order[i]] <- paste(lineage_DF[,.self$.graph$.feature_order[i-1]], lineage_table[,get(.self$.graph$.feature_order[i])], sep=",")
     }
     lineage_DT <- as.data.table(lineage_DF)
     
@@ -355,8 +355,8 @@ EpivizMetagenomicsData$methods(
       
     for(i in seq_len(num_rows)){
       if(as.integer(strsplit(nodesToRet[i], "-")[[1]][1]) == last_level_of_subtree){
-        depths[i] = length(.self$.feature_order)
-        level = length(.self$.feature_order)
+        depths[i] = length(.self$.graph$.feature_order)
+        level = length(.self$.graph$.feature_order)
         index <- which(.self$.graph$.node_ids_table[,level,with=FALSE] == nodeId)
         
         label <- as.character(unique(graph_tree[,level][index]))
@@ -378,7 +378,7 @@ EpivizMetagenomicsData$methods(
         nchildrens[i] <- 0
         nleaves[i] <- 0
         
-        orders[i] <- emdc$.graph$.nodes_table[get("id")==nodeId,get("order")][[1]]
+        orders[i] <- .self$.graph$.nodes_table[get("id")==nodeId,get("order")][[1]]
       } else{
       nodeId <- nodesToRet[i]
       split_res <- strsplit(nodesToRet[i], "-")[[1]]
@@ -402,11 +402,13 @@ EpivizMetagenomicsData$methods(
       partition <- "NA"
       partitions[i] <- partition
       
-      #list_of_leaves <- .self$.graph$.leaf_of_table[node_label %in% label,leaf]
-      #leaf_indexes_temp <- leaf_ordering_table[leaf %in% list_of_leaves, otu_index]
-      ids_match <- .self$.graph$.nodes_table[id == nodesToRet[i],]
-      parents_match <- ids_match[parent == parentIds[i]]
-      leaf_indexes_temp <- temp_nodes_table[lineage == parents_match[,lineage,], otu_index,]
+      if(nodesToRet[i] == "0-0"){
+        leaf_indexes_temp <- temp_nodes_table[level == (length(.self$.graph$.feature_order)-1), otu_index,]
+      } else{
+        ids_match <- .self$.graph$.nodes_table[id == nodesToRet[i],]
+        parents_match <- ids_match[parent == parentIds[i]]
+        leaf_indexes_temp <- temp_nodes_table[lineage == parents_match[,lineage,], otu_index,]
+      }
       #leaf_indexes_temp <- temp_nodes_table[lineage == .self$.graph$.nodes_table[id == nodesToRet[i],lineage,], otu_index,]
       if(length(leaf_indexes_temp) > 0){
         start <- min(leaf_indexes_temp)
@@ -709,21 +711,29 @@ EpivizMetagenomicsData$methods(
     data_columns = getValues(measurements, start, end, selectedLevels, selections)
     data_rows = getRows(measurements, start, end, selectedLevels, selections)
     
-    colFrame = as.data.frame(data_columns)
-    colnames(colFrame) <- names(data_columns)
-    label = unlist(data_rows$metadata$label)
-    lineage = unlist(data_rows$metadata$lineage)
-    id = unlist(data_rows$metadata$id)
-    rowMetadataFrame = data.frame(label=label, id=id, linege=lineage)
-    data_rows$metadata <- NULL
-    rowFrame = as.data.frame(data_rows)
-
-    non_zero_indices <- which(!apply(colFrame,1,FUN = function(x){all(x == 0)}))
-    data_columns <- as.list(colFrame[non_zero_indices, ])
-    data_rows <- as.list(rowFrame[non_zero_indices, ])
-    data_metadata_rows <- as.list(rowMetadataFrame[non_zero_indices, ])
-
-    data_rows[["metadata"]] = data_metadata_rows
+    # colFrame = as.data.frame(data_columns)
+    # colnames(colFrame) <- names(data_columns)
+    # label = unlist(data_rows$metadata$label)
+    # lineage = unlist(data_rows$metadata$lineage)
+    # id = unlist(data_rows$metadata$id)
+    # rowMetadataFrame = data.frame(label=label, id=id, linege=lineage)
+    # data_rows$metadata <- NULL
+    # rowFrame = as.data.frame(data_rows)
+    # 
+    # rowOrder <- order(rowFrame[,"start"])
+    # colFrame <- colFrame[rowOrder,]
+    # rowMetadataFrame <- rowMetadataFrame[rowOrder,]
+    # rowFrame <- rowFrame[rowOrder,]
+    # 
+    # #non_zero_indices <- which(!apply(colFrame,1,FUN = function(x){all(x == 0)}))
+    # #data_columns <- as.list(colFrame[non_zero_indices, ])
+    # #data_rows <- as.list(rowFrame[non_zero_indices, ])
+    # #data_metadata_rows <- as.list(rowMetadataFrame[non_zero_indices, ])
+    # data_columns <- as.list(colFrame)
+    # data_rows <- as.list(rowFrame)
+    # data_metadata_rows <- as.list(rowMetadataFrame)
+    # 
+    # data_rows[["metadata"]] = data_metadata_rows
 
     result <- list(
       cols = data_columns,
