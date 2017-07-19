@@ -211,13 +211,12 @@ MetavizGraph <- setRefClass("MetavizGraph",
         temp_level_count <- temp_level[, .(leaf_index = .I[which.min(otu_index)], count = .N), by=eval(level)]
         
         level_features <- as.character(table_node_ids[[level]])
-        random_ids <- sample(1:1000000, nrow(temp_level_count), replace=FALSE)
         for(i in seq_len(nrow(temp_level_count))) {
           row <- temp_level_count[i,]
           if(depth==1 && i == 1){
-            id <- paste(as.hexmode(depth-1), as.hexmode(0), sep="-")
+            id <- paste(depth-1, 0, sep="-")
           } else{
-            id <- paste(as.hexmode(depth-1), as.hexmode(random_ids[i]), sep="-")
+            id <- paste(depth-1, paste(digest(row[,1]), i, sep=""), sep="-")
           }
           level_features <- replace(level_features, which(level_features == row[[level]]), id)
         }
