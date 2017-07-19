@@ -631,7 +631,7 @@ EpivizMetagenomicsData$methods(
     results <- second_join[,sum(value), by=list(sample, node_label.x)]
     close_results <- as.data.frame(dcast(data = results, formula = node_label.x ~ sample, value.var='V1'))
     close_results[is.na(close_results)] <- 0.0
-    names_to_add <- close_results[,1]
+    names_to_add <- names(close_results[,1])
     data_columns = list()
     for(m in measurements){
       if(m %in% colnames(close_results)){
