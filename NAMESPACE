@@ -2,6 +2,7 @@
 
 export(generateSelection)
 export(metavizControl)
+export(setMetavizStandalone)
 export(startMetaviz)
 export(startMetavizStandalone)
 export(validateObject)
