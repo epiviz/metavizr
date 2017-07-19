@@ -16,30 +16,31 @@ MetavizGraph <- setRefClass("MetavizGraph",
       .self$.feature_order = feature_order
     
       message("creating hierarchy_tree")
-      .self$.hierarchy_tree <- .create_hierarchy_tree(object, feature_order = feature_order)
+      .self$.hierarchy_tree <- .create_hierarchy_tree(object)
                            
       message("creating node_ids_table")
-      .self$.node_ids_table <- .create_node_ids(feature_order = feature_order)
-                               
+      .self$.node_ids_table <- .create_node_ids()
+
       message("creating nodes_table")
-      .self$.nodes_table <- .create_nodes_table(feature_order = feature_order)
-                               
+      .self$.nodes_table <- .create_nodes_table()
+
       message("creating leaf_of_table")
-      .self$.leaf_of_table <- .create_leaf_of_table(feature_order = feature_order)
-      
-      .self$.leaf_of_table <- merge(unique(.self$.nodes_table[,mget(c("lineage", "id"))]), 
+      .self$.leaf_of_table <- .create_leaf_of_table()
+
+      .self$.leaf_of_table <- merge(unique(.self$.nodes_table[,mget(c("lineage", "id"))]),
                                     unique(.self$.leaf_of_table) , by="lineage")
       .self$.leaf_of_table <- .self$.leaf_of_table[,id:=as.character(id)]
     },
 
-    .create_nodes_table=function(feature_order){
+    .create_nodes_table=function(){
       "Create a data.table with information for each node in the feature hierarchy
       
       \\describe{
-      \\item{feature_order}{The order of hierarchy as colnames of fData for the MRexperiment object}
       }
       \\value{ret_table}{data.table containing information for each node}
       "
+      
+      feature_order <- .self$.feature_order
       
       lineage_DF <- as.data.frame(.self$.node_ids_table)
       lineage_table <- .self$.node_ids_table
@@ -54,13 +55,13 @@ MetavizGraph <- setRefClass("MetavizGraph",
       root_parents <- rep("None", length(.self$.node_ids_table[,get(feature_order[1])]))
       nodes_tab <- data.frame(id = .self$.node_ids_table[,get(feature_order[1])], parent = root_parents, 
                               lineage = .self$.node_ids_table[,get(feature_order[1])], 
-                              node_label = .self$.hierarchy_tree[,1], level = rep(1, length(.self$.hierarchy_tree[,1])))
+                              node_label = .self$.hierarchy_tree[,1], level = rep(0, length(.self$.hierarchy_tree[,1])))
       
       for(i in seq(2, length(feature_order))){
-        temp_nodes_tab <- data.frame(id = .self$.node_ids_table[,get(.self$.feature_order[i])], 
+        temp_nodes_tab <- data.frame(id = .self$.node_ids_table[,get(feature_order[i])], 
                                      parent = .self$.node_ids_table[,get(.self$.feature_order[i-1])], 
                                      lineage = lineage_DT[,get(feature_order[i])],  node_label = .self$.hierarchy_tree[,i],  
-                                     level = rep(i, length(.self$.hierarchy_tree[,i])))
+                                     level = rep(i-1, length(.self$.hierarchy_tree[,i])))
         
         nodes_tab <- rbind(nodes_tab[rownames(unique(nodes_tab[,c("id","parent")])),], temp_nodes_tab[rownames(unique(temp_nodes_tab[,c("id","parent")])),])
       }
@@ -85,20 +86,21 @@ MetavizGraph <- setRefClass("MetavizGraph",
       return(ret_table)
     },
     
-    .create_leaf_of_table=function(feature_order){
+    .create_leaf_of_table=function(){
       "Create a data.table with leaf, ancestor relationship for each leaf
     
       \\describe{
-        \\item{feature_order}{The order of hierarchy as colnames of fData for the MRexperiment object}
           }
       \\value{ret_table}{data.table leaf of relationship for each node}
       "                               
-      #                          
+      #            
+      feature_order <- .self$.feature_order
+      
       temp_hiearchy_DT <- as.data.table(.self$.hierarchy_tree)
       num_features <- length(feature_order)
       hiearchy_cols <- colnames(.self$.hierarchy_tree)
                               
-      melt_res <- melt(temp_hiearchy_DT, id.vars = c(.self$.feature_order[num_features], "otu_index"), 
+      melt_res <- melt(temp_hiearchy_DT, id.vars = c(feature_order[num_features], "otu_index"), 
                       measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols)-1)]))
       label_table <- melt_res[,c(1,2,4)]
       setnames(label_table, c("leaf", "otu_index","node_label"))
@@ -115,7 +117,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
       }
       lineage_DT <- as.data.table(lineage_DF)
       
-      melt_res_lineage <- melt(lineage_DT, id.vars = c(.self$.feature_order[num_features], "otu_index"), measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols))-1]))
+      melt_res_lineage <- melt(lineage_DT, id.vars = c(feature_order[num_features], "otu_index"), measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols))-1]))
 
       lineage_leaf_of_table <- unique(melt_res_lineage[,c(2,4)])
       setnames(lineage_leaf_of_table, c("otu_index","lineage"))
@@ -129,15 +131,17 @@ MetavizGraph <- setRefClass("MetavizGraph",
       return(ret_table)
       },
                              
-    .create_hierarchy_tree=function(obj_in, feature_order){
+    .create_hierarchy_tree=function(obj_in){
       "Create a data.frame with the hierarchy ordered by each level of the hierarchy
     
       \\describe{
         \\item{obj_in}{An MRexperiment object containing featureData}
-        \\item{feature_order}{The order of hierarchy as colnames of fData for the MRexperiment object}
           }
       \\value{ordered_fData}{data.frame with sorted hierarchy of features}
       "  
+      
+      feature_order <- .self$.feature_order
+      
       fd = fData(obj_in) 
       for( i in seq(ncol(fd))){
         fd[,i] = as.character(fd[,i]) 
@@ -146,12 +150,32 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                
       replacing_na_obj_fData <- fData(obj_in)[,feature_order]
       for(i in seq(1, length(feature_order))){
-        na_indices <- which(is.na(replacing_na_obj_fData[,i]))
-        replacing_na_obj_fData[,i][na_indices] <- paste("Not_Annotated", feature_order[i], sep="_")
-        na_indices <- which(replacing_na_obj_fData[,i] == "NA")
-        replacing_na_obj_fData[,i][na_indices] <- paste("Not_Annotated", feature_order[i], sep="_")
+        na_indices <- which(is.na(replacing_na_obj_fData[,feature_order[i]]))
+        for(j in seq(1, length(na_indices))){
+          if(i > 1) {
+            replacing_na_obj_fData[,feature_order[i]][na_indices[j]] <- paste("Not_Annotated", feature_order[i], replacing_na_obj_fData[,feature_order[1]][na_indices[j]], sep="_")
+          } else {
+            replacing_na_obj_fData[,feature_order[i]][na_indices[j]] <- paste("Not_Annotated", feature_order[i], sep="_")
+          }
+        }
+        na_indices <- which(replacing_na_obj_fData[,feature_order[i]] == "NA")
+        for(j in seq(1, length(na_indices))){
+          if(i > 1){ 
+            replacing_na_obj_fData[,feature_order[i]][na_indices[j]] <- paste("Not_Annotated", feature_order[i], replacing_na_obj_fData[,feature_order[1]][na_indices[j]], sep="_")
+          } else{
+            replacing_na_obj_fData[,feature_order[i]][na_indices[j]] <- paste("Not_Annotated", feature_order[i], sep="_")
+          }
+        }
+        null_indices <- which(replacing_na_obj_fData[,feature_order[i]] == "NULL")
+        for(j in seq(1, length(null_indices))){
+          if(i > 1){ 
+            replacing_na_obj_fData[,feature_order[i]][null_indices[j]] <- paste("Not_Annotated", feature_order[i], replacing_na_obj_fData[,feature_order[1]][null_indices[j]], sep="_")
+          } else{
+            replacing_na_obj_fData[,feature_order[i]][null_indices[j]] <- paste("Not_Annotated", feature_order[i], sep="_")
+          }
+        }
       }
-                               
+                       
       obj_fData <- as.data.table(replacing_na_obj_fData)
       cols <- feature_order[1:length(feature_order)-1]
       order <- rep(1, length(feature_order)-1)
@@ -159,11 +183,18 @@ MetavizGraph <- setRefClass("MetavizGraph",
                                
       otu_indexes <- seq(1:length(ordered_fData[,get(feature_order[length(feature_order)])]))
       ordered_fData <- ordered_fData[, otu_index:=otu_indexes]
-                               
-      return(as.data.frame(ordered_fData))
+      ordered_fData_df <- as.data.frame(ordered_fData)
+      
+      if(length(unique(ordered_fData_df[,1])) > 1){
+        rootFeature <- rep("AllFeatures", nrow(ordered_fData_df))
+        ordered_fData_df <- cbind(rootFeature, ordered_fData_df)
+        .self$.feature_order <- unlist(c("rootFeature", feature_order))
+      }
+      
+      return(ordered_fData_df)
     },
                              
-    .create_node_ids=function(feature_order){
+    .create_node_ids=function(){
       "Create a data.table with unique ids used for metavizr to specify level and child for any node 
     
        \\describe{
@@ -171,6 +202,8 @@ MetavizGraph <- setRefClass("MetavizGraph",
            }
        \\value{table_node_ids}{data.table with node ids in sorted hierarchy}
       "  
+      feature_order <- .self$.feature_order
+      
       table_node_ids <- .self$.hierarchy_tree
       id_list <- sapply(feature_order, function(level) {
         depth <- which(feature_order == level)
@@ -181,7 +214,6 @@ MetavizGraph <- setRefClass("MetavizGraph",
         random_ids <- sample(1:1000000, nrow(temp_level_count), replace=FALSE)
         for(i in seq_len(nrow(temp_level_count))) {
           row <- temp_level_count[i,]
-          id <- paste(as.hexmode(depth-1), as.hexmode(row$leaf_index), sep="-")
           if(depth==1 && i == 1){
             id <- paste(as.hexmode(depth-1), as.hexmode(0), sep="-")
           } else{
