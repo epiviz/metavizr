@@ -17,9 +17,6 @@ MetavizGraph <- setRefClass("MetavizGraph",
     
       message("creating hierarchy_tree")
       .self$.hierarchy_tree <- .create_hierarchy_tree(object, feature_order = feature_order)
-                               
-      message("creating leaf_of_table")
-      .self$.leaf_of_table <- .create_leaf_of_table(feature_order = feature_order)
                            
       message("creating node_ids_table")
       .self$.node_ids_table <- .create_node_ids(feature_order = feature_order)
@@ -27,8 +24,11 @@ MetavizGraph <- setRefClass("MetavizGraph",
       message("creating nodes_table")
       .self$.nodes_table <- .create_nodes_table(feature_order = feature_order)
                                
-      .self$.leaf_of_table <- merge(unique(.self$.nodes_table[,mget(c("id", "node_label"))]), 
-                                    unique(.self$.leaf_of_table) , by="node_label")
+      message("creating leaf_of_table")
+      .self$.leaf_of_table <- .create_leaf_of_table(feature_order = feature_order)
+      
+      .self$.leaf_of_table <- merge(unique(.self$.nodes_table[,mget(c("lineage", "id", "node_label"))]), 
+                                    unique(.self$.leaf_of_table) , by="lineage")
       .self$.leaf_of_table <- .self$.leaf_of_table[,id:=as.character(id)]
     },
 
@@ -93,19 +93,35 @@ MetavizGraph <- setRefClass("MetavizGraph",
           }
       \\value{ret_table}{data.table leaf of relationship for each node}
       "                               
-                               
-      temp_hiearchy_DT <- as.data.table(.self$.hierarchy_tree)
+      #                          
+      # temp_hiearchy_DT <- as.data.table(.self$.hierarchy_tree)
       num_features <- length(feature_order)
       hiearchy_cols <- colnames(.self$.hierarchy_tree)
-                               
-      melt_res <- melt(temp_hiearchy_DT, id.vars = c(.self$.feature_order[num_features]), 
-                       measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols)-1)]))
-      ret_table <- melt_res[,c(1,3)]
-      setnames(ret_table, c("leaf", "node_label"))
-                               
-      ret_table <- ret_table[,leaf:=as.character(leaf)]
-      return(ret_table)
-    },
+      #                          
+      # melt_res <- melt(temp_hiearchy_DT, id.vars = c(.self$.feature_order[num_features]), 
+      #                  measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols)-1)]))
+      # ret_table <- melt_res[,c(1,3)]
+      # setnames(ret_table, c("leaf", "node_label"))
+      #                          
+      # ret_table <- ret_table[,leaf:=as.character(leaf)]
+      # return(ret_table)
+      
+      lineage_DF <- as.data.frame(.self$.node_ids_table)
+      lineage_table <- .self$.node_ids_table
+      lineage_DF[,feature_order[1]] <- lineage_table[,get(feature_order[1])]
+      
+      for(i in seq(2,length(feature_order))){
+        lineage_DF[,feature_order[i]] <- paste(lineage_DF[,feature_order[i-1]], lineage_table[,get(feature_order[i])], sep=",")
+      }
+      lineage_DT <- as.data.table(lineage_DF)
+      
+      melt_res_lineage <- melt(lineage_DT, id.vars = c("otu_index"), measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols))-1]))
+      lineage_leaf_of_table <- unique(melt_res_lineage[,c(1,3)])
+      setnames(lineage_leaf_of_table, c("leaf", "lineage"))
+      
+      lineage_leaf_of_table <- lineage_leaf_of_table[,leaf:=as.character(leaf)]
+      return(lineage_leaf_of_table)
+      },
                              
     .create_hierarchy_tree=function(obj_in, feature_order){
       "Create a data.frame with the hierarchy ordered by each level of the hierarchy

@@ -523,8 +523,8 @@ EpivizMetagenomicsData$methods(
     first_join <- merge(leaf_ordering_table, merge(nodes_at_level, .self$.graph$.leaf_of_table, by="id"), by="leaf")
     setorderv(first_join, "otu_index")
     
-    nodes <- unique(first_join$node_label.x)
-
+    nodes <- sort(as.data.frame(unique(first_join[,c("node_label.x", "lineage.x")]))[,"node_label.x"])
+    
     ends <- rep(0, length(nodes))
     starts <- rep(0, length(nodes))
     indexes <- rep(0, length(nodes))
@@ -594,7 +594,7 @@ EpivizMetagenomicsData$methods(
     
     leaf_sample_count_table_sub_select <- .self$.leaf_sample_count_table_long[otu_index >= start & otu_index <= end]
 
-    first_join <- unique(merge(unique(.self$.graph$.leaf_of_table),unique(nodes_at_level), by="id")) 
+    first_join <- unique(merge(unique(.self$.graph$.leaf_of_table),unique(nodes_at_level), by="lineage")) 
     
     leaf_sample_count_table_sub_select <- leaf_sample_count_table_sub_select[,-(which(colnames(leaf_sample_count_table_sub_select)=="otu_index")), with=FALSE]
     leaf_sample_count_table_sub_select <- leaf_sample_count_table_sub_select[sample %in% measurements,]
@@ -606,7 +606,7 @@ EpivizMetagenomicsData$methods(
     results <- second_join[,sum(value), by=list(sample, node_label.x)]
     close_results <- as.data.frame(dcast(data = results, formula = node_label.x ~ sample, value.var='V1'))
     close_results[is.na(close_results)] <- 0.0
-    names_to_add <- names(close_results[,1])
+    names_to_add <- close_results[,1]
     data_columns = list()
     for(m in measurements){
       if(m %in% colnames(close_results)){
@@ -646,7 +646,7 @@ EpivizMetagenomicsData$methods(
       }
     }
     
-    selectedLevels = .self$.levelSelected
+    .self$.levelSelected = selectedLevels
     selections = .self$.nodeSelections
     measurements = unique(measurements)
 
