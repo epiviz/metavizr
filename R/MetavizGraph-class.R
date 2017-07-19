@@ -27,7 +27,7 @@ MetavizGraph <- setRefClass("MetavizGraph",
       message("creating leaf_of_table")
       .self$.leaf_of_table <- .create_leaf_of_table(feature_order = feature_order)
       
-      .self$.leaf_of_table <- merge(unique(.self$.nodes_table[,mget(c("lineage", "id", "node_label"))]), 
+      .self$.leaf_of_table <- merge(unique(.self$.nodes_table[,mget(c("lineage", "id"))]), 
                                     unique(.self$.leaf_of_table) , by="lineage")
       .self$.leaf_of_table <- .self$.leaf_of_table[,id:=as.character(id)]
     },
@@ -94,17 +94,17 @@ MetavizGraph <- setRefClass("MetavizGraph",
       \\value{ret_table}{data.table leaf of relationship for each node}
       "                               
       #                          
-      # temp_hiearchy_DT <- as.data.table(.self$.hierarchy_tree)
+      temp_hiearchy_DT <- as.data.table(.self$.hierarchy_tree)
       num_features <- length(feature_order)
       hiearchy_cols <- colnames(.self$.hierarchy_tree)
-      #                          
-      # melt_res <- melt(temp_hiearchy_DT, id.vars = c(.self$.feature_order[num_features]), 
-      #                  measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols)-1)]))
-      # ret_table <- melt_res[,c(1,3)]
-      # setnames(ret_table, c("leaf", "node_label"))
-      #                          
-      # ret_table <- ret_table[,leaf:=as.character(leaf)]
-      # return(ret_table)
+                              
+      melt_res <- melt(temp_hiearchy_DT, id.vars = c(.self$.feature_order[num_features], "otu_index"), 
+                      measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols)-1)]))
+      label_table <- melt_res[,c(1,2,4)]
+      setnames(label_table, c("leaf", "otu_index","node_label"))
+                              
+      label_table <- label_table[,leaf:=as.character(leaf)]
+      label_table <- label_table[,otu_index:=as.character(otu_index)]
       
       lineage_DF <- as.data.frame(.self$.node_ids_table)
       lineage_table <- .self$.node_ids_table
@@ -115,12 +115,18 @@ MetavizGraph <- setRefClass("MetavizGraph",
       }
       lineage_DT <- as.data.table(lineage_DF)
       
-      melt_res_lineage <- melt(lineage_DT, id.vars = c("otu_index"), measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols))-1]))
-      lineage_leaf_of_table <- unique(melt_res_lineage[,c(1,3)])
-      setnames(lineage_leaf_of_table, c("leaf", "lineage"))
+      melt_res_lineage <- melt(lineage_DT, id.vars = c(.self$.feature_order[num_features], "otu_index"), measure.vars = c(hiearchy_cols[1:(length(hiearchy_cols))-1]))
+
+      lineage_leaf_of_table <- unique(melt_res_lineage[,c(2,4)])
+      setnames(lineage_leaf_of_table, c("otu_index","lineage"))
+
+      lineage_leaf_of_table <- lineage_leaf_of_table[,otu_index:=as.character(otu_index)]
       
-      lineage_leaf_of_table <- lineage_leaf_of_table[,leaf:=as.character(leaf)]
-      return(lineage_leaf_of_table)
+      lineage_df <- as.data.frame(lineage_leaf_of_table)
+      leaf_node_label <- as.data.frame(label_table)[,c("leaf", "node_label")]
+      
+      ret_table <- as.data.table(cbind(lineage_df, leaf_node_label))
+      return(ret_table)
       },
                              
     .create_hierarchy_tree=function(obj_in, feature_order){
