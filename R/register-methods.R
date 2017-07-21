@@ -2,6 +2,7 @@
 #' 
 #' @param object The object to register to data server
 #' @param columns Name of columns containing data to register
+#' @param type if data object has counts at inner nodes
 #' @param ... Additonal arguments passed to object constructors
 #' @return An \code{\link{EpivizMetagenomicsData-class}} object 
 #' @import metagenomeSeq
@@ -18,7 +19,7 @@ setMethod("register", "MRexperiment", function(object, type="LeafCounts", column
 #' Generic method to register data to the epiviz data server
 #' 
 #' @param object The object to register to data server
-#' @param columns Name of columns containing data to register
+#' @param type if data object has counts at inner nodes
 #' @param ... Additonal arguments passed to object constructors
 #' @return An \code{\link{phyloseq-class}} object 
 #' @import metagenomeSeq

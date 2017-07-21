@@ -11,6 +11,8 @@
 \arguments{
 \item{object}{The object to register to data server}
 
+\item{type}{if data object has counts at inner nodes}
+
 \item{columns}{Name of columns containing data to register}
 
 \item{...}{Additonal arguments passed to object constructors}
