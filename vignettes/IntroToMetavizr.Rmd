@@ -214,8 +214,8 @@ Finally, we add the MRexperiment as a measurement using the `add_measurements` m
 splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(MRcounts(splinesMRexp[i,]))) >= 2})
 splines_to_plot_indices <- which(splines_to_plot == TRUE)
 
-ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], type = "LeafCounts", datasource_name = "etec16_base21", control=metavizControl(norm = FALSE, aggregateAtDepth = 4), feature_order = feature_order2)
-splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines2", control = metavizControl(norm=FALSE, aggregateAtDepth = 4), feature_order = feature_order2)
+ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base21", type = "LeafCounts", control=metavizControl(norm = FALSE, aggregateAtDepth = 4), feature_order = feature_order2)
+splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines2", type = "LeafCounts", control = metavizControl(norm=FALSE, aggregateAtDepth = 4), feature_order = feature_order2)
 splineMeasurements <- splineObj$get_measurements()
 splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
 
