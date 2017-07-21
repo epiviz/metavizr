@@ -7,8 +7,12 @@
 #' @import metagenomeSeq
 #' @importMethodsFrom epivizrData register
 #' 
-setMethod("register", "MRexperiment", function(object, columns=NULL, ...) {
-  return(EpivizMetagenomicsData$new(object=object, columns=columns, ...))
+setMethod("register", "MRexperiment", function(object, type="LeafCounts", columns=NULL, ...) {
+  if(type == "LeafCounts"){
+    return(EpivizMetagenomicsData$new(object=object, columns=columns, ...))
+  } else {
+    return(InnerNodesEpivizMetagenomicsData$new(object=object, columns=columns, ...))
+  }
 })
 
 #' Generic method to register data to the epiviz data server
@@ -22,7 +26,11 @@ setMethod("register", "MRexperiment", function(object, columns=NULL, ...) {
 #' @importFrom phyloseq phyloseq_to_metagenomeSeq
 #' @importMethodsFrom epivizrData register
 #' 
-setMethod("register", "phyloseq", function(object, ...) {
+setMethod("register", "phyloseq", function(object, type="LeafCounts", ...) {
   phy_obj <- phyloseq_to_metagenomeSeq(physeq = object, ...)
-  return(EpivizMetagenomicsData$new(object=phy_obj, ...))
+  if(type == "LeafCounts"){
+    return(EpivizMetagenomicsData$new(object=phy_obj, ...))
+  } else {
+    return(InnerNodesEpivizMetagenomicsData$new(object=phy_obj, ...))
+  }
 })
