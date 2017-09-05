@@ -608,7 +608,7 @@ EpivizMetagenomicsData$methods(
     return(data_rows)
   },
   
-  getValues=function(measurements = NULL, start = 1, end = 1000, selectedLevels = 3, selections = NULL) {
+  getValues=function(measurements = NULL, start = 1, end = 1000, selectedLevels = 3, selections = NULL, row_order = NULL) {
     "Return the counts for a sample within the specified range
     
     \\describe{
@@ -671,19 +671,21 @@ EpivizMetagenomicsData$methods(
         close_results[new_index,]["node_label.x"] <- zero_results[k]
       }
     }
-    close_results <- close_results[order(close_results[,"node_label.x"]),]
+    if(is.null(row_order)){
+      close_results <- close_results[order(close_results[,"node_label.x"]),]
+    } else {
+      rownames(close_results) <- close_results[,"node_label.x"]
+      close_results <- close_results[row_order,]
+    }
     close_results[is.na(close_results)] <- 0.0
     rownames(close_results) <- seq(1,nrow(close_results))
-    names_to_add <- names(close_results[,1])
     data_columns = list()
     for(m in measurements){
       if(m %in% colnames(close_results)){
         inner_result <- close_results[,m]
-        names(inner_result) <- names_to_add
         data_columns[[m]] <- inner_result
       } else{
         inner_result <- rep(0.0, nrow(close_results))
-        names(inner_result) <- names_to_add
         data_columns[[m]] <- inner_result
       }
     }
@@ -720,10 +722,9 @@ EpivizMetagenomicsData$methods(
     selections = .self$.nodeSelections
     measurements = unique(measurements)
 
-    data_columns = getValues(measurements, start, end, selectedLevels, selections)
-    data_rows = getRows(measurements, start, end, selectedLevels, selections)
-    
-    
+    data_rows = getRows(measurements = measurements, start = start, end = end, selectedLevels = selectedLevels, selections = selections)
+    row_order = unlist(data_rows$metadata$label)
+    data_columns = getValues(measurements = measurements, start = start, end = end, selectedLevels = selectedLevels, selections = selections, row_order = row_order)
     
     result <- list(
       cols = data_columns,
