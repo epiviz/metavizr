@@ -24,6 +24,6 @@ set metaviz app standalone settings
 }
 \examples{
 # see package vignette for example usage
-setMetavizStandalone()
+# setMetavizStandalone()
 
 }

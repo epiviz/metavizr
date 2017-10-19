@@ -73,7 +73,7 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
     }
 
 \item{\code{getValues(measurements = NULL, start = 1, end = 1000,
-  selectedLevels = 3, selections = NULL)}}{Return the counts for a sample within the specified range
+  selectedLevels = 3, selections = NULL, row_order = NULL)}}{Return the counts for a sample within the specified range
 
 \describe{
 \item{measurements}{Samples to get counts for}

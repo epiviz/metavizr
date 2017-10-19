@@ -22,7 +22,7 @@ Start metaviz app and create \code{\link[metavizr]{MetavizApp}} object to manage
 }
 \examples{
 # see package vignette for example usage
-app <- startMetaviz(non_interactive=TRUE, open_browser=TRUE)
+app <- startMetaviz(non_interactive=TRUE, open_browser=FALSE)
 app$stop_app()
 
 }

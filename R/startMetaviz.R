@@ -167,7 +167,7 @@
 #' @seealso \code{\link[metavizr]{MetavizApp}}
 #' @examples
 #' # see package vignette for example usage
-#' app <- startMetaviz(non_interactive=TRUE, open_browser=TRUE)
+#' app <- startMetaviz(non_interactive=TRUE, open_browser=FALSE)
 #' app$stop_app()
 #' 
 #' @export
@@ -207,7 +207,7 @@ startMetaviz <- function(host="http://metaviz.cbcb.umd.edu",
 #' @import GenomeInfoDb
 #' @examples
 #' # see package vignette for example usage
-#' app <- startMetavizStandalone()
+#' app <- startMetavizStandalone(non_interactive=TRUE)
 #' app$stop_app()
 #' 
 #' @export
@@ -246,7 +246,7 @@ startMetavizStandalone <- function(register_function = .register_all_metaviz_thi
 #' @import epivizrStandalone
 #' @examples
 #' # see package vignette for example usage
-#' setMetavizStandalone()
+#' # setMetavizStandalone()
 #' 
 #' @export
 setMetavizStandalone <- function(url="https://github.com/epiviz/epiviz.git", branch="metaviz-4.1", local_path=NULL, non_interactive=FALSE) {
