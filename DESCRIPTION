@@ -1,6 +1,6 @@
 Package: metavizr
 Type: Package
-Version: 1.1.3
+Version: 1.1.4
 Authors@R: c( person("Hector", "Corrada Bravo",
         email="hcorrada@gmail.com", role=c("cre","aut")),
         person("Florin", "Chelaru", email="florin.chelaru@gmail.com",
