@@ -143,7 +143,7 @@ InnerNodesMetavizGraph <- setRefClass("InnerNodesMetavizGraph",
         for(i in seq(1, length(feature_order))){
           empty_indices <- which(is.na(replacing_na_obj_fData[,feature_order[i]]))
           replacing_na_obj_fData[,feature_order[i]][empty_indices] <- "Not_Annotated"
-          
+
           na_indices <- which(replacing_na_obj_fData[,feature_order[i]] == "NA")
           replacing_na_obj_fData[,feature_order[i]][na_indices] <- "Not_Annotated"
 

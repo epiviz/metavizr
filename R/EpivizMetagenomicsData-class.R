@@ -8,7 +8,7 @@
 #' @import digest
 #' @import methods
 #' @import httr
-#' @exportClass EpivizMetagenomicsData
+#' @exportClass EpivizMetagenomicsData		
 #' @examples
 #'
 #' library(metagenomeSeq)
