@@ -101,7 +101,6 @@ InnerNodesEpivizMetagenomicsData <- setRefClass("InnerNodesEpivizMetagenomicsDat
         .self$.nodeSelections = temp_selections
       }
                                           
-      callSuper(object=object, ...)
     },
                                         
     # Create leaf_sample_count data.table
