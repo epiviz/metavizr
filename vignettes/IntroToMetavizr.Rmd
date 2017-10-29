@@ -240,6 +240,41 @@ app$chart_mgr$set_chart_settings(splineChart, settings=settings, colors = colors
 
 ![Spline metavizr](images/Spline.png)
 
+```{r, eval=TRUE, echo=FALSE}
+app$chart_mgr$rm_all_charts()
+```
+
+# Visualize Whole Metagenome Shotgun Sequencing using data from curatedMetagenomicData
+
+Beyond marker-gene survey sequencing results, Metaviz can visualize taxonomic community profiles from whole metagenome shotgun sequencing.
+In order to show this utility, we will use select portions of the vignette for a Bioconductor 2017 workshop found here: https://github.com/waldronlab/MicrobiomeWorkshop. 
+We first retrieve a dataset named `Zeller_2014` from curatedMetagenomicData and convert the ExpressionSet containing abundance measurements into an MRExperiment which we will then use with Metaviz.
+
+```{r, eval=TRUE, echo=FALSE}
+require(curatedMetagenomicData)
+
+zeller.eset = ZellerG_2014.metaphlan_bugs_list.stool()
+zeller_MR_expr = ExpressionSet2MRexperiment(zeller.eset)
+```
+
+We add the MRExperiment to the Metaviz app with a call to `plot` with the type = "InnerNodeCounts" specified.
+
+```{r, eval=TRUE, echo=FALSE}
+facetZoomWGS <- app$plot(zeller_MR_expr, type = "InnerNodeCounts", datasource_name = "zeller", feature_order = colnames(fData(zeller_MR_expr)))
+```
+
+A FacetZoom utility is now visible for the taxonomic hierarchy of the `Zeller_2014` dataset. Now we can add a heatmap for abundance measurments for that data.
+
+```{r, eval=TRUE, echo=FALSE}
+heatmap_plot <- app$chart_mgr$revisualize(chart_type = "HeatmapPlot", chart = facetZoomWGS)
+```
+
+The FacetZoom control can be used to select features of interest to show in the linked heatmap. A user can explore at lower levels of the taxonomic hierarchy and remove nodes as desired from the data visualizations. We complete, all charts can be removed with a call to the Metaviz app chart manager.
+
+```{r, eval=TRUE, echo=FALSE}
+app$chart_mgr$rm_all_charts()
+```
+
 ### Close Metavizr and end session
 
 To close the connection with metaviz and the R session, we use the stop_app function.
@@ -248,11 +283,13 @@ To close the connection with metaviz and the R session, we use the stop_app func
 app$stop_app()
 ```
 
+
 ### SessionInfo
 
 ```{r session-info, cache=FALSE}
 sessionInfo()
 ```
+
 
 References:
 
