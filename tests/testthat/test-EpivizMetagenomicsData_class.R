@@ -136,3 +136,40 @@ test_that("getValuesInnerNodes", {
   diff_result <- setdiff(round(unname(res[[sampleId]]), digits=3), round(expected,digits=3))
   expect_equal(length(diff_result), 0)
 })
+
+test_that("getHierarchyInnerNodesRoot", {
+  library(curatedMetagenomicData)
+  
+  # From curatedMetagenomicData and MicrobiomeWorkshop Vignettes
+  zeller.eset = ZellerG_2014.metaphlan_bugs_list.stool()
+  zeller_MR <- ExpressionSet2MRexperiment(zeller.eset)
+  
+  feature_order <- colnames(fData(zeller_MR))
+  
+  mObj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(zeller_MR, feature_order = feature_order)
+  res <- mObj$getHierarchy(nodeId = NULL)
+  
+  expect_equal("AllFeatures", as.character(res$tree$label))
+  expect_equal(4, res$tree$nchildren)
+})
+
+test_that("getRowsInnerNodes", {
+  library(curatedMetagenomicData)
+  
+  # From curatedMetagenomicData and MicrobiomeWorkshop Vignettes
+  zeller.eset = ZellerG_2014.metaphlan_bugs_list.stool()
+  zeller_MR <- ExpressionSet2MRexperiment(zeller.eset)
+  
+  feature_order <- colnames(fData(zeller_MR))
+  
+  sampleId<- "CCIS98482370ST-3-0"
+  mObj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(zeller_MR, feature_order = feature_order)
+  resRows <- mObj$getRows(measurement = sampleId, selectedLevels = 2)  
+  expected_label <- c("Euryarchaeota", "Acidobacteria", "Actinobacteria", "Bacteroidetes", 
+                      "Candidatus_Saccharibacteria", "Chlorobi", "Deferribacteres", "Deinococcus_Thermus", 
+                      "Firmicutes", "Fusobacteria", "Proteobacteria", "Spirochaetes", "Synergistetes", 
+                      "Verrucomicrobia", "Ascomycota", "Eukaryota_noname", "Viruses_noname")
+  
+  intersect_result <- intersect(resRows$metadata$label, expected_label)
+  expect_equal(length(intersect_result), length(expected_label))
+})
