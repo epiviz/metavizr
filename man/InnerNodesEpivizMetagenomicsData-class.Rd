@@ -12,13 +12,6 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \section{Methods}{
 
 \describe{
-\item{\code{df_to_tree(root, df)}}{Helper function to recursively build nested response for getHierarchy
-
-\describe{
-\item{root}{Root of subtree}
-\item{df}{data.frame containing children to process}
-}}
-
 \item{\code{getAlphaDiversity(measurements = NULL)}}{Compute alpha diversity using vegan for the given samples
 
 \describe{
@@ -27,29 +20,18 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \item{end}{End of feature range to query}
 }}
 
-\item{\code{getCombined(measurements = NULL, seqName, start = 1, end = 1000,
-  order = NULL, nodeSelection = NULL, selectedLevels = NULL)}}{Return the counts aggregated to selected nodes for the given samples
-
-\describe{
-\item{measurements}{Samples to get counts for}
-\item{seqName}{name of datasource}
-\item{start}{Start of feature range to query}
-\item{end}{End of feature range to query}
-\item{order}{Ordering of nodes}
-\item{nodeSelection}{Node-id and selectionType pairs}
-\item{selectedLevels}{Current aggregation level}
-
-}}
-
-\item{\code{get_default_chart_type()}}{Get name of default chart type for this data type}
-
 \item{\code{getHierarchy(nodeId = NULL)}}{Retrieve feature hierarchy information for subtree with specified root
 
 \describe{
-\item{nodeId}{Feature identifier with level info}
+  \item{nodeId}{Feature identifier with level info}
 }}
 
-\item{\code{get_measurements()}}{Get description of measurements served by this object}
+\item{\code{get_measurements()}}{Get all annotation info for all samples
+
+\describe{
+  \item{chart_id_or_object}{An object of class \code{EpivizChart} or an id for
+    a chart loaded to the epiviz app.}
+}}
 
 \item{\code{getPCA(measurements = NULL)}}{Compute PCA over all features for given samples
 
@@ -61,15 +43,16 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 \item{\code{getRows(measurements = NULL, start = 1, end = 1000, selectedLevels = 3,
   selections = NULL)}}{Return the sample annotation and features within the specified range and level for a given sample and features
+    
+    \describe{
+      \item{measurements}{Samples to retrieve for}
+      \item{start}{Start of feature range to query}
+      \item{end}{End of feature range to query}
+      \item{selections}{Node-id and selectionType pairs}
+      \item{selectedLevels}{Current aggregation level}
 
-\describe{
-\item{measurements}{Samples to retrieve for}
-\item{start}{Start of feature range to query}
-\item{end}{End of feature range to query}
-\item{selections}{Node-id and selectionType pairs}
-\item{selectedLevels}{Current aggregation level}
-
-}}
+    }
+    }
 
 \item{\code{getValues(measurements = NULL, start = 1, end = 1000,
   selectedLevels = 3, selections = NULL)}}{Return the counts for a sample within the specified range
@@ -87,16 +70,10 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
   selectedLevels = NULL, request_with_labels = FALSE)}}{Update internal state for hierarchy
 
 \describe{
-\item{selection}{Node-id and selectionType pairs}
-\item{order}{Ordering of features}
-\item{selectedLevels}{Current aggregation level}
-\item{request_with_labels}{For handling requests using fData entries from MRexperiment}
-}}
-
-\item{\code{row_to_dict(row)}}{Helper function to format each node entry for getHierarchy response
-
-\describe{
-\item{row}{Information for current node.}
+  \item{selection}{Node-id and selectionType pairs}
+  \item{order}{Ordering of features}
+  \item{selectedLevels}{Current aggregation level}
+  \item{request_with_labels}{For handling requests using fData entries from MRexperiment}
 }}
 
 \item{\code{searchTaxonomy(query = NULL, max_results = 15)}}{Return list of features matching a text-based query
@@ -106,27 +83,17 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \item{max_results}{Maximum results to return}
 
 }}
-
-\item{\code{toNEO4JDbHTTP(batch_url, neo4juser, neo4jpass, datasource, description = NULL)}}{Write an `InnerNodesEpivizMetagenomicsData` object to a Neo4j graph database
-
-@param batch_url (character) Neo4j database url and port for processing batch http requests
-@param neo4juser (character) Neo4j database user name
-@param neo4jpass (character) Neo4j database password
-@param datasource (character) Name of Neo4j datasource node for this `InnerNodesEpivizMetagenomicsData` object 
-
-@examples
-library(metagenomeSeq)
-data("mouseData")
-mobj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(object=mouseData)
-mobj$toNEO4JDbHTTP(batch_url = "http://localhost:7474/db/data/batch", neo4juser = "neo4juser", neo4jpass = "neo4jpass", datasource = "mouse_data")}
-
-\item{\code{update(new_object, send_request = TRUE)}}{Update underlying data object with new object}
 }}
 
 \examples{
 
-library(metagenomeSeq)
-data(mouseData)
-obj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(mouseData, type = "InnerNodeCounts", feature_order = colnames(fData(mouseData)))
+\dontrun{
+library(curatedMetagenomicData)
+zeller.eset = ZellerG_2014.metaphlan_bugs_list.stool()
+zeller_MR <- ExpressionSet2MRexperiment(zeller.eset)
+feature_order <- colnames(fData(zeller_MR))
+sampleId<- "CCIS98482370ST-3-0"
+mObj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(zeller_MR, feature_order = feature_order)
+}
 
 }
