@@ -257,10 +257,10 @@ zeller.eset = ZellerG_2014.metaphlan_bugs_list.stool()
 zeller_MR_expr = ExpressionSet2MRexperiment(zeller.eset)
 ```
 
-We add the MRExperiment to the Metaviz app with a call to `plot` with the type = "InnerNodeCounts" specified.
+We add the MRExperiment to the Metaviz app with a call to `plot` with the type = "innerNodeCounts" specified.
 
 ```{r, eval=TRUE, echo=FALSE}
-facetZoomWGS <- app$plot(zeller_MR_expr, type = "InnerNodeCounts", datasource_name = "zeller", feature_order = colnames(fData(zeller_MR_expr)))
+facetZoomWGS <- app$plot(zeller_MR_expr, type = "innerNodeCounts", datasource_name = "zeller", feature_order = colnames(fData(zeller_MR_expr)))
 ```
 
 A FacetZoom utility is now visible for the taxonomic hierarchy of the `Zeller_2014` dataset. Now we can add a heatmap for abundance measurments for that data.
