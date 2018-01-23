@@ -5,15 +5,14 @@
 \alias{register,phyloseq-method}
 \title{Generic method to register data to the epiviz data server}
 \usage{
-\S4method{register}{phyloseq}(object, type = "LeafCounts", ...)
+\S4method{register}{phyloseq}(object, type = NULL, ...)
 }
 \arguments{
 \item{object}{The object to register to data server}
 
-\item{type}{leafCounts, if data objects has counts at leaf level
-or innerNodeCounts, if data object has counts at inner nodes}
-
 \item{...}{Additonal arguments passed to object constructors}
+
+\item{columns}{Name of columns containing data to register}
 }
 \value{
 An \code{\link{phyloseq-class}} object

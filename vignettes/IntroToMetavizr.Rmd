@@ -28,7 +28,7 @@ require(msd16s)
 The connection to `Metaviz` is managed through a session manager object of class `EpivizApp`. We can create this object and open `Metaviz` using the `startMetaviz` function.
 
 ```{r, eval=FALSE, echo=TRUE}
-app <- startMetaviz()
+app <- startMetaviz(host="http://localhost:9024", verbose = TRUE)
 
 ```
 
@@ -135,7 +135,7 @@ Once the browser is open we can visualize the metagenomic features from the `mou
 
 ```{r,eval=TRUE}
 #specify the feature hierarchy for the dataset
-icicle_plot <- app$plot(aggregated_species, datasource_name="mmssdd", type = "LeafCounts", control = control, feature_order = aggregated_feature_order)
+icicle_plot <- app$plot(aggregated_species, datasource_name="mmssdd", control = control, feature_order = aggregated_feature_order)
 ```
 
 You should now see an icicle widget to explore the hierarchy of the metagenomic features from the `mouseData` object. To navigate the complex, hierarchical structure of the feature space, we developed an icicle/facet zoom visualization. Because of the limitations in the screen size and performance rendering big trees, the icicle plot is an efficient visualization for navigating trees. The icicle visualization helps zoom in and out of trees and traverse subtrees. Every node in the icicle has a state associated with it. There are three possible states for a node 1) expand - use all subtree nodes during analysis 2) collapse - aggregate all nodes under the subtree to the selected node 3) remove - discard all nodes in the subtree for the analysis. The state of a node is also propagated to all its children and can be identified by the opacity of the node. Row level controls are available to the left of the icicle - to set the state of all nodes at a selected depth/taxonomic class of the hierarchy. Icicle is traversible if the ends on the row controls are chevrons. Users can set states on the nodes to define a cut over the feature space. The cut defines how the count data is queried, analyzed and visualized in other plots like heat maps or stacked line plots. In addition to defining the cut, we also have a navigation bar on top of the icicle to limit the range of features when querying for count data. Navigation bar is a flexible component (increase/decrease the length) and controls are available to move the bar left/right and extend over the entire range of the current tree in the icicle. Each of these actions would query the count data and automatically propagate the changes to other visualizations in the workspace. When navigating outside the scope of the navigation bar, chevrons (left/right) appear on the navigation bar to help identify the current position. Brushing/hovering is another important visual element we focused on our implementation of an icicle. Hovering over a node hovers its path in the tree i.e. highlight both its parents and children. When there are other visualizations like heat maps or stacked line plots in the workspace, hovering over a chart element highlights the mapped feature nodes in all the other plots.
@@ -186,39 +186,16 @@ Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
 ```{r, eval=TRUE}
 featureData(etec16s)$Kingdom <- "Bacteria"
 feature_order <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "OTU.ID")
-
-timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
-                             formula = abundance~id + time*class + AntiGiven,
-                             class="AnyDayDiarrhea",
-                             id="SubjectID",
-                             time="Day",
-                             lvl="Family",
-                             featureOrder = feature_order,
-                             C=0.3,
-                             B=1,
-                             seed=1234)
+featureData(etec16s) <- featureData(etec16s)[,feature_order]
 ```
 
-For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `ts2MRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
-
-```{r, eval=TRUE}
-feature_order2 <- c("Kingdom", "Phylum", "Class", "Order", "Family")
-
-splinesMRexp <- ts2MRexperiment(timeSeriesFits, featureData = featureData(aggregateByTaxonomy(etec16s, lvl="Family", featureOrder = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
-```
-
-Finally, we add the MRexperiment as a measurement using the `add_measurements` method and then visualize those measurements as a LinePlot.
+For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `ts2MRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively. This is done in the constructor for `EpivizMetagenomicsDataTimeSeries-class`. Finally, we add the MRexperiment as a measurement using the `add_measurements` method and then visualize those measurements as a LinePlot.
 
 
 ```{r, eval=TRUE}
-splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(MRcounts(splinesMRexp[i,]))) >= 2})
-splines_to_plot_indices <- which(splines_to_plot == TRUE)
+ic_plot <- app$plot(object = etec16s, type = "TimeSeries", datasource_name = "etec_splines", control = metavizControl(norm=FALSE, aggregateAtDepth = 4), formula = abundance~id + time*class + AntiGiven, class="AnyDayDiarrhea", id="SubjectID", time="Day", lvl="Family", feature_order = feature_order, B=1, runFitTimeSeries = TRUE, fitThreshold = 2)
 
-ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base21", type = "LeafCounts", control=metavizControl(norm = FALSE, aggregateAtDepth = 4), feature_order = feature_order2)
-splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines2", type = "LeafCounts", control = metavizControl(norm=FALSE, aggregateAtDepth = 4), feature_order = feature_order2)
-splineMeasurements <- splineObj$get_measurements()
-splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
-
+splineChart <- app$chart_mgr$revisualize("LinePlot", ic_plot)
 ```
 
 We can update the colors and settings on the spline chart. For example, lets limit the y axis to be between -10 and 10. To do so we use the `set_chart_settings` method. We can list existing settings for a chart using the `list_chart_settings` function.
@@ -240,41 +217,6 @@ app$chart_mgr$set_chart_settings(splineChart, settings=settings, colors = colors
 
 ![Spline metavizr](images/Spline.png)
 
-```{r, eval=TRUE, echo=FALSE}
-app$chart_mgr$rm_all_charts()
-```
-
-# Visualize Whole Metagenome Shotgun Sequencing using data from curatedMetagenomicData
-
-Beyond marker-gene survey sequencing results, Metaviz can visualize taxonomic community profiles from whole metagenome shotgun sequencing.
-In order to show this utility, we will use select portions of the vignette for a Bioconductor 2017 workshop found here: https://github.com/waldronlab/MicrobiomeWorkshop. 
-We first retrieve a dataset named `Zeller_2014` from curatedMetagenomicData and convert the ExpressionSet containing abundance measurements into an MRExperiment which we will then use with Metaviz.
-
-```{r, eval=TRUE, echo=FALSE}
-require(curatedMetagenomicData)
-
-zeller.eset = ZellerG_2014.metaphlan_bugs_list.stool()
-zeller_MR_expr = ExpressionSet2MRexperiment(zeller.eset)
-```
-
-We add the MRExperiment to the Metaviz app with a call to `plot` with the type = "innerNodeCounts" specified.
-
-```{r, eval=TRUE, echo=FALSE}
-facetZoomWGS <- app$plot(zeller_MR_expr, type = "innerNodeCounts", datasource_name = "zeller", feature_order = colnames(fData(zeller_MR_expr)))
-```
-
-A FacetZoom utility is now visible for the taxonomic hierarchy of the `Zeller_2014` dataset. Now we can add a heatmap for abundance measurments for that data.
-
-```{r, eval=TRUE, echo=FALSE}
-heatmap_plot <- app$chart_mgr$revisualize(chart_type = "HeatmapPlot", chart = facetZoomWGS)
-```
-
-The FacetZoom control can be used to select features of interest to show in the linked heatmap. A user can explore at lower levels of the taxonomic hierarchy and remove nodes as desired from the data visualizations. We complete, all charts can be removed with a call to the Metaviz app chart manager.
-
-```{r, eval=TRUE, echo=FALSE}
-app$chart_mgr$rm_all_charts()
-```
-
 ### Close Metavizr and end session
 
 To close the connection with metaviz and the R session, we use the stop_app function.
@@ -283,13 +225,11 @@ To close the connection with metaviz and the R session, we use the stop_app func
 app$stop_app()
 ```
 
-
 ### SessionInfo
 
 ```{r session-info, cache=FALSE}
 sessionInfo()
 ```
-
 
 References:
 

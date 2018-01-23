@@ -5,8 +5,7 @@
 \alias{register,MRexperiment-method}
 \title{Generic method to register data to the epiviz data server}
 \usage{
-\S4method{register}{MRexperiment}(object, type = "LeafCounts",
-  columns = NULL, ...)
+\S4method{register}{MRexperiment}(object, type = NULL, columns = NULL, ...)
 }
 \arguments{
 \item{object}{The object to register to data server}

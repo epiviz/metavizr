@@ -32,6 +32,6 @@ Suggests: knitr, BiocStyle, matrixStats, msd16s (>= 0.109.1), etec16s,
 Collate: 'metavizControl.R' 'startMetaviz.R' 'utils.R'
         'EpivizMetagenomicsData-class.R' 'register-methods.R'
         'validateMRExperiment.R' 'MetavizApp-class.R'
-        'MetavizGraph-class.R' 'InnerNodesEpivizMetagenomicsData-class.R' 'InnerNodesMetavizGraph-class.R'
+        'MetavizGraph-class.R' 'EpivizMetagenomicsDataTimeSeries-class.R'
 biocViews: Visualization, Infrastructure, GUI, Metagenomics
 RoxygenNote: 6.0.1

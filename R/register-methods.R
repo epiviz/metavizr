@@ -9,19 +9,19 @@
 #' @import metagenomeSeq
 #' @importMethodsFrom epivizrData register
 #' 
-setMethod("register", "MRexperiment", function(object, type="LeafCounts", columns=NULL, ...) {
-  if(type == "LeafCounts"){
+setMethod("register", "MRexperiment", function(object, type=NULL, columns=NULL, ...) {
+  if(is.null(type)){
     return(EpivizMetagenomicsData$new(object=object, columns=columns, ...))
-  } else if(type == "innerNodeCounts") {
-    return(InnerNodesEpivizMetagenomicsData$new(object=object, columns=columns, ...))
+  }
+  else if(type == "TimeSeries"){
+    return(EpivizMetagenomicsDataTimeSeries$new(object=object, columns=columns, ...))
   }
 })
 
 #' Generic method to register data to the epiviz data server
 #' 
 #' @param object The object to register to data server
-#' @param type leafCounts, if data objects has counts at leaf level
-#'        or innerNodeCounts, if data object has counts at inner nodes
+#' @param columns Name of columns containing data to register
 #' @param ... Additonal arguments passed to object constructors
 #' @return An \code{\link{phyloseq-class}} object 
 #' @import metagenomeSeq
@@ -29,11 +29,12 @@ setMethod("register", "MRexperiment", function(object, type="LeafCounts", column
 #' @importFrom phyloseq phyloseq_to_metagenomeSeq
 #' @importMethodsFrom epivizrData register
 #' 
-setMethod("register", "phyloseq", function(object, type="LeafCounts", ...) {
+setMethod("register", "phyloseq", function(object, type=NULL, ...) {
   phy_obj <- phyloseq_to_metagenomeSeq(physeq = object, ...)
-  if(type == "LeafCounts"){
+  if(is.null(type)){
     return(EpivizMetagenomicsData$new(object=phy_obj, ...))
-  } else if(type == "innerNodeCounts") {
-    return(InnerNodesEpivizMetagenomicsData$new(object=phy_obj, ...))
+  }
+  else if(type == "TimeSeries"){
+    return(EpivizMetagenomicsDataTimeSeries$new(object=phy_obj, ...))
   }
 })

@@ -87,10 +87,21 @@
       if (is.null(obj)) {
         stop("cannot find datasource", m)
       }
-      obj$getCombined(measurements, seqName, start, end, order, nodeSelection, selectedLevels)
+      res <- obj$getCombined(measurements, seqName, start, end, order, nodeSelection, selectedLevels)
+      if (class(obj) == "EpivizMetagenomicsDataTimeSeries"){
+        res$rows$metadata$splines <- TRUE
+      }
+      res
     })
     names(result) <- names(measurementsList)
+    
     result
+  })
+  
+  app$server$register_action("splinesSettings", function(request_data) {
+    updateAlpha <- strtoi(request_data$settings$alpha)
+    obj <- app$data_mgr$.get_ms_object(ls(app$data_mgr$.ms_list)[1])
+    result <- obj$updateSplineAlpha(updateAlpha)
   })
   
   app$server$register_action("getSeqInfos", function(request_data) {
@@ -167,7 +178,7 @@
 #' @seealso \code{\link[metavizr]{MetavizApp}}
 #' @examples
 #' # see package vignette for example usage
-#' app <- startMetaviz(non_interactive=TRUE, open_browser=TRUE)
+#' app <- startMetaviz(non_interactive=TRUE, open_browser=FALSE)
 #' app$stop_app()
 #' 
 #' @export
@@ -209,7 +220,7 @@ startMetaviz <- function(host="http://metaviz.cbcb.umd.edu",
 #' 
 #' \dontrun{
 #' # see package vignette for example usage
-#' app <- startMetavizStandalone()
+#' app <- startMetavizStandalone(non_interactive=TRUE)
 #' app$stop_app()
 #' }
 #' 
