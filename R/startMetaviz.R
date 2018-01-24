@@ -89,7 +89,8 @@
       }
       res <- obj$getCombined(measurements, seqName, start, end, order, nodeSelection, selectedLevels)
       if (class(obj) == "EpivizMetagenomicsDataTimeSeries"){
-        res$rows$metadata$splines <- TRUE
+        # res$rows$metadata$splines <- TRUE
+        res$rows$metadata$splines <- "true"
       }
       res
     })
@@ -101,7 +102,8 @@
   app$server$register_action("splinesSettings", function(request_data) {
     updateAlpha <- strtoi(request_data$settings$alpha)
     obj <- app$data_mgr$.get_ms_object(ls(app$data_mgr$.ms_list)[1])
-    result <- obj$updateSplineAlpha(updateAlpha)
+    obj$updateSplineAlpha(updateAlpha)
+    return(list())
   })
   
   app$server$register_action("getSeqInfos", function(request_data) {
