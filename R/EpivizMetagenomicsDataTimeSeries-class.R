@@ -35,14 +35,15 @@ EpivizMetagenomicsDataTimeSeries <- setRefClass("EpivizMetagenomicsDataTimeSerie
   ),
   methods = list(
     initialize=function(object, columns=NULL, control=metavizControl(), feature_order = NULL, formula = NULL, class = NULL, id = NULL, time = NULL, lvl = NULL,
-                        C = NULL, B = NULL, seed = NULL, alpha = NULL, runFitTimeSeries = FALSE, original_mr_exp = NULL, fitThreshold = NULL, ...) {
+                        C = NULL, B = NULL, seed = NULL, alpha = NULL, runFitTimeSeries = FALSE, fitThreshold = NULL, ...) {
       
-      if (is.null(original_mr_exp)){
-        .self$.original_mr_exp <- object
-      } else {
-        .self$.original_mr_exp <- original_mr_exp
+      .self$.original_mr_exp <- object
+      if(is.null(alpha)){
+        .self$.alpha = 1.4
       }
-      .self$.alpha <- alpha
+      else{
+        .self$.alpha <- alpha
+      }
       if(is.null(feature_order)){
         .self$.feature_order <- ""
       }else{
@@ -64,13 +65,8 @@ EpivizMetagenomicsDataTimeSeries <- setRefClass("EpivizMetagenomicsDataTimeSerie
       .self$.fitThreshold <- fitThreshold
       
       if (runFitTimeSeries == TRUE){
-        if (!is.null(original_mr_exp)){
-          spline_obj <- metagenomeSeq::fitMultipleTimeSeries(obj = original_mr_exp, formula = .self$.formula, class=.self$.time_series_class, id =.self$.spline_id, time = .self$.time, 
-                                                             lvl = .self$.lvl, featureOrder = .self$.feature_order, C = .self$.C, B = .self$.B, seed = .self$.seed)         
-        } else{
           spline_obj <- metagenomeSeq::fitMultipleTimeSeries(obj = object, formula = .self$.formula, class=.self$.time_series_class, id =.self$.spline_id, time = .self$.time, 
-                                                             lvl = .self$.lvl, featureOrder = .self$.feature_order, C = .self$.C, B = .self$.B, seed = .self$.seed)          
-        }
+                                                             lvl = .self$.lvl, featureOrder = .self$.feature_order, C = .self$.C, B = .self$.B, seed = .self$.seed, alpha = .self$.alpha)          
 
         
         feature_order_agg <- .self$.feature_order[1:which(.self$.feature_order == .self$.lvl)]
@@ -90,19 +86,15 @@ EpivizMetagenomicsDataTimeSeries <- setRefClass("EpivizMetagenomicsDataTimeSerie
           callSuper(object = new_mrexp[splines_to_plot_indices,], columns = columns, control = control, feature_order = feature_order_agg, ...)
         }
       } else{
-        if (!is.null(original_mr_exp)){
-          callSuper(object = original_mr_exp, columns = columns, control = control, feature_order = feature_order, ...)
-        } else{
           callSuper(object = object, columns = columns, control = control, feature_order = feature_order, ...)
-        }
       }
 
     },
     
     updateSplineAlpha = function(alpha = NULL){
       .self$.alpha <- alpha
-      .self <- .self$initialize(object = .self$.original_mr_exp, columns = .self$.columns, control = .self$.metavizControl, feature_order = .self$.feature_order, formula = .self$.formula, class = .self$.time_series_class, id = .self$.spline_id, time = .self$.time, lvl = .self$.lvl,
-                       C = .self$.C, B = .self$.B, seed = .self$.seed, alpha = .self$.alpha, runFitTimeSeries = TRUE)
+      .self$initialize(object = .self$.original_mr_exp, columns = .self$.columns, control = .self$.metavizControl, feature_order = .self$.feature_order, formula = .self$.formula, class = .self$.time_series_class, id = .self$.spline_id, time = .self$.time, lvl = .self$.lvl,
+                       C = .self$.C, B = .self$.B, seed = .self$.seed, alpha = .self$.alpha, runFitTimeSeries = TRUE, fitThreshold = .self$.fitThreshold)
     }
   )
 )

@@ -100,7 +100,7 @@
   })
   
   app$server$register_action("splinesSettings", function(request_data) {
-    updateAlpha <- strtoi(request_data$settings$alpha)
+    updateAlpha <- as.double(request_data$settings$alpha)
     obj <- app$data_mgr$.get_ms_object(ls(app$data_mgr$.ms_list)[1])
     obj$updateSplineAlpha(updateAlpha)
     return(list())
