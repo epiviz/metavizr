@@ -101,7 +101,9 @@
   
   app$server$register_action("splinesSettings", function(request_data) {
     updateAlpha <- as.double(request_data$settings$alpha)
-    obj <- app$data_mgr$.get_ms_object(ls(app$data_mgr$.ms_list)[1])
+    names_list <- ls(app$data_mgr$.ms_list)
+    class_list <- lapply(names_list, function(i) {class(app$data_mgr$.get_ms_object(i))})
+    obj <- app$data_mgr$.get_ms_object(names_list[which(class_list == "EpivizMetagenomicsDataTimeSeries")][1])
     obj$updateSplineAlpha(updateAlpha)
     return(list())
   })
