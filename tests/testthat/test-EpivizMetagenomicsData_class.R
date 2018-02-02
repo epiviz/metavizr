@@ -129,7 +129,7 @@ test_that("getValuesInnerNodes", {
   feature_order <- colnames(fData(zeller_MR))
   
   sampleId<- "CCIS98482370ST-3-0"
-  mObj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(zeller_MR, feature_order = feature_order)
+  mObj <- metavizr:::EpivizMetagenomicsDataInnerNodes$new(zeller_MR, feature_order = feature_order)
   res <- mObj$getValues(measurements = sampleId)
   
   expected <- c(0.0 , 34.1386632, 0.0, 4.9910581, 0.0, 1487.7701940, 3.2804836, 0.4248467, 0.0, 1561.4404797, 0.0, 0.0, 8.6380271, 0.0, 3.7638340, 0.0, 0.0, 0.0, 0.0, 12.3146400, 0.0, 0.0, 120.0305245, 0.3565092, 0.4894787, 0.0, 0.0, 0.0, 0.0)
@@ -146,7 +146,7 @@ test_that("getHierarchyInnerNodesRoot", {
   
   feature_order <- colnames(fData(zeller_MR))
   
-  mObj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(zeller_MR, feature_order = feature_order)
+  mObj <- metavizr:::EpivizMetagenomicsDataInnerNodes$new(zeller_MR, feature_order = feature_order)
   res <- mObj$getHierarchy(nodeId = NULL)
   
   expect_equal("AllFeatures", as.character(res$tree$label))
@@ -163,7 +163,7 @@ test_that("getRowsInnerNodes", {
   feature_order <- colnames(fData(zeller_MR))
   
   sampleId<- "CCIS98482370ST-3-0"
-  mObj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(zeller_MR, feature_order = feature_order)
+  mObj <- metavizr:::EpivizMetagenomicsDataInnerNodes$new(zeller_MR, feature_order = feature_order)
   resRows <- mObj$getRows(measurement = sampleId, selectedLevels = 2)  
   expected_label <- c("Euryarchaeota", "Acidobacteria", "Actinobacteria", "Bacteroidetes", 
                       "Candidatus_Saccharibacteria", "Chlorobi", "Deferribacteres", "Deinococcus_Thermus", 
