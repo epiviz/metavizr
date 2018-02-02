@@ -13,8 +13,10 @@ setMethod("register", "MRexperiment", function(object, type="LeafCounts", column
   if(type == "LeafCounts"){
     return(EpivizMetagenomicsData$new(object=object, columns=columns, ...))
   } else if(type == "innerNodeCounts") {
-    return(InnerNodesEpivizMetagenomicsData$new(object=object, columns=columns, ...))
-  }
+    return(EpivizMetagenomicsDataInnerNodes$new(object=object, columns=columns, ...))
+  } else if(type == "TimeSeries"){ 
+    return(EpivizMetagenomicsDataTimeSeries$new(object=object, columns=columns, ...)) 
+  } 
 })
 
 #' Generic method to register data to the epiviz data server
@@ -34,6 +36,8 @@ setMethod("register", "phyloseq", function(object, type="LeafCounts", ...) {
   if(type == "LeafCounts"){
     return(EpivizMetagenomicsData$new(object=phy_obj, ...))
   } else if(type == "innerNodeCounts") {
-    return(InnerNodesEpivizMetagenomicsData$new(object=phy_obj, ...))
+    return(EpivizMetagenomicsDataInnerNodes$new(object=phy_obj, ...))
+  } else if(type == "TimeSeries"){ 
+    return(EpivizMetagenomicsDataTimeSeries$new(object=phy_obj, ...)) 
   }
 })

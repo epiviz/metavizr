@@ -2,7 +2,7 @@
 #'
 #' Used to manage aggregation and range queries from the Metaviz app UI. 
 #'  
-InnerNodesMetavizGraph <- setRefClass("InnerNodesMetavizGraph",
+MetavizGraphInnerNodes <- setRefClass("MetavizGraphInnerNodes",
   fields=list(
     .feature_order = "ANY",
     .hierarchy_tree = "ANY",
@@ -248,13 +248,13 @@ InnerNodesMetavizGraph <- setRefClass("InnerNodesMetavizGraph",
 #' 
 #' @param object The object from which taxonomy data is extracted
 #' @param ... Additional arguments
-#' @return a \code{\link{InnerNodesMetavizGraph}} object
-setGeneric("buildInnerNodesMetavizGraph", signature=c("object"),
-           function(object, ...) standardGeneric("buildInnerNodesMetavizGraph"))
+#' @return a \code{\link{MetavizGraphInnerNodes}} object
+setGeneric("buildMetavizGraphInnerNodes", signature=c("object"),
+           function(object, ...) standardGeneric("buildMetavizGraphInnerNodes"))
 
-#' @describeIn buildInnerNodesMetavizGraph Build graph from a \code{\link[metagenomeSeq]{MRexperiment-class}} object
+#' @describeIn buildMetavizGraphInnerNodes Build graph from a \code{\link[metagenomeSeq]{MRexperiment-class}} object
 #' @importFrom Biobase fData
 #' @param feature_order Ordering of leaves (features) in taxonomy tree
-setMethod("buildInnerNodesMetavizGraph", "MRexperiment", function(object, feature_order, ...) {
-  InnerNodesMetavizGraph$new(object, feature_order = feature_order)
+setMethod("buildMetavizGraphInnerNodes", "MRexperiment", function(object, feature_order, ...) {
+  MetavizGraphInnerNodes$new(object, feature_order = feature_order)
 })

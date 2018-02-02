@@ -28,7 +28,7 @@ require(msd16s)
 The connection to `Metaviz` is managed through a session manager object of class `EpivizApp`. We can create this object and open `Metaviz` using the `startMetaviz` function.
 
 ```{r, eval=FALSE, echo=TRUE}
-app <- startMetaviz()
+app <- startMetaviz(host="http://metaviz-dev.cbcb.umd.edu", verbose = TRUE)
 
 ```
 
@@ -186,39 +186,16 @@ Next, use metagenomeSeq to fit a smoothing-spline to the time series data.
 ```{r, eval=TRUE}
 featureData(etec16s)$Kingdom <- "Bacteria"
 feature_order <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "OTU.ID")
-
-timeSeriesFits <- fitMultipleTimeSeries(obj=etec16s,
-                             formula = abundance~id + time*class + AntiGiven,
-                             class="AnyDayDiarrhea",
-                             id="SubjectID",
-                             time="Day",
-                             lvl="Family",
-                             featureOrder = feature_order,
-                             C=0.3,
-                             B=1,
-                             seed=1234)
+featureData(etec16s) <- featureData(etec16s)[,feature_order]
 ```
 
-For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `ts2MRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively.
-
-```{r, eval=TRUE}
-feature_order2 <- c("Kingdom", "Phylum", "Class", "Order", "Family")
-
-splinesMRexp <- ts2MRexperiment(timeSeriesFits, featureData = featureData(aggregateByTaxonomy(etec16s, lvl="Family", featureOrder = feature_order2)), sampleNames = timeSeriesFits[[2]]$fit$timePoints)
-```
-
-Finally, we add the MRexperiment as a measurement using the `add_measurements` method and then visualize those measurements as a LinePlot.
+For plotting the data using Metaviz, we set the fit values as y-coordinates and timepoints as x-coordinates.  We need to call `ts2MRexperiment` with arguments for the sample and feature data, in this case timepoints and annotations, respectively. This is done in the constructor for `EpivizMetagenomicsDataTimeSeries-class`. Finally, we add the MRexperiment as a measurement using the `add_measurements` method and then visualize those measurements as a LinePlot.
 
 
 ```{r, eval=TRUE}
-splines_to_plot <- sapply(1:nrow(MRcounts(splinesMRexp)), function(i) {max(abs(MRcounts(splinesMRexp[i,]))) >= 2})
-splines_to_plot_indices <- which(splines_to_plot == TRUE)
+ic_plot <- app$plot(object = etec16s, type = "TimeSeries", datasource_name = "etec_splines", control = metavizControl(norm=FALSE, aggregateAtDepth = 4), formula = abundance~id + time*class + AntiGiven, class="AnyDayDiarrhea", id="SubjectID", time="Day", lvl="Family", feature_order = feature_order, B=1, seed = 1234, runFitTimeSeries = TRUE, fitThreshold = 2)
 
-ic_plot <- app$plot(splinesMRexp[splines_to_plot_indices,], datasource_name = "etec16_base21", type = "LeafCounts", control=metavizControl(norm = FALSE, aggregateAtDepth = 4), feature_order = feature_order2)
-splineObj <- app$data_mgr$add_measurements(splinesMRexp[splines_to_plot_indices,], datasource_name = "splines2", type = "LeafCounts", control = metavizControl(norm=FALSE, aggregateAtDepth = 4), feature_order = feature_order2)
-splineMeasurements <- splineObj$get_measurements()
-splineChart <- app$chart_mgr$visualize("LinePlot", splineMeasurements)
-
+splineChart <- app$chart_mgr$revisualize("LinePlot", ic_plot)
 ```
 
 We can update the colors and settings on the spline chart. For example, lets limit the y axis to be between -10 and 10. To do so we use the `set_chart_settings` method. We can list existing settings for a chart using the `list_chart_settings` function.

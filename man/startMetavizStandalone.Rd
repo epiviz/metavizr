@@ -25,7 +25,7 @@ Start metaviz app in standalone (locally) and create \code{\link[metavizr]{Metav
 
 \dontrun{
 # see package vignette for example usage
-app <- startMetavizStandalone()
+app <- startMetavizStandalone(non_interactive=TRUE) 
 app$stop_app()
 }
 
