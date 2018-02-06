@@ -120,44 +120,19 @@ EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
       leaf_names <- rownames(normed_counts)
       replacing_na_obj_fData <- fData(obj_in)[,.self$.feature_order]
 
-      for(i in seq(1, length(.self$.feature_order))){
-        na_indices <- which(is.na(replacing_na_obj_fData[,.self$.feature_order[i]]))
-        for(j in seq(1, length(na_indices))){
-          if(i > 1) {
-            replacing_na_obj_fData[,.self$.feature_order[i]][na_indices[j]] <- paste("Not_Annotated", .self$.feature_order[i], replacing_na_obj_fData[,.self$.feature_order[1]][na_indices[j]], sep="_")
-          } else {
-            replacing_na_obj_fData[,.self$.feature_order[i]][na_indices[j]] <- paste("Not_Annotated", .self$.feature_order[i], sep="_")
-          }
-        }
-        na_indices <- which(replacing_na_obj_fData[,.self$.feature_order[i]] == "NA")
-        for(j in seq(1, length(na_indices))){
-          if(i > 1){ 
-            replacing_na_obj_fData[,.self$.feature_order[i]][na_indices[j]] <- paste("Not_Annotated", .self$.feature_order[i], replacing_na_obj_fData[,.self$.feature_order[1]][na_indices[j]], sep="_")
-          } else{
-            replacing_na_obj_fData[,.self$.feature_order[i]][na_indices[j]] <- paste("Not_Annotated", .self$.feature_order[i], sep="_")
-          }
-        }
-        null_indices <- which(replacing_na_obj_fData[,.self$.feature_order[i]] == "NULL")
-        for(j in seq(1, length(null_indices))){
-          if(i > 1){ 
-            replacing_na_obj_fData[,.self$.feature_order[i]][null_indices[j]] <- paste("Not_Annotated", .self$.feature_order[i], replacing_na_obj_fData[,.self$.feature_order[1]][null_indices[j]], sep="_")
-          } else{
-            replacing_na_obj_fData[,.self$.feature_order[i]][null_indices[j]] <- paste("Not_Annotated", .self$.feature_order[i], sep="_")
-          }
-        }
-      }
+      nas_replaced <- replaceNAFeatures(replacing_na_obj_fData, .self$.feature_order)
       
       na_indices <- which(is.na(leaf_names))
       for(j in seq(1, length(na_indices))){
-         leaf_names[na_indices[j]] <- replacing_na_obj_fData[,.self$.feature_order[length(.self$.feature_order)]][na_indices[j]]
+         leaf_names[na_indices[j]] <- nas_replaced[,.self$.feature_order[length(.self$.feature_order)]][na_indices[j]]
       }
       na_indices <- which(leaf_names == "NA")
       for(j in seq(1, length(na_indices))){
-         leaf_names[na_indices[j]] <- replacing_na_obj_fData[,.self$.feature_order[length(.self$.feature_order)]][na_indices[j]]
+         leaf_names[na_indices[j]] <- nas_replaced[,.self$.feature_order[length(.self$.feature_order)]][na_indices[j]]
       }
       null_indices <- which(leaf_names == "NULL")
       for(j in seq(1, length(null_indices))){
-         leaf_names[null_indices[j]] <- replacing_na_obj_fData[,.self$.feature_order[length(.self$.feature_order)]][na_indices[j]]
+         leaf_names[null_indices[j]] <- nas_replaced[,.self$.feature_order[length(.self$.feature_order)]][na_indices[j]]
       }
       
       normed_counts[["leaf"]] <- leaf_names
