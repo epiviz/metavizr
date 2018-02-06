@@ -8,7 +8,7 @@
 #' @import digest
 #' @import methods
 #' @import httr
-#' @exportClass InnerNodesEpivizMetagenomicsData
+#' @exportClass EpivizMetagenomicsDataInnerNodes
 #' @examples
 #' 
 #' \dontrun{
@@ -17,10 +17,10 @@
 #' zeller_MR <- ExpressionSet2MRexperiment(zeller.eset)
 #' feature_order <- colnames(fData(zeller_MR))
 #' sampleId<- "CCIS98482370ST-3-0"
-#' mObj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(zeller_MR, feature_order = feature_order)
+#' mObj <- metavizr:::EpivizMetagenomicsDataInnerNodes$new(zeller_MR, feature_order = feature_order)
 #' }
 #'
-InnerNodesEpivizMetagenomicsData <- setRefClass("InnerNodesEpivizMetagenomicsData",
+EpivizMetagenomicsDataInnerNodes <- setRefClass("EpivizMetagenomicsDataInnerNodes",
   contains = "EpivizMetagenomicsData",
   fields = list(
     .levels = "ANY",
@@ -77,7 +77,7 @@ InnerNodesEpivizMetagenomicsData <- setRefClass("InnerNodesEpivizMetagenomicsDat
                                           
       .self$.sampleAnnotation <- pData(object)
                                           
-      .self$.graph <- buildInnerNodesMetavizGraph(object, feature_order=feature_order)
+      .self$.graph <- buildMetavizGraphInnerNodes(object, feature_order=feature_order)
       .self$.graph_feature_order <- .self$.graph$.feature_order
                                           
       message("creating leaf_sample_count_table")
@@ -150,7 +150,7 @@ InnerNodesEpivizMetagenomicsData <- setRefClass("InnerNodesEpivizMetagenomicsDat
 )
 
 # Data analysis features
-InnerNodesEpivizMetagenomicsData$methods(
+EpivizMetagenomicsDataInnerNodes$methods(
   nmeasurements=function() {
     ncol(.self$.leaf_sample_count_table)-4
   }
@@ -159,7 +159,7 @@ InnerNodesEpivizMetagenomicsData$methods(
 )
 
 # Epiviz Websockets Protocol
-InnerNodesEpivizMetagenomicsData$methods(
+EpivizMetagenomicsDataInnerNodes$methods(
     get_measurements=function() {
     "Get all annotation info for all samples
     

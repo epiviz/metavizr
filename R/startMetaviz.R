@@ -87,11 +87,24 @@
       if (is.null(obj)) {
         stop("cannot find datasource", m)
       }
-      obj$getCombined(measurements, seqName, start, end, order, nodeSelection, selectedLevels)
+      res <- obj$getCombined(measurements, seqName, start, end, order, nodeSelection, selectedLevels) 
+      if (class(obj) == "EpivizMetagenomicsDataTimeSeries"){ 
+        res$rows$metadata$splines <- "true"
+      } 
+      res 
     })
     names(result) <- names(measurementsList)
     result
   })
+  
+  app$server$register_action("splinesSettings", function(request_data) { 
+    updateAlpha <- as.double(request_data$settings$alpha)
+    names_list <- ls(app$data_mgr$.ms_list)
+    class_list <- lapply(names_list, function(i) {class(app$data_mgr$.get_ms_object(i))})
+    obj <- app$data_mgr$.get_ms_object(names_list[which(class_list == "EpivizMetagenomicsDataTimeSeries")][1])
+    obj$updateSplineAlpha(updateAlpha)
+    return(list())
+  }) 
   
   app$server$register_action("getSeqInfos", function(request_data) {
     return(list(

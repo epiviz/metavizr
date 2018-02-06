@@ -882,7 +882,23 @@ EpivizMetagenomicsData$methods(
 
     result <- list(data = unname(data))
     return(result)
-  }
+  }, 
+  
+  updateSplineAlpha=function(alpha=NULL){ 
+    " Unimplemented in EpivizMetagenomicsData 
+      Implemented in EpivizMetagenomicsDataTimeSeries 
+     
+    \\describe{ 
+    \\item{alpha}{Smoothing Spline parameter} 
+    } 
+    " 
+  },
+  
+  getSpline = function(){ 
+    " Unimplemented in EpivizMetagenomicsData 
+      Implemented in EpivizMetagenomicsDataTimeSeries 
+    " 
+  } 
 )
 
 
