@@ -9,11 +9,13 @@
 #' @import methods
 #' @import httr
 #' @exportClass EpivizMetagenomicsData		
+#' 
 #' @examples
-#'
+#' \dontrun{
 #' library(metagenomeSeq)
 #' data(mouseData)
 #' obj <- metavizr:::EpivizMetagenomicsData$new(mouseData, feature_order = colnames(fData(mouseData)))
+#' }
 #' 
 EpivizMetagenomicsData <- setRefClass("EpivizMetagenomicsData",
   contains = "EpivizData",

@@ -23,7 +23,10 @@ path to the metaviz app git repository
 set metaviz app standalone settings
 }
 \examples{
+
+\dontrun{
 # see package vignette for example usage
-# setMetavizStandalone()
+setMetavizStandalone()
+}
 
 }

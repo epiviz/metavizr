@@ -10,11 +10,16 @@
 #' @import httr
 #' @exportClass InnerNodesEpivizMetagenomicsData
 #' @examples
-#'
-#' library(metagenomeSeq)
-#' data(mouseData)
-#' obj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(mouseData, type = "InnerNodeCounts", feature_order = colnames(fData(mouseData)))
 #' 
+#' \dontrun{
+#' library(curatedMetagenomicData)
+#' zeller.eset = ZellerG_2014.metaphlan_bugs_list.stool()
+#' zeller_MR <- ExpressionSet2MRexperiment(zeller.eset)
+#' feature_order <- colnames(fData(zeller_MR))
+#' sampleId<- "CCIS98482370ST-3-0"
+#' mObj <- metavizr:::InnerNodesEpivizMetagenomicsData$new(zeller_MR, feature_order = feature_order)
+#' }
+#'
 InnerNodesEpivizMetagenomicsData <- setRefClass("InnerNodesEpivizMetagenomicsData",
   contains = "EpivizMetagenomicsData",
   fields = list(

@@ -125,9 +125,10 @@ mobj$toNEO4JDbHTTP(batch_url = "http://localhost:7474/db/data/batch", neo4juser 
 }}
 
 \examples{
-
+\dontrun{
 library(metagenomeSeq)
 data(mouseData)
 obj <- metavizr:::EpivizMetagenomicsData$new(mouseData, feature_order = colnames(fData(mouseData)))
+}
 
 }

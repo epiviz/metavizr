@@ -206,9 +206,12 @@ startMetaviz <- function(host="http://metaviz.cbcb.umd.edu",
 #' @import epivizrStandalone
 #' @import GenomeInfoDb
 #' @examples
+#' 
+#' \dontrun{
 #' # see package vignette for example usage
 #' app <- startMetavizStandalone(non_interactive=TRUE)
 #' app$stop_app()
+#' }
 #' 
 #' @export
 startMetavizStandalone <- function(register_function = .register_all_metaviz_things,
@@ -245,8 +248,11 @@ startMetavizStandalone <- function(register_function = .register_all_metaviz_thi
 #' 
 #' @import epivizrStandalone
 #' @examples
+#' 
+#' \dontrun{
 #' # see package vignette for example usage
-#' # setMetavizStandalone()
+#' setMetavizStandalone()
+#' }
 #' 
 #' @export
 setMetavizStandalone <- function(url="https://github.com/epiviz/epiviz.git", branch="metaviz-4.1", local_path=NULL, non_interactive=FALSE) {
