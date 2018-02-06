@@ -21,7 +21,7 @@
 #' }
 #'
 EpivizMetagenomicsDataInnerNodes <- setRefClass("EpivizMetagenomicsDataInnerNodes",
-  contains = "EpivizMetagenomicsData",
+  contains = "EpivizData",
   fields = list(
     .levels = "ANY",
     .maxDepth = "numeric",
@@ -144,8 +144,6 @@ EpivizMetagenomicsDataInnerNodes <- setRefClass("EpivizMetagenomicsDataInnerNode
       
       return(ret_table_long)
     }
-                                        
-
   )
 )
 
@@ -154,12 +152,14 @@ EpivizMetagenomicsDataInnerNodes$methods(
   nmeasurements=function() {
     ncol(.self$.leaf_sample_count_table)-4
   }
-  
-
 )
 
 # Epiviz Websockets Protocol
 EpivizMetagenomicsDataInnerNodes$methods(
+    get_default_chart_type=function() { 
+      "epiviz.ui.charts.tree.Icicle"
+    },
+    
     get_measurements=function() {
     "Get all annotation info for all samples
     
@@ -188,7 +188,80 @@ EpivizMetagenomicsDataInnerNodes$methods(
     return(out)
   },
   
-
+  row_to_dict=function(row){
+    "Helper function to format each node entry for getHierarchy response
+    
+    \\describe{
+    \\item{row}{Information for current node.}
+    }
+    "
+    
+    toRet = list()
+    toRet['end'] = row['end']
+    toRet['partition'] = "NA"
+    toRet['leafIndex'] = row['leafIndex']
+    toRet['nchildren'] = row['nchildren']
+    toRet['label'] = row['label']
+    toRet['name'] = row['label']
+    toRet['start'] = row['start']
+    toRet['depth'] = row['depth']
+    toRet['globalDepth'] = row['depth']
+    toRet['nleaves'] = row['nleaves']
+    toRet['parentId'] = row['parentId']
+    toRet['order'] = row['order']
+    toRet['id'] = row['id']
+    if(toRet['id'] %in% names(.self$.nodeSelections)){
+      toRet['selectionType'] = .self$.nodeSelections[[as.character(toRet['id'])]]
+    } else{
+      toRet['selectionType'] = 1
+    }
+    toRet['taxonomy'] = row['taxonomy']
+    toRet['size'] = 1
+    toRet['children'] = NULL
+    return(toRet)
+  },
+  
+  df_to_tree=function(root, df){
+    "Helper function to recursively build nested response for getHierarchy
+    
+    \\describe{
+    \\item{root}{Root of subtree}
+    \\item{df}{data.frame containing children to process}
+    }
+    "
+    
+    if(nrow(df) == 0) {
+      root$children = NULL
+      return(root)
+    }
+    
+    children = df[which(df['parentId'] == as.character(unlist(root['id']))),]
+    
+    if(length(children) == 0){
+      root$children = NULL
+      return(root)
+    }
+    
+    otherChildren = df[which(df['parentId'] != as.character(unlist(root['id']))),]
+    
+    children = children[order(children['order']),]
+    
+    if(nrow(children) > 0){
+      for(row_index in seq_len(nrow(children))){
+        childDict = row_to_dict(children[row_index,])
+        subDict = df_to_tree(childDict, otherChildren)
+        
+        if(!is.null(subDict)){
+          root$children[[row_index]] = subDict
+        }
+        else {
+          root$children = NULL
+        }
+      }
+    }
+    return(root)
+  },
+  
   getHierarchy=function(nodeId = NULL) {
     "Retrieve feature hierarchy information for subtree with specified root
     
@@ -695,6 +768,49 @@ EpivizMetagenomicsDataInnerNodes$methods(
     }
     
     result <- list(data = unname(data))
+    return(result)
+  },
+  
+  getCombined=function(measurements = NULL, 
+                       seqName, start = 1, end = 1000, 
+                       order = NULL, nodeSelection = NULL, selectedLevels = NULL) {
+    "Return the counts aggregated to selected nodes for the given samples
+    
+    \\describe{
+    \\item{measurements}{Samples to get counts for}
+    \\item{seqName}{name of datasource}
+    \\item{start}{Start of feature range to query}
+    \\item{end}{End of feature range to query}
+    \\item{order}{Ordering of nodes}
+    \\item{nodeSelection}{Node-id and selectionType pairs}
+    \\item{selectedLevels}{Current aggregation level}
+    
+    }
+    "
+    
+    # update node selections types to metaviztree
+    if(!is.null(nodeSelection)) {
+      for(n in names(nodeSelection)){
+        .self$.nodeSelections[[n]] = nodeSelection[[n]]
+      }
+    }
+    
+    if(is.null(selectedLevels)) {
+      selectedLevels = .self$.levelSelected
+    }
+    selections = .self$.nodeSelections
+    measurements = unique(measurements)
+
+    data_rows = getRows(measurements = measurements, start = start, end = end, selectedLevels = selectedLevels, selections = selections)
+    row_order = unlist(data_rows$metadata$label)
+    data_columns = getValues(measurements = measurements, start = start, end = end, selectedLevels = selectedLevels, selections = selections)
+    
+    result <- list(
+      cols = data_columns,
+      rows = data_rows,
+      globalStartIndex = data_rows$start[[1]]
+    )
+
     return(result)
   }
 )
