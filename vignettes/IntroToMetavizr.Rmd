@@ -230,7 +230,8 @@ We first retrieve a dataset named `Zeller_2014` from curatedMetagenomicData and 
 ```{r, eval=TRUE, echo=FALSE}
 require(curatedMetagenomicData)
 
-zeller.eset = ZellerG_2014.metaphlan_bugs_list.stool()
+zeller <- curatedMetagenomicData("ZellerG_2014.metaphlan_bugs_list.stool", dryrun = FALSE)
+zeller.eset <- zeller[[1]]
 zeller_MR_expr = ExpressionSet2MRexperiment(zeller.eset)
 ```
 
