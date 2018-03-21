@@ -17,3 +17,8 @@ hierarchy with NA or null feature labels replaced
 \description{
 Method to replace NA or null feature labels with Not_Annotated_hierarchy-level
 }
+\examples{
+library(msd16s)
+feature_order <- colnames(fData(msd16s))[1:8]
+replaceNAFeatures(fData(msd16s)[,feature_order],feature_order)
+}
