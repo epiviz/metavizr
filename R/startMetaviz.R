@@ -261,9 +261,10 @@ startMetavizStandalone <- function(register_function = .register_all_metaviz_thi
 #' @import epivizrStandalone
 #' @examples
 #' 
+#' \dontrun{
 #' #' # see package vignette for example usage
 #' setMetavizStandalone()
-#' 
+#' }
 #' 
 #' @export
 setMetavizStandalone <- function(url="https://github.com/epiviz/epiviz.git", branch="metaviz-4.1", local_path=NULL, non_interactive=FALSE) {

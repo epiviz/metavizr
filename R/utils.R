@@ -42,9 +42,10 @@ generateSelection = function(feature_names, aggregation_level, selection_type, f
 #' @export
 #' 
 #' @examples
-#' library(msd16s)
-#' feature_order <- colnames(fData(msd16s))[1:8]
-#' replaceNAFeatures(fData(msd16s)[,feature_order],feature_order)
+#' library(metagenomeSeq)
+#' data(mouseData)
+#' feature_order <- colnames(fData(mouseData))
+#' replaceNAFeatures(fData(mouseData),feature_order)
 
 replaceNAFeatures = function(replacing_na_obj_fData, feature_order) {
   
