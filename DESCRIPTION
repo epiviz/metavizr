@@ -23,7 +23,7 @@ Description: This package provides Websocket communication to the
         data structures. Visualizations (using d3.js) can be easily
         added to the web app as well.
 VignetteBuilder: knitr
-Depends: R (>= 3.3), metagenomeSeq (>= 1.17.1), methods, data.table,
+Depends: R (>= 3.4), metagenomeSeq (>= 1.17.1), methods, data.table,
         Biobase, digest
 Imports: epivizr, epivizrData, epivizrServer, epivizrStandalone, vegan,
         GenomeInfoDb, phyloseq, httr

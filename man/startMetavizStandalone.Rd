@@ -23,10 +23,9 @@ Start metaviz app in standalone (locally) and create \code{\link[metavizr]{Metav
 }
 \examples{
 
-\dontrun{
-# see package vignette for example usage
+#' # see package vignette for example usage
 app <- startMetavizStandalone(non_interactive=TRUE)
 app$stop_app()
-}
+
 
 }
