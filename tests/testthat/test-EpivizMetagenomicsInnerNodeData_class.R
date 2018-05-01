@@ -2,7 +2,7 @@ context("testing EpivizMetagenomicsInnerNodesData Class")
 library(curatedMetagenomicData)
 
 # From curatedMetagenomicData and MicrobiomeWorkshop Vignettes
-zeller_file <- system.file("inst", "ZellerG_2014.RData", package = "metavizr")
+zeller_file <- system.file("extdata", "ZellerG_2014.RData", package = "metavizr")
 load(zeller_file)
 zeller.eset <- zeller[[1]]
 zeller_MR <- ExpressionSet2MRexperiment(zeller.eset)
