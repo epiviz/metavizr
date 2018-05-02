@@ -2,7 +2,8 @@ context("testing EpivizMetagenomicsInnerNodesData Class")
 library(curatedMetagenomicData)
 
 # From curatedMetagenomicData and MicrobiomeWorkshop Vignettes
-zeller <- curatedMetagenomicData("ZellerG_2014.metaphlan_bugs_list.stool", dryrun = FALSE)
+zeller_file <- system.file("extdata", "ZellerG_2014.RData", package = "metavizr")
+load(zeller_file)
 zeller.eset <- zeller[[1]]
 zeller_MR <- ExpressionSet2MRexperiment(zeller.eset)
 feature_order <- colnames(fData(zeller_MR))

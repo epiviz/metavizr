@@ -19,6 +19,10 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
   \item{df}{data.frame containing children to process}
 }}
 
+\item{\code{get_default_chart_type()}}{Get name of default chart type for this data type}
+
+\item{\code{get_measurements()}}{Get description of measurements served by this object}
+
 \item{\code{getAlphaDiversity(measurements = NULL)}}{Compute alpha diversity using vegan for the given samples
 
 \describe{
@@ -41,15 +45,11 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 }}
 
-\item{\code{get_default_chart_type()}}{Get name of default chart type for this data type}
-
 \item{\code{getHierarchy(nodeId = NULL)}}{Retrieve feature hierarchy information for subtree with specified root
 
 \describe{
   \item{nodeId}{Feature identifier with level info}
 }}
-
-\item{\code{get_measurements()}}{Get description of measurements served by this object}
 
 \item{\code{getPCA(measurements = NULL)}}{Compute PCA over all features for given samples
 
