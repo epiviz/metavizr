@@ -1,6 +1,6 @@
 Package: metavizr
 Type: Package
-Version: 1.6.0
+Version: 1.6.1
 Authors@R: c( person("Hector", "Corrada Bravo",
         email="hcorrada@gmail.com", role=c("cre","aut")),
         person("Florin", "Chelaru", email="florin.chelaru@gmail.com",
@@ -34,5 +34,5 @@ Collate: 'metavizControl.R' 'startMetaviz.R' 'utils.R'
         'validateMRExperiment.R' 'MetavizApp-class.R'
         'MetavizGraph-class.R' 'EpivizMetagenomicsDataInnerNodes-class.R' 
         'MetavizGraphInnerNodes-class.R' 'EpivizMetagenomicsDataTimeSeries-class.R' 
-biocViews: Visualization, Infrastructure, GUI, Metagenomics
+biocViews: Visualization, Infrastructure, GUI, Metagenomics, ImmunoOncology
 RoxygenNote: 6.0.1
