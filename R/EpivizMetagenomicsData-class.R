@@ -319,10 +319,10 @@ EpivizMetagenomicsData$methods(
     
     lineage_DF <- as.data.frame(.self$.graph$.node_ids_table)
     lineage_table <- .self$.graph$.node_ids_table
-    lineage_DF[,feature_order[1]] <- lineage_table[,get(feature_order[1])]
+    lineage_DF[,.self$.feature_order[1]] <- lineage_table[,get(.self$.feature_order[1])]
 
-    for(i in seq(2,length(feature_order))){
-      lineage_DF[,feature_order[i]] <- paste(lineage_DF[,feature_order[i-1]], lineage_table[,get(feature_order[i])], sep=",")
+    for(i in seq(2,length(.self$.feature_order))){
+      lineage_DF[,.self$.feature_order[i]] <- paste(lineage_DF[,.self$.feature_order[i-1]], lineage_table[,get(.self$.feature_order[i])], sep=",")
     }
     lineage_DT <- as.data.table(lineage_DF)
 
@@ -337,9 +337,9 @@ EpivizMetagenomicsData$methods(
     
     for(i in seq_len(num_rows)){
       if(as.integer(strsplit(nodesToRet[i], "-")[[1]][1]) == last_level_of_subtree){
-        depths[i] = length(emdc$.feature_order)
-        level = length(emdc$.feature_order)
-        index <- which(emdc$.graph$.node_ids_table[,level,with=FALSE] == nodeId)
+        depths[i] = length(.self$.feature_order)
+        level = length(.self$.feature_order)
+        index <- which(.self$.graph$.node_ids_table[,level,with=FALSE] == nodeId)
         
         label <- as.character(unique(graph_tree[,level][index]))
         labels[i] <- label
@@ -360,7 +360,7 @@ EpivizMetagenomicsData$methods(
         nchildrens[i] <- 0
         nleaves[i] <- 0
         
-        orders[i] <- emdc$.graph$.nodes_table[get("id")==nodeId,get("order")][[1]]
+        orders[i] <- .self$.graph$.nodes_table[get("id")==nodeId,get("order")][[1]]
       } else{
       nodeId <- nodesToRet[i]
       split_res <- strsplit(nodesToRet[i], "-")[[1]]
