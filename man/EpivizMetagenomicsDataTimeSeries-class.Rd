@@ -12,8 +12,9 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 \examples{
 
+\dontrun{
 library(metagenomeSeq)
 data(mouseData)
 obj <- metavizr:::EpivizMetagenomicsData$new(mouseData, feature_order = colnames(fData(mouseData)))
-
+}
 }
