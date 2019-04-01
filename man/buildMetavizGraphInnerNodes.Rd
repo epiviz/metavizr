@@ -8,7 +8,8 @@
 \usage{
 buildMetavizGraphInnerNodes(object, ...)
 
-\S4method{buildMetavizGraphInnerNodes}{MRexperiment}(object, feature_order, ...)
+\S4method{buildMetavizGraphInnerNodes}{MRexperiment}(object, feature_order,
+  ...)
 }
 \arguments{
 \item{object}{The object from which taxonomy data is extracted}

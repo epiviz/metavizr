@@ -12,10 +12,11 @@
 #' @exportClass EpivizMetagenomicsDataTimeSeries
 #' @examples
 #'
+#' \dontrun{
 #' library(metagenomeSeq)
 #' data(mouseData)
 #' obj <- metavizr:::EpivizMetagenomicsData$new(mouseData, feature_order = colnames(fData(mouseData)))
-#'
+#' }
 EpivizMetagenomicsDataTimeSeries <-
   setRefClass(
     "EpivizMetagenomicsDataTimeSeries",

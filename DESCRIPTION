@@ -35,4 +35,4 @@ Collate: 'metavizControl.R' 'startMetaviz.R' 'utils.R'
         'MetavizGraph-class.R' 'EpivizMetagenomicsDataInnerNodes-class.R' 
         'MetavizGraphInnerNodes-class.R' 'EpivizMetagenomicsDataTimeSeries-class.R' 
 biocViews: Visualization, Infrastructure, GUI, Metagenomics, ImmunoOncology
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

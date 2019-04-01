@@ -4,10 +4,10 @@
 \alias{metavizControl}
 \title{metavizr settings}
 \usage{
-metavizControl(aggregateAtDepth = 3, aggregateFun = function(x) colSums(x),
-  valuesAnnotationFuns = NULL, maxDepth = 4, maxHistory = 3,
-  maxValue = NULL, minValue = NULL, title = "", n = 10000,
-  rankFun = stats::sd, norm = TRUE, log = FALSE,
+metavizControl(aggregateAtDepth = 3, aggregateFun = function(x)
+  colSums(x), valuesAnnotationFuns = NULL, maxDepth = 4,
+  maxHistory = 3, maxValue = NULL, minValue = NULL, title = "",
+  n = 10000, rankFun = stats::sd, norm = TRUE, log = FALSE,
   featureSelection = NULL)
 }
 \arguments{
