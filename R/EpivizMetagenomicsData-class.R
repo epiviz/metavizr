@@ -1266,7 +1266,7 @@ EpivizMetagenomicsData$methods(
     }
     
     query <- "MATCH (fNode:Feature {datasource: {datasource_param}})-[:PARENT_OF*]->(fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param} }) CREATE (fNode)-[:LEAF_OF]->(fLeaf)"
-    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)), "\"", sep=""))
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order) - 1), "\"", sep=""))
     query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE)
     
     if(!is.null(batch_url)) {
@@ -1278,7 +1278,7 @@ EpivizMetagenomicsData$methods(
     }
     
     query <- "MATCH (fLeaf:Feature {depth: {depth_param}, datasource: {datasource_param}}) CREATE (fLeaf)-[:LEAF_OF]->(fLeaf)"
-    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order)), "\"", sep=""))
+    params <- list(datasource_param=paste("\"", as.character(datasource), "\"", sep=""), depth_param=paste("\"", as.character(length(.self$.feature_order) - 1), "\"", sep=""))
     query_final <- .buildBatchJSON(query_in = query, param_list = params, params_complete = TRUE)
     
     if(!is.null(batch_url)) {
