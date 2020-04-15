@@ -41,3 +41,26 @@ setMethod("register", "phyloseq", function(object, type="LeafCounts", ...) {
     return(EpivizMetagenomicsDataTimeSeries$new(object=phy_obj, ...)) 
   }
 })
+
+
+#' Generic method to register data to the epiviz data server
+#' 
+#' @param object The object to register to data server
+#' @param columns Name of columns containing data to register
+#' @param ... Additonal arguments passed to object constructors
+#' @return An \code{\link{EpivizMetagenomicsData-class}} object 
+#' @import TreeSummarizedExperiment
+#' @importMethodsFrom epivizrData register
+#' 
+setMethod("register", "TreeSummarizedExperiment", function(object, columns=NULL, ...) {
+
+  counts <- t(assays(object)$counts)
+  tree <- colData(object)
+  rownames(tree) <- rownames(counts)
+  annotations <- rowData(object)
+  rownames(annotations) <- colnames(counts)
+
+  sExp <- newMRexperiment(counts, featureData = AnnotatedDataFrame(tree), phenoData = AnnotatedDataFrame(annotations))
+
+  return(EpivizMetagenomicsData$new(object=sExp, columns=columns, ...))
+})
