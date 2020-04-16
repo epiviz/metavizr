@@ -4,8 +4,11 @@
 \alias{startMetavizStandalone}
 \title{Start metaviz app in standalone (locally) and create \code{\link[metavizr]{MetavizApp}} object to manage connection.}
 \usage{
-startMetavizStandalone(register_function = .register_all_metaviz_things,
-  use_viewer_option = FALSE, ...)
+startMetavizStandalone(
+  register_function = .register_all_metaviz_things,
+  use_viewer_option = FALSE,
+  ...
+)
 }
 \arguments{
 \item{register_function}{(function) function used to register actions and charts on the metaviz app.}

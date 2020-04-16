@@ -52,15 +52,15 @@ setMethod("register", "phyloseq", function(object, type="LeafCounts", ...) {
 #' @import TreeSummarizedExperiment
 #' @importMethodsFrom epivizrData register
 #' 
-setMethod("register", "TreeSummarizedExperiment", function(object, columns=NULL, ...) {
+setMethod("register", "TreeSummarizedExperiment", function(object, tree="row", columns=NULL, ...) {
 
-  counts <- t(assays(object)$counts)
-  tree <- colData(object)
-  rownames(tree) <- rownames(counts)
-  annotations <- rowData(object)
-  rownames(annotations) <- colnames(counts)
+  # counts <- t(assays(object)$counts)
+  # tree <- colData(object)
+  # rownames(tree) <- rownames(counts)
+  # annotations <- rowData(object)
+  # rownames(annotations) <- colnames(counts)
+  # 
+  # sExp <- newMRexperiment(counts, featureData = AnnotatedDataFrame(tree), phenoData = AnnotatedDataFrame(annotations))
 
-  sExp <- newMRexperiment(counts, featureData = AnnotatedDataFrame(tree), phenoData = AnnotatedDataFrame(annotations))
-
-  return(EpivizMetagenomicsData$new(object=sExp, columns=columns, ...))
+  return(EpivizTreeData$new(object=object, tree=tree, columns=columns, ...))
 })

@@ -4,8 +4,12 @@
 \alias{generateSelection}
 \title{Method to select and set aggregation type to nodes in FacetZoom}
 \usage{
-generateSelection(feature_names, aggregation_level, selection_type,
-  feature_order = NULL)
+generateSelection(
+  feature_names,
+  aggregation_level,
+  selection_type,
+  feature_order = NULL
+)
 }
 \arguments{
 \item{feature_names}{Selected Features}

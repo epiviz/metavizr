@@ -4,8 +4,11 @@
 \alias{startMetaviz}
 \title{Start metaviz app and create \code{\link[metavizr]{MetavizApp}} object to manage connection.}
 \usage{
-startMetaviz(host = "http://metaviz.cbcb.umd.edu",
-  register_function = .register_all_metaviz_things, ...)
+startMetaviz(
+  host = "http://metaviz.cbcb.umd.edu",
+  register_function = .register_all_metaviz_things,
+  ...
+)
 }
 \arguments{
 \item{host}{(character) host address to launch.}

@@ -4,8 +4,12 @@
 \alias{setMetavizStandalone}
 \title{set metaviz app standalone settings}
 \usage{
-setMetavizStandalone(url = "https://github.com/epiviz/epiviz.git",
-  branch = "metaviz-4.1", local_path = NULL, non_interactive = FALSE)
+setMetavizStandalone(
+  url = "https://github.com/epiviz/epiviz.git",
+  branch = "metaviz-4.1",
+  local_path = NULL,
+  non_interactive = FALSE
+)
 }
 \arguments{
 \item{url}{(character) github url to use. defaults to (\url{"https://github.com/epiviz/epiviz.git"}).}

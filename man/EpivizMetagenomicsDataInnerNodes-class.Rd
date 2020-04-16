@@ -31,8 +31,15 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \item{end}{End of feature range to query}
 }}
 
-\item{\code{getCombined(measurements = NULL, seqName, start = 1, end = 1000,
-  order = NULL, nodeSelection = NULL, selectedLevels = NULL)}}{Return the counts aggregated to selected nodes for the given samples
+\item{\code{getCombined(
+  measurements = NULL,
+  seqName,
+  start = 1,
+  end = 1000,
+  order = NULL,
+  nodeSelection = NULL,
+  selectedLevels = NULL
+)}}{Return the counts aggregated to selected nodes for the given samples
 
 \describe{
 \item{measurements}{Samples to get counts for}
@@ -59,8 +66,13 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 \item{end}{End of feature range to query}
 }}
 
-\item{\code{getRows(measurements = NULL, start = 1, end = 1000, selectedLevels = 3,
-  selections = NULL)}}{Return the sample annotation and features within the specified range and level for a given sample and features
+\item{\code{getRows(
+  measurements = NULL,
+  start = 1,
+  end = 1000,
+  selectedLevels = 3,
+  selections = NULL
+)}}{Return the sample annotation and features within the specified range and level for a given sample and features
 
 \describe{
 \item{measurements}{Samples to retrieve for}
@@ -71,8 +83,13 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 }}
 
-\item{\code{getValues(measurements = NULL, start = 1, end = 1000,
-  selectedLevels = 3, selections = NULL)}}{Return the counts for a sample within the specified range
+\item{\code{getValues(
+  measurements = NULL,
+  start = 1,
+  end = 1000,
+  selectedLevels = 3,
+  selections = NULL
+)}}{Return the counts for a sample within the specified range
 
 \describe{
 \item{measurements}{Samples to get counts for}
@@ -83,8 +100,12 @@ Used to serve metagenomic data (used in e.g., icicle plots and heatmaps). Wraps
 
 }}
 
-\item{\code{propagateHierarchyChanges(selection = NULL, order = NULL,
-  selectedLevels = NULL, request_with_labels = FALSE)}}{Update internal state for hierarchy
+\item{\code{propagateHierarchyChanges(
+  selection = NULL,
+  order = NULL,
+  selectedLevels = NULL,
+  request_with_labels = FALSE
+)}}{Update internal state for hierarchy
 
 \describe{
 \item{selection}{Node-id and selectionType pairs}

@@ -26,13 +26,13 @@ VignetteBuilder: knitr
 Depends: R (>= 3.4), metagenomeSeq (>= 1.17.1), methods, data.table,
         Biobase, digest
 Imports: epivizr, epivizrData, epivizrServer, epivizrStandalone, vegan,
-        GenomeInfoDb, phyloseq, httr
+        GenomeInfoDb, phyloseq, httr, TreeSummarizedExperiment, SummarizedExperiment
 Suggests: knitr, BiocStyle, matrixStats, msd16s (>= 0.109.1), etec16s,
         testthat, gss, curatedMetagenomicData
 Collate: 'metavizControl.R' 'startMetaviz.R' 'utils.R'
-        'EpivizMetagenomicsData-class.R' 'register-methods.R'
+        'EpivizMetagenomicsData-class.R' 'EpivizTreeData-class.R' 'register-methods.R'
         'validateMRExperiment.R' 'MetavizApp-class.R'
         'MetavizGraph-class.R' 'EpivizMetagenomicsDataInnerNodes-class.R' 
         'MetavizGraphInnerNodes-class.R' 'EpivizMetagenomicsDataTimeSeries-class.R' 
 biocViews: Visualization, Infrastructure, GUI, Metagenomics, ImmunoOncology
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
