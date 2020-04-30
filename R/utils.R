@@ -49,6 +49,46 @@ generateSelection = function(feature_names, aggregation_level, selection_type, f
 
 replaceNAFeatures = function(replacing_na_obj_fData, feature_order) {
   
+  message("replacing feature labels")
+
+  tax <- replacing_na_obj_fData
+  feature_order <- colnames(tax)
+  for(i in seq(2, length(feature_order))) {
+    sub_table <- tax[, feature_order[1:i]]
+
+    lineages <- apply(sub_table, 1, paste, collapse="_")
+    lineages <- as.data.frame(lineages)
+    lineages$group <- sub_table[, feature_order[i]]
+
+    # grp <- sub_table[, by = feature_order[i]]
+    # grouped <- aggregate(sub_table, by=list(sub_table[, feature_order[i]]), FUN=length)
+    grouped <- aggregate(lineages$lineages, by=list(lineages$group), FUN=function(x) length(unique(x)))
+    grouped <- grouped[grouped$x > 1,]
+
+    list_non_unique <- aggregate(lineages$lineages, by=list(lineages$group), FUN=function(x) unique(x))
+
+    if (nrow(grouped) > 0) {
+      for(j in seq(1, nrow(grouped))) {
+        trowgrp <- grouped[j,]
+        tlist <- list_non_unique[list_non_unique[["Group.1"]] == trowgrp[["Group.1"]],]
+        tkcount <- 1
+        for(k in tlist[["x"]][[1]]) {
+          tkrow <- rownames(lineages[lineages$lineages == k,])
+          tax[tkrow, feature_order[i]] <- paste(tax[tkrow, feature_order[i]], tkcount, sep="_")
+          tkcount <- tkcount + 1
+        }
+      }
+    }
+  }
+
+  for( i in seq(ncol(tax))){
+    tax[,i] = as.character(tax[,i])
+  }
+
+  replacing_na_obj_fData <- as.data.frame(tax, stringAsFactors=FALSE)
+  
+  
+  message("replacing NA feature labels")
   for(i in seq(1, length(feature_order))){
     na_indices <- which(is.na(replacing_na_obj_fData[,feature_order[i]]))
     for(j in seq(1, length(na_indices))){
@@ -76,6 +116,50 @@ replaceNAFeatures = function(replacing_na_obj_fData, feature_order) {
     }
   }
   
-  replacing_na_obj_fData
+  # replacing_na_obj_fData
   return(replacing_na_obj_fData)
+}
+
+#' Method to fix feature labels across lineages
+#'
+#' @param tax fData from MRexperiment object
+#' @return hierarchy with feature labels replaced
+#' @export
+#' 
+replaceFeatureLabels <- function(tax) {
+  message("replacing feature labels")
+  feature_order <- colnames(tax)
+  for(i in seq(2, length(feature_order))) {
+    sub_table <- tax[, feature_order[1:i]]
+    
+    lineages <- apply(sub_table, 1, paste, collapse="_")
+    lineages <- as.data.frame(lineages)
+    lineages$group <- sub_table[, feature_order[i]]
+    
+    # grp <- sub_table[, by = feature_order[i]]
+    # grouped <- aggregate(sub_table, by=list(sub_table[, feature_order[i]]), FUN=length)
+    grouped <- aggregate(lineages$lineages, by=list(lineages$group), FUN=function(x) length(unique(x)))
+    grouped <- grouped[grouped$x > 1,]
+    
+    list_non_unique <- aggregate(lineages$lineages, by=list(lineages$group), FUN=function(x) unique(x))
+    
+    if (nrow(grouped) > 0) {
+      for(j in seq(1, nrow(grouped))) {
+        trowgrp <- grouped[j,]
+        tlist <- list_non_unique[list_non_unique[["Group.1"]] == trowgrp[["Group.1"]],]
+        tkcount <- 1
+        for(k in tlist[["x"]][[1]]) {
+          tkrow <- rownames(lineages[lineages$lineages == k,])
+          tax[tkrow, feature_order[i]] <- paste(tax[tkrow, feature_order[i]], tkcount, sep="_")
+          tkcount <- tkcount + 1
+        }
+      }
+    }
+  }
+  
+  for( i in seq(ncol(tax))){
+    tax[,i] = as.character(tax[,i]) 
+  }
+  
+  return(as.data.frame(tax, stringAsFactors=FALSE))
 }
