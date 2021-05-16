@@ -28,7 +28,7 @@ Depends: R (>= 3.4), metagenomeSeq (>= 1.17.1), methods, data.table,
 Imports: epivizr, epivizrData, epivizrServer, epivizrStandalone, vegan,
         GenomeInfoDb, phyloseq, httr
 Suggests: knitr, BiocStyle, matrixStats, msd16s (>= 0.109.1), etec16s,
-        testthat, gss, curatedMetagenomicData, rmarkdown
+        testthat, gss, ExperimentHub, tidyr, rmarkdown
 Collate: 'metavizControl.R' 'startMetaviz.R' 'utils.R'
         'EpivizMetagenomicsData-class.R' 'register-methods.R'
         'validateMRExperiment.R' 'MetavizApp-class.R'
