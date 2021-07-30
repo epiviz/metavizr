@@ -228,11 +228,60 @@ In order to show this utility, we will use select portions of the vignette for a
 We first retrieve a dataset named `Zeller_2014` from curatedMetagenomicData and convert the ExpressionSet containing abundance measurements into an MRExperiment which we will then use with Metaviz.
 
 ```{r, eval=TRUE, echo=FALSE}
-require(curatedMetagenomicData)
+require(ExperimentHub)
+require(tidyr)
 
-zeller <- curatedMetagenomicData("ZellerG_2014.metaphlan_bugs_list.stool", dryrun = FALSE)
-zeller.eset <- zeller[[1]]
-zeller_MR_expr = ExpressionSet2MRexperiment(zeller.eset)
+EH <-
+  ExperimentHub()
+
+ZellerG_2014.metaphlan_bugs_list.stool <-
+    EH[["EH1954"]]
+
+relative_abundance <-
+  exprs(ZellerG_2014.metaphlan_bugs_list.stool)
+
+number_reads <-
+  ZellerG_2014.metaphlan_bugs_list.stool$number_reads
+
+counts <-
+  sweep(relative_abundance, 2, number_reads/100, "*")
+
+counts <-
+  round(counts)
+
+pheno_data <-
+  phenoData(ZellerG_2014.metaphlan_bugs_list.stool)
+
+into_cols <-
+  c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "Strain")
+
+taxonomy_data <-
+  data.frame(rowname = rownames(counts))
+
+taxonomy_data <-
+  separate(taxonomy_data, "rowname", into_cols, sep = "\\|", fill = "right")
+
+rownames(counts) <-
+  gsub(".+\\|", "", rownames(counts))
+
+rownames(taxonomy_data) <-
+  gsub(".+\\|", "", rownames(counts))
+
+taxonomy_data <-
+  apply(taxonomy_data, 2, function(x) {gsub("[a-z]__", "", x)})
+
+taxonomy_data <-
+  data.frame(taxonomy_data)
+
+taxonomy_data <-
+  AnnotatedDataFrame(taxonomy_data)
+
+zeller_MR_expr <-
+    metagenomeSeq::newMRexperiment(
+        counts = counts,
+        phenoData = pheno_data,
+        featureData = taxonomy_data
+    )
 ```
 
 We add the MRExperiment to the Metaviz app with a call to `plot` with the type = "innerNodeCounts" specified.
