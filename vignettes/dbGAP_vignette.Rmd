@@ -1,0 +1,51 @@
+---
+title: "dbGAP protected variable"
+author: "Justin Wagner"
+date: "`r Sys.Date()`"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{Introduction to metavizr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Load HMP2Data, metagenomeSeq, phyloseq, and metavizr. Then download the IBD16S dataset from HMP2Data.
+```{r}
+library(HMP2Data)
+library(metagenomeSeq)
+library(phyloseq)
+library(metavizr)
+IBD16S_mr_exp <- phyloseq_to_metagenomeSeq(IBD16S())
+```
+
+Start the Metaviz app
+```{r, eval=FALSE}
+app <- startMetaviz()
+```
+
+Create a new variable "dbGap_Field" in the phenoData of IBD16S_mr_exp. If have dbGAP values then match those on sample ID.
+```{r, eval=FALSE}
+pData_IBD16S_mr_exp <- pData(IBD16S_mr_exp)
+pData_IBD16S_mr_exp$dbGap_Field <- runif(nrow(pData_IBD16S_mr_exp))
+pData(IBD16S_mr_exp) <- pData_IBD16S_mr_exp
+```
+
+Specify feature order for hierarchy and normalize 
+```{r, eval=FALSE}
+feature_order <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "OTUname")
+control <- metavizr::metavizControl(norm = TRUE)
+icicle_plot <- app$plot(IBD16S_mr_exp, datasource_name="IBD16s", type = "LeafCounts", feature_order=feature_order, control = control)
+heatmap <- app$chart_mgr$revisualize(chart_type = "HeatmapPlot", chart = icicle_plot)
+```
+
+
+```{r}
+knitr::include_graphics("Pictures/dbGAP_capture1.tif")
+```
+
+Select dbGAP field in row names and set "Color by row labels" to "On"
+
+```{r}
+knitr::include_graphics("Pictures/dbGAP_capture2.tif")
+```
+
